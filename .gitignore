@@ -10,3 +10,10 @@
 *.lai
 *.la
 *.a
+
+Debug/
+Release/
+
+JLParser*
+JLLexer*
+JL.tokens
