@@ -14,19 +14,26 @@ options {
   #include <parser/antlr/antlr_utils.h>
 }
 
-rule returns [NBlock* result]: 
-{ result = new NBlock(); }
+@postinclude {
+  TranslationUnit* translationUnit;
+}
+
+translation_unit returns [NBlock* result]: 
+{ 
+  translationUnit = new TranslationUnit("test");
+  result = new NBlock(translationUnit); 
+}
 (stmt=statement { result->addStatement(stmt); })+ 
 ;
 
 statement returns [NStatement* result]: 
 stmt=assignment { result = stmt; } | 
-exp=expression { result = new NExpressionStatement(exp); }
+exp=expression { result = new NExpressionStatement(translationUnit, exp); }
 ;
 
 assignment returns [NAssignment* result]: 
 id=identifier '=' exp=expression NEWLINE 
-{ result = new NAssignment(id, exp); }
+{ result = new NAssignment(translationUnit, id, exp); }
 ;
 
 expression returns [NExpression* result]
@@ -38,7 +45,7 @@ expression returns [NExpression* result]
   op1=literal { result=op1; }
   (
     OP_PLUS      { type = PLUS; } 
-    op2=literal  { result = new NBinaryOperator(result, type, op2); }
+    op2=literal  { result = new NBinaryOperator(translationUnit, result, type, op2); }
   )*
 ;
 
@@ -51,7 +58,7 @@ val=identifier { result = val; } |
 ;
 
 identifier returns [NIdentifier* result]:
-IDENTIFIER { result = new NIdentifier(getTokenString($IDENTIFIER)); } 
+IDENTIFIER { result = new NIdentifier(translationUnit, getTokenString($IDENTIFIER)); } 
 ;
 
 double_literal returns [NDoubleLiteral* result]:
@@ -60,7 +67,7 @@ DOUBLE_LITERAL
   std::stringstream valueStr(getTokenString($DOUBLE_LITERAL));
   double value = 0.0;
   valueStr >> value;
-  result = new NDoubleLiteral(value); 
+  result = new NDoubleLiteral(translationUnit, value); 
 } 
 ;
 

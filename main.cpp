@@ -40,11 +40,15 @@ int main(int argc, char **argv) {
 		return ANTLR3_ERR_NOMEM;
 	}
 
-	NBlock* program = parser->rule(parser);
+	NBlock* program = parser->translation_unit(parser);
 
 	std::cout << "Parsing finished" << std::endl;
 
 	std::cout << program << std::endl;
+
+	program->generateCode();
+
+	program->getTranslationUnit().module->dump();
 
 	//putc('*', stdout);
 	//fflush(stdout);
