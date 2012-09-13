@@ -59,16 +59,39 @@
 								<option id="gnu.cpp.link.option.libs.148126949" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="pthread"/>
 									<listOptionValue builtIn="false" value="m"/>
+									<listOptionValue builtIn="false" value="antlr3c"/>
+									<listOptionValue builtIn="false" value="cpputils"/>
+									<listOptionValue builtIn="false" value="LLVMX86Disassembler"/>
+									<listOptionValue builtIn="false" value="LLVMX86CodeGen"/>
+									<listOptionValue builtIn="false" value="LLVMSelectionDAG"/>
+									<listOptionValue builtIn="false" value="LLVMAsmPrinter"/>
+									<listOptionValue builtIn="false" value="LLVMX86AsmParser"/>
+									<listOptionValue builtIn="false" value="LLVMMCParser"/>
+									<listOptionValue builtIn="false" value="LLVMX86Desc"/>
+									<listOptionValue builtIn="false" value="LLVMX86AsmPrinter"/>
+									<listOptionValue builtIn="false" value="LLVMX86Utils"/>
+									<listOptionValue builtIn="false" value="LLVMX86Info"/>
+									<listOptionValue builtIn="false" value="LLVMJIT"/>
+									<listOptionValue builtIn="false" value="LLVMRuntimeDyld"/>
+									<listOptionValue builtIn="false" value="LLVMExecutionEngine "/>
+									<listOptionValue builtIn="false" value="LLVMCodeGen"/>
+									<listOptionValue builtIn="false" value="LLVMScalarOpts"/>
+									<listOptionValue builtIn="false" value="LLVMInstCombine"/>
+									<listOptionValue builtIn="false" value="LLVMTransformUtils"/>
+									<listOptionValue builtIn="false" value="LLVMipa"/>
+									<listOptionValue builtIn="false" value="LLVMAnalysis"/>
+									<listOptionValue builtIn="false" value="LLVMTarget"/>
+									<listOptionValue builtIn="false" value="LLVMMC"/>
+									<listOptionValue builtIn="false" value="LLVMObject"/>
 									<listOptionValue builtIn="false" value="LLVMCore"/>
 									<listOptionValue builtIn="false" value="LLVMSupport"/>
 									<listOptionValue builtIn="false" value="dl"/>
-									<listOptionValue builtIn="false" value="antlr3c"/>
-									<listOptionValue builtIn="false" value="cpputils"/>
 								</option>
 								<option id="gnu.cpp.link.option.paths.2007448953" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/cpputils/Debug}&quot;"/>
 									<listOptionValue builtIn="false" value="/home/hannes/development/lib/compiler/llvm/Debug+Asserts/lib"/>
 								</option>
+								<option id="gnu.cpp.link.option.flags.638293375" name="Linker flags" superClass="gnu.cpp.link.option.flags" value="`/home/hannes/development/lib/compiler/llvm/Debug+Asserts/bin/llvm-config --libs jit native`" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1394777371" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>

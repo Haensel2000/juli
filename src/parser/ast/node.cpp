@@ -92,7 +92,7 @@ void NAssignment::generateCode() const {
 void NBlock::generateCode() const {
 
 	Constant* s = ConstantDataArray::getString(getGlobalContext(),
-				StringRef("%f"));
+				StringRef("%f\n"));
 	GlobalVariable* gvar_array__str = new GlobalVariable(
 			*translationUnit->module, s->getType(), true,
 			GlobalValue::PrivateLinkage, 0, ".str");
@@ -117,6 +117,7 @@ void NBlock::generateCode() const {
 
 	Function* mainFunction = Function::Create(mainFunctionType,
 			Function::ExternalLinkage, "main", translationUnit->module);
+	//mainFunction->setDoesNotThrow(true);
 
 	BasicBlock* block = BasicBlock::Create(getGlobalContext(), "entry",
 			mainFunction);
@@ -129,6 +130,8 @@ void NBlock::generateCode() const {
 			i != statements.end(); ++i) {
 		(*i)->generateCode();
 	}
+
+	builder.CreateRet(ConstantInt::get(getGlobalContext(), APInt(64, StringRef("0"), 10)));
 }
 
 void NExpressionStatement::generateCode() const {

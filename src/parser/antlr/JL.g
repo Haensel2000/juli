@@ -27,8 +27,12 @@ translation_unit returns [NBlock* result]:
 ;
 
 statement returns [NStatement* result]: 
-stmt=assignment { result = stmt; } | 
-exp=expression { result = new NExpressionStatement(translationUnit, exp); }
+stmt1=assignment { result = stmt1; } | 
+stmt2=expression_statement { result = stmt2; }
+;
+
+expression_statement returns [NExpressionStatement* result]:
+exp=expression NEWLINE { result = new NExpressionStatement(translationUnit, exp); }
 ;
 
 assignment returns [NAssignment* result]: 
