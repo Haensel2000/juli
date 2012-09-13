@@ -10,50 +10,57 @@ options {
   #include <sstream>
   #include <cstdio>
   
-  #include <parser/ast/node.h>
+  #include <parser/ast/ast.h>
+  #include <codegen/translationUnit.h>
   #include <parser/antlr/antlr_utils.h>
 }
 
 @postinclude {
-  TranslationUnit* translationUnit;
+  juli::TranslationUnit* translationUnit;
 }
 
-translation_unit returns [NBlock* result]: 
+translation_unit returns [juli::TranslationUnit* result]
+@declarations
+{
+   juli::NBlock* block;
+}:
 { 
-  translationUnit = new TranslationUnit("test");
-  result = new NBlock(translationUnit); 
+  result = new juli::TranslationUnit("test");
+  block = new juli::NBlock(result); 
+  result->setAST(block);
+  translationUnit = result;
 }
-(stmt=statement { result->addStatement(stmt); })+ 
+(stmt=statement { block->addStatement(stmt); })+ 
 ;
 
-statement returns [NStatement* result]: 
+statement returns [juli::NStatement* result]: 
 stmt1=assignment { result = stmt1; } | 
 stmt2=expression_statement { result = stmt2; }
 ;
 
-expression_statement returns [NExpressionStatement* result]:
-exp=expression NEWLINE { result = new NExpressionStatement(translationUnit, exp); }
+expression_statement returns [juli::NExpressionStatement* result]:
+exp=expression NEWLINE { result = new juli::NExpressionStatement(translationUnit, exp); }
 ;
 
-assignment returns [NAssignment* result]: 
+assignment returns [juli::NAssignment* result]: 
 id=identifier '=' exp=expression NEWLINE 
-{ result = new NAssignment(translationUnit, id, exp); }
+{ result = new juli::NAssignment(translationUnit, id, exp); }
 ;
 
-expression returns [NExpression* result]
+expression returns [juli::NExpression* result]
 @declarations
 {
-   Operator type = UNKNOWN;
+   juli::Operator type = juli::UNKNOWN;
 }
 :
   op1=literal { result=op1; }
   (
-    OP_PLUS      { type = PLUS; } 
-    op2=literal  { result = new NBinaryOperator(translationUnit, result, type, op2); }
+    OP_PLUS      { type = juli::PLUS; } 
+    op2=literal  { result = new juli::NBinaryOperator(translationUnit, result, type, op2); }
   )*
 ;
 
-literal returns [NExpression* result]: 
+literal returns [juli::NExpression* result]: 
 val=double_literal { result = val; }
 | 
 val=identifier { result = val; } | 
@@ -61,17 +68,17 @@ val=identifier { result = val; } |
 { result = val; }
 ;
 
-identifier returns [NIdentifier* result]:
-IDENTIFIER { result = new NIdentifier(translationUnit, getTokenString($IDENTIFIER)); } 
+identifier returns [juli::NIdentifier* result]:
+IDENTIFIER { result = new juli::NIdentifier(translationUnit, getTokenString($IDENTIFIER)); } 
 ;
 
-double_literal returns [NDoubleLiteral* result]:
+double_literal returns [juli::NDoubleLiteral* result]:
 DOUBLE_LITERAL
 { 
   std::stringstream valueStr(getTokenString($DOUBLE_LITERAL));
   double value = 0.0;
   valueStr >> value;
-  result = new NDoubleLiteral(translationUnit, value); 
+  result = new juli::NDoubleLiteral(translationUnit, value); 
 } 
 ;
 
