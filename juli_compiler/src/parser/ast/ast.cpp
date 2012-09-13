@@ -132,8 +132,6 @@ void juli::NExpressionStatement::generateCode(llvm::IRBuilder<>& builder) const 
 	argValues.push_back(s);
 	argValues.push_back(value);
 
-	function->dump();
-
 	builder.CreateCall(function, argValues);
 
 }

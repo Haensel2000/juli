@@ -41,9 +41,7 @@ TranslationUnit* juli::Parser::parse(const string& filename) {
 
 	TranslationUnit* translationUnit = parser->translation_unit(parser);
 
-	std::cout << "Parsing finished" << std::endl;
-
-	std::cout << translationUnit->getAST() << std::endl;
+	//std::cout << translationUnit->getAST() << std::endl;
 
 	parser->free(parser);
 	parser = NULL;
