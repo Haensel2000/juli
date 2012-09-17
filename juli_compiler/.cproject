@@ -65,6 +65,7 @@
 									<listOptionValue builtIn="false" value="LLVMSelectionDAG"/>
 									<listOptionValue builtIn="false" value="LLVMAsmPrinter"/>
 									<listOptionValue builtIn="false" value="LLVMX86AsmParser"/>
+									<listOptionValue builtIn="false" value="LLVMX86Disassembler"/>
 									<listOptionValue builtIn="false" value="LLVMMCParser"/>
 									<listOptionValue builtIn="false" value="LLVMX86Desc"/>
 									<listOptionValue builtIn="false" value="LLVMX86AsmPrinter"/>

@@ -43,6 +43,8 @@ int main(int argc, char **argv) {
 		try {
 			unit->generateCode();
 
+			unit->module->dump();
+
 			if (unit->getErrors().empty()) {
 				std::string filename(argv[i]);
 				std::string basename = filename.substr(0, filename.find_last_of('.', filename.size()));
