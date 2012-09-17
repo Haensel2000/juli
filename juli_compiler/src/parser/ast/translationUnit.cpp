@@ -8,9 +8,12 @@ using namespace juli;
 juli::TranslationUnit::TranslationUnit(const std::string& name) {
 	module = new llvm::Module(name, llvm::getGlobalContext());
 
+	llvm::LLVMContext& c = getContext();
+
 	// initialize primitive types:
-	typeTable["double"] = new PrimitiveType(llvm::Type::getDoubleTy(getContext()));
-	typeTable["void"] = new PrimitiveType(llvm::Type::getVoidTy(getContext()));
+	typeTable["double"] = new PrimitiveType(llvm::Type::getDoubleTy(c));
+	typeTable["void"] = new PrimitiveType(llvm::Type::getVoidTy(c));
+	typeTable["int"] = new PrimitiveType(llvm::Type::getInt32Ty(c));
 }
 
 juli::TranslationUnit::~TranslationUnit() {
