@@ -13,6 +13,25 @@ llvm::Value* juli::NDoubleLiteral::generateCode(
 			llvm::APFloat(value));
 }
 
+llvm::Value* juli::NStringLiteral::generateCode(
+		llvm::IRBuilder<>& builder) const {
+	Constant* s = ConstantDataArray::getString(translationUnit->getContext(),
+					StringRef(value));
+	GlobalVariable* globalStr = new GlobalVariable(
+			*translationUnit->module, s->getType(), true,
+			GlobalValue::PrivateLinkage, 0, ".str");
+	globalStr->setInitializer(s);
+
+//	GlobalVariable* globalStr = translationUnit->module->getGlobalVariable(
+//			".str", true);
+	std::vector<Constant*> indices;
+	ConstantInt* const_int64_8 = ConstantInt::get(translationUnit->getContext(),
+			APInt(64, StringRef("0"), 10));
+	indices.push_back(const_int64_8);
+	indices.push_back(const_int64_8);
+	return ConstantExpr::getGetElementPtr(globalStr, indices);
+}
+
 llvm::Value* juli::NIdentifier::generateCode(llvm::IRBuilder<>& builder) const {
 	llvm::Value* v = translationUnit->getSymbolTable()[name];
 	if (!v)
@@ -44,18 +63,19 @@ llvm::Value* juli::NBinaryOperator::generateCode(
 	}
 }
 
-llvm::Value* juli::NFunctionCall::generateCode(llvm::IRBuilder<>& builder) const {
+llvm::Value* juli::NFunctionCall::generateCode(
+		llvm::IRBuilder<>& builder) const {
 	// Look up the name in the global module table.
 	llvm::Function* function = translationUnit->module->getFunction(id->name);
-	if (function == 0) {
-		std::cerr <<  "Unknown function " << id->name << std::endl;
-		return 0;
-	}
-	// If argument mismatch error.
-	if (function->arg_size() != arguments.size()) {
-		std::cerr << "Incorrect # arguments passed" << std::endl;
-		return 0;
-	}
+//	if (function == 0) {
+//		std::cerr << "Unknown function " << id->name << std::endl;
+//		return 0;
+//	}
+//	// If argument mismatch error.
+//	if (function->arg_size() != arguments.size()) {
+//		std::cerr << "Incorrect # arguments passed" << std::endl;
+//		return 0;
+//	}
 
 	std::vector<llvm::Value*> argValues;
 	for (unsigned i = 0, e = arguments.size(); i != e; ++i) {
@@ -148,13 +168,18 @@ llvm::FunctionType* juli::NFunctionDeclaration::createFunctionType() const {
 		argumentTypes.push_back((*i)->getLLVMType());
 	}
 
-	return FunctionType::get(returnType, argumentTypes, false);
+	return FunctionType::get(returnType, argumentTypes, varArgs);
 }
 
 llvm::Function* juli::NFunctionDeclaration::createFunction() const {
-	llvm::Function* f = Function::Create(createFunctionType(), Function::ExternalLinkage,
-			id->name, translationUnit->module);
+	llvm::Function* f = Function::Create(createFunctionType(),
+			Function::ExternalLinkage, id->name, translationUnit->module);
 	return f;
+}
+
+void juli::NFunctionDeclaration::generateCode(
+		llvm::IRBuilder<>& builder) const {
+	llvm::Function* f = createFunction();
 }
 
 void juli::NFunctionDefinition::generateCode(llvm::IRBuilder<>& builder) const {

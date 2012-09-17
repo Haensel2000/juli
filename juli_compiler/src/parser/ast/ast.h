@@ -62,6 +62,15 @@ public:
 	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
 };
 
+class NStringLiteral: public NLiteral<std::string> {
+public:
+	NStringLiteral(TranslationUnit* module, std::string value) :
+			NLiteral<std::string>(module, value) {
+	}
+
+	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
+};
+
 //class NInteger : public NExpression {
 //public:
 //    long long value;
@@ -219,7 +228,10 @@ public:
 
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
-		os << type << " " << id << " = " << assignmentExpr << ";";
+		os << type << " " << id;
+		if (assignmentExpr) {
+			os << " = " << assignmentExpr;
+		}
 	}
 
 	llvm::Type* getLLVMType() const;
@@ -227,17 +239,20 @@ public:
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
-class NFunctionDeclaration : public Node {
+class NFunctionDeclaration: public NStatement {
 protected:
 	llvm::FunctionType* createFunctionType() const;
 public:
 	const NIdentifier* type;
 	const NIdentifier* id;
 	VariableList arguments;
+	bool varArgs;
 
-	NFunctionDeclaration(TranslationUnit* module, const NIdentifier* type, const NIdentifier* id,
-			const VariableList arguments) : Node(module),
-			type(type), id(id), arguments(arguments) {
+	NFunctionDeclaration(TranslationUnit* module, const NIdentifier* type,
+			const NIdentifier* id, const VariableList arguments, bool varArgs =
+					false) :
+			NStatement(module), type(type), id(id), arguments(arguments), varArgs(
+					varArgs) {
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
@@ -246,6 +261,8 @@ public:
 	}
 
 	llvm::Function* createFunction() const;
+
+	virtual void generateCode(llvm::IRBuilder<>& builder) const;
 
 };
 
@@ -278,7 +295,10 @@ public:
 
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
-		os << "return " << expression;
+		os << "return ";
+		if (expression)
+			os << expression;
+
 	}
 
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;

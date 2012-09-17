@@ -14,6 +14,7 @@ juli::TranslationUnit::TranslationUnit(const std::string& name) {
 	typeTable["double"] = new PrimitiveType(llvm::Type::getDoubleTy(c));
 	typeTable["void"] = new PrimitiveType(llvm::Type::getVoidTy(c));
 	typeTable["int"] = new PrimitiveType(llvm::Type::getInt32Ty(c));
+	typeTable["cstr"] = new PrimitiveType(llvm::Type::getInt8PtrTy(c));
 }
 
 juli::TranslationUnit::~TranslationUnit() {
