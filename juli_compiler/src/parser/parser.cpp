@@ -7,13 +7,28 @@
 using namespace juli;
 using namespace std;
 
+pANTLR3_STRING_FACTORY Parser::strFactory;
+
+pANTLR3_STRING juli::Parser::getString(const char* s) {
+	return strFactory->newStr(strFactory, (pANTLR3_UINT8) s);
+}
+
+juli::Parser::Parser() {
+	strFactory = antlr3StringFactoryNew(ANTLR3_ENC_UTF8);
+}
+
+juli::Parser::~Parser() {
+	delete strFactory;
+}
+
 TranslationUnit* juli::Parser::parse(const string& filename) {
 	pANTLR3_INPUT_STREAM input;
 	pANTLR3_COMMON_TOKEN_STREAM tokenStream;
 	pJLParser parser;
 	pJLLexer lexer;
 
-	input = antlr3FileStreamNew((pANTLR3_UINT8) filename.c_str(), ANTLR3_ENC_UTF8);
+	input = antlr3FileStreamNew((pANTLR3_UINT8) filename.c_str(),
+			ANTLR3_ENC_UTF8);
 	if (input == NULL) {
 		cerr << "Could not find file " << filename << std::endl;
 		return 0;
@@ -39,7 +54,8 @@ TranslationUnit* juli::Parser::parse(const string& filename) {
 		return 0;
 	}
 
-	TranslationUnit* translationUnit = parser->translation_unit(parser, filename.c_str());
+	TranslationUnit* translationUnit = parser->translation_unit(parser,
+			filename.c_str());
 
 	//std::cout << translationUnit->getAST() << std::endl;
 

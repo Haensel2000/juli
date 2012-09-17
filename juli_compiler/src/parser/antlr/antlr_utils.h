@@ -15,4 +15,6 @@ const char* getTokenText(pANTLR3_COMMON_TOKEN token);
 
 std::string getTokenString(pANTLR3_COMMON_TOKEN token);
 
+pANTLR3_STRING getString(const char* s);
+
 #endif /* ANTLR_UTILS_H_ */

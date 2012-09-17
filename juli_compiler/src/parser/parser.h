@@ -9,7 +9,7 @@
 #define PARSER_H_
 
 #include <string>
-
+#include <antlr3.h>
 #include <parser/ast/translationUnit.h>
 
 using std::string;
@@ -18,7 +18,14 @@ namespace juli {
 
 class Parser {
 private:
+	static pANTLR3_STRING_FACTORY strFactory;
 public:
+
+	Parser();
+
+	~Parser();
+
+	static pANTLR3_STRING getString(const char* s);
 
 	TranslationUnit* parse(const string& filename);
 
