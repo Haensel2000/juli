@@ -34,8 +34,9 @@ using namespace juli;
 using std::cerr;
 
 int main(int argc, char **argv) {
-	Parser parser;
+
 	CodeEmitter emitter;
+	Parser parser;
 
 	for (int i = 1; i < argc; ++i) {
 		std::cout << "Building file: " << argv[i] << std::endl;

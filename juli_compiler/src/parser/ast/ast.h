@@ -8,6 +8,8 @@
 #ifndef AST_H_
 #define AST_H_
 
+#include <sstream>
+
 #include <parser/ast/node.h>
 
 #include <llvm/DerivedTypes.h>
@@ -66,6 +68,33 @@ class NStringLiteral: public NLiteral<std::string> {
 public:
 	NStringLiteral(TranslationUnit* module, std::string value) :
 			NLiteral<std::string>(module, value) {
+
+		std::stringstream sstream;
+		unsigned char escCount = 0;
+		for (std::string::iterator i = value.begin(); i != value.end(); ++i) {
+			if (*i == '\\') {
+				escCount++;
+			} else if (escCount == 1) {
+				switch (*i) {
+				case 'n':
+					sstream << "\n";
+					break;
+				default:
+					sstream << "\\" << *i;
+					break;
+				}
+				escCount = 0;
+			} else if (escCount > 1){
+				for (int j = 0; j < escCount; ++j)
+					sstream << "\\";
+				sstream << *i;
+			} else {
+				sstream << *i;
+			}
+		}
+
+		this->value = sstream.str();
+
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
@@ -221,11 +250,13 @@ class NVariableDeclaration: public NStatement {
 public:
 	NIdentifier* type;
 	NIdentifier* id;
-	NExpression *assignmentExpr;
+	NExpression* assignmentExpr;
+
 	NVariableDeclaration(TranslationUnit* module, NIdentifier* type,
 			NIdentifier* id) :
 			NStatement(module), type(type), id(id) {
 	}
+
 	NVariableDeclaration(TranslationUnit* module, NIdentifier* type,
 			NIdentifier* id, NExpression *assignmentExpr) :
 			NStatement(module), type(type), id(id), assignmentExpr(
