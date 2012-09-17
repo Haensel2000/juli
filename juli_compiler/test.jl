@@ -7,6 +7,6 @@ double add(double x, double y) {
 void main() {
 	double x;
 	x = add(4.0, 3.0);
-	printf("%.2f\\n\\n", x);
+	printf("%.2f\n\n", x);
 	return;
 }

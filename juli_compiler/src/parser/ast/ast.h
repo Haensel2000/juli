@@ -68,6 +68,11 @@ public:
 			NLiteral<std::string>(module, value) {
 	}
 
+	virtual void print(std::ostream& os, int indent) const {
+		beginLine(os, indent);
+		os << "\"" << value << "\"";
+	}
+
 	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
 };
 
@@ -117,7 +122,7 @@ public:
 
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
-		os << id << "(" << arguments << ");";
+		os << id << "(" << arguments << ")";
 	}
 
 	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
@@ -186,7 +191,9 @@ public:
 		for (std::vector<NStatement*>::const_iterator i = statements.begin();
 				i != statements.end(); ++i) {
 			beginLine(os, indent);
-			os << **i << std::endl;
+			(*i)->print(os, indent + 2);
+			os << ";" << std::endl;
+			//os << **i << std::endl;
 		}
 	}
 
@@ -257,7 +264,10 @@ public:
 
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
-		os << type << " " << id << "(" << arguments << ")";
+		os << type << " " << id << "(" << arguments;
+		if (varArgs)
+			os << ", ...";
+		os << ")";
 	}
 
 	llvm::Function* createFunction() const;
@@ -279,7 +289,7 @@ public:
 
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
-		os << declaration << block;
+		os << declaration << std::endl << block;
 	}
 
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;

@@ -63,7 +63,7 @@ namespace juli {
 
 		void printStatements(std::ostream& os) const {
 			for (StatementList::const_iterator i = statements.begin(); i != statements.end(); ++i) {
-				os << *i << std::endl;
+				os << *i << ";" << std::endl;
 			}
 		}
 
