@@ -61,7 +61,6 @@
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="antlr3c"/>
 									<listOptionValue builtIn="false" value="cpputils"/>
-									<listOptionValue builtIn="false" value="LLVMX86Disassembler"/>
 									<listOptionValue builtIn="false" value="LLVMX86CodeGen"/>
 									<listOptionValue builtIn="false" value="LLVMSelectionDAG"/>
 									<listOptionValue builtIn="false" value="LLVMAsmPrinter"/>

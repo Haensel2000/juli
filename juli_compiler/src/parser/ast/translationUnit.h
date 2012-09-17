@@ -11,20 +11,27 @@
 #include <map>
 
 #include <parser/ast/ast.h>
+#include <parser/ast/types.h>
 
 #include <llvm/DerivedTypes.h>
 #include <llvm/IRBuilder.h>
 #include <llvm/LLVMContext.h>
 #include <llvm/Module.h>
 
+#include <parser/ast/error.h>
+
 namespace juli {
 
 	class TranslationUnit {
 	private:
-		NBlock* ast;
+		StatementList statements;
+		std::map<std::string, Type*> typeTable;
+		std::map<std::string, llvm::Value*> symbolTable;
+
+		mutable std::vector<CompilerError> compilerErrors;
 	public:
 		llvm::Module* module;
-		std::map<std::string, llvm::Value*> namedValues;
+
 
 		TranslationUnit(const std::string& name);
 
@@ -36,9 +43,25 @@ namespace juli {
 
 		void generateCode(llvm::IRBuilder<> builder);
 
-		void setAST(NBlock* ast);
+		void addStatement(NStatement* statement);
 
-		NBlock* getAST();
+		const StatementList getStatements();
+
+		const Type* resolveType(const NIdentifier* id) const throw (CompilerError);
+
+		std::map<std::string, llvm::Value*>& getSymbolTable() {
+			return symbolTable;
+		}
+
+		const std::vector<CompilerError>& getErrors() const {
+			return compilerErrors;
+		}
+
+		void reportError(CompilerError& e) const {
+			compilerErrors.push_back(e);
+		}
+
+
 	};
 
 }

@@ -18,11 +18,6 @@
 
 namespace juli {
 
-Node* Error(const char *Str);
-Node* ErrorP(const char *Str);
-Node* ErrorF(const char *Str);
-llvm::Value* errorValue(const char *Str);
-
 class NExpression: public Node {
 public:
 	NExpression(TranslationUnit* module) :
@@ -124,8 +119,8 @@ public:
 	NExpression* lhs;
 	Operator op;
 	NExpression* rhs;
-	NBinaryOperator(TranslationUnit* module, NExpression* lhs,
-			Operator op, NExpression* rhs) :
+	NBinaryOperator(TranslationUnit* module, NExpression* lhs, Operator op,
+			NExpression* rhs) :
 			NExpression(module), lhs(lhs), op(op), rhs(rhs) {
 	}
 
@@ -152,8 +147,7 @@ class NAssignment: public NStatement {
 public:
 	NIdentifier* lhs;
 	NExpression* rhs;
-	NAssignment(TranslationUnit* module, NIdentifier* lhs,
-			NExpression* rhs) :
+	NAssignment(TranslationUnit* module, NIdentifier* lhs, NExpression* rhs) :
 			NStatement(module), lhs(lhs), rhs(rhs) {
 	}
 	//virtual llvm::Value* codeGen(CodeGenContext& context);
@@ -171,7 +165,7 @@ class NBlock: public NStatement {
 public:
 	StatementList statements;
 	NBlock(TranslationUnit* module) :
-		NStatement(module) {
+			NStatement(module) {
 	}
 	//virtual llvm::Value* codeGen(CodeGenContext& context);
 
@@ -209,15 +203,15 @@ public:
 
 class NVariableDeclaration: public NStatement {
 public:
-	const NIdentifier& type;
-	NIdentifier& id;
+	NIdentifier* type;
+	NIdentifier* id;
 	NExpression *assignmentExpr;
-	NVariableDeclaration(TranslationUnit* module, const NIdentifier& type,
-			NIdentifier& id) :
+	NVariableDeclaration(TranslationUnit* module, NIdentifier* type,
+			NIdentifier* id) :
 			NStatement(module), type(type), id(id) {
 	}
-	NVariableDeclaration(TranslationUnit* module, const NIdentifier& type,
-			NIdentifier& id, NExpression *assignmentExpr) :
+	NVariableDeclaration(TranslationUnit* module, NIdentifier* type,
+			NIdentifier* id, NExpression *assignmentExpr) :
 			NStatement(module), type(type), id(id), assignmentExpr(
 					assignmentExpr) {
 	}
@@ -228,25 +222,63 @@ public:
 		os << type << " " << id << " = " << assignmentExpr << ";";
 	}
 
+	llvm::Type* getLLVMType() const;
+
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
-class NFunctionDeclaration: public NStatement {
+class NFunctionDeclaration : public Node {
+protected:
+	llvm::FunctionType* createFunctionType() const;
 public:
 	const NIdentifier* type;
 	const NIdentifier* id;
 	VariableList arguments;
+
+	NFunctionDeclaration(TranslationUnit* module, const NIdentifier* type, const NIdentifier* id,
+			const VariableList arguments) : Node(module),
+			type(type), id(id), arguments(arguments) {
+	}
+
+	virtual void print(std::ostream& os, int indent) const {
+		beginLine(os, indent);
+		os << type << " " << id << "(" << arguments << ")";
+	}
+
+	llvm::Function* createFunction() const;
+
+};
+
+class NFunctionDefinition: public NStatement {
+public:
+	NFunctionDeclaration* declaration;
 	NBlock* block;
-	NFunctionDeclaration(TranslationUnit* module, const NIdentifier* type,
-			const NIdentifier* id, const VariableList arguments, NBlock* block) :
-			NStatement(module), type(type), id(id), arguments(arguments), block(
-					block) {
+
+	NFunctionDefinition(TranslationUnit* module, NFunctionDeclaration* decl,
+			NBlock* block) :
+			NStatement(module), declaration(decl), block(block) {
 	}
 	//virtual llvm::Value* codeGen(CodeGenContext& context);
 
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
-		os << type << " " << id << "(" << arguments << ")" << block;
+		os << declaration << block;
+	}
+
+	virtual void generateCode(llvm::IRBuilder<>& builder) const;
+};
+
+class NReturnStatement: public NStatement {
+private:
+	NExpression* expression;
+public:
+	NReturnStatement(TranslationUnit* module, NExpression* expression) :
+			NStatement(module), expression(expression) {
+	}
+
+	virtual void print(std::ostream& os, int indent) const {
+		beginLine(os, indent);
+		os << "return " << expression;
 	}
 
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;

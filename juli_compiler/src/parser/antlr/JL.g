@@ -11,7 +11,7 @@ options {
   #include <cstdio>
   
   #include <parser/ast/ast.h>
-  #include <codegen/translationUnit.h>
+  #include <parser/ast/translationUnit.h>
   #include <parser/antlr/antlr_utils.h>
 }
 
@@ -19,31 +19,76 @@ options {
   juli::TranslationUnit* translationUnit;
 }
 
-translation_unit returns [juli::TranslationUnit* result]
-@declarations
-{
-   juli::NBlock* block;
-}:
+translation_unit [const char* moduleName] returns [juli::TranslationUnit* result]:
 { 
   result = new juli::TranslationUnit("test");
-  block = new juli::NBlock(result); 
-  result->setAST(block);
   translationUnit = result;
 }
-(stmt=statement { block->addStatement(stmt); })+ 
+(stmt=function_definition { result->addStatement(stmt); })+ 
 ;
 
 statement returns [juli::NStatement* result]: 
 stmt1=assignment { result = stmt1; } | 
-stmt2=expression_statement { result = stmt2; }
+stmt2=expression_statement { result = stmt2; } |
+stmt3=return_statement { result = stmt3; } |
+stmt4=function_definition { result = stmt4; }
+;
+
+function_definition returns [juli::NFunctionDefinition* result]:
+decl=function_declaration bl=block
+{
+  result = new juli::NFunctionDefinition(translationUnit, decl, bl);
+}
+;
+
+block returns [juli::NBlock* result]:
+{
+  result = new juli::NBlock(translationUnit);
+}
+'{'
+(stmt=statement { result->addStatement(stmt); })*
+'}' 
+;
+
+function_declaration returns [juli::NFunctionDeclaration* result]
+@declarations
+{
+   juli::VariableList arguments;
+   juli::NIdentifier* type;
+   juli::NIdentifier* id;
+}:
+sign=variable_declaration { id = sign->id; type = sign->type; }
+'(' 
+(first_arg=variable_declaration { arguments.push_back(first_arg); }
+(',' arg=variable_declaration { arguments.push_back(arg); } )
+*)
+? 
+')'
+{
+  result = new juli::NFunctionDeclaration(translationUnit, type, id, arguments);
+}
+;
+
+variable_declaration returns [juli::NVariableDeclaration* result]:
+type=identifier id=identifier
+{
+  result = new juli::NVariableDeclaration(translationUnit, type, id);
+}
+;
+
+return_statement returns [juli::NReturnStatement* result]:
+'return' exp=expression ';' 
+{
+  result = new juli::NReturnStatement(translationUnit, exp);
+}
 ;
 
 expression_statement returns [juli::NExpressionStatement* result]:
-exp=expression NEWLINE { result = new juli::NExpressionStatement(translationUnit, exp); }
+exp=expression ';' { result = new juli::NExpressionStatement(translationUnit, exp); }
 ;
 
 assignment returns [juli::NAssignment* result]: 
-id=identifier '=' exp=expression NEWLINE 
+id=identifier '=' exp=expression ';' 
 { result = new juli::NAssignment(translationUnit, id, exp); }
 ;
 
@@ -84,7 +129,7 @@ DOUBLE_LITERAL
 
 IDENTIFIER : CHAR ALPHANUM* ;
 DOUBLE_LITERAL : DIGIT+ ('.' DIGIT+)? ;
-NEWLINE : (('\u000C')?('\r')? '\n' )+;
+//NEWLINE : (('\u000C')?('\r')? '\n' )+;
 OP_PLUS : '+' ;
 WS : (' ' | '\t' | '\n' | '\r' | '\f')+ { $channel = HIDDEN; };
 fragment ALPHANUM : ('a'..'z' | 'A'..'Z' | '0'..'9') ;

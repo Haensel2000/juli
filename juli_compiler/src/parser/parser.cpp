@@ -39,7 +39,7 @@ TranslationUnit* juli::Parser::parse(const string& filename) {
 		return 0;
 	}
 
-	TranslationUnit* translationUnit = parser->translation_unit(parser);
+	TranslationUnit* translationUnit = parser->translation_unit(parser, filename.c_str());
 
 	//std::cout << translationUnit->getAST() << std::endl;
 

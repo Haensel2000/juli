@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include <codegen/translationUnit.h>
+#include <parser/ast/translationUnit.h>
 
 using std::string;
 

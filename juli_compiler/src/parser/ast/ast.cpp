@@ -1,27 +1,25 @@
 #include "ast.h"
-#include <codegen/translationUnit.h>
+#include <parser/ast/translationUnit.h>
+#include <iostream>
 
 using namespace juli;
 using namespace llvm;
 
-
-void error(const char *Str) {
-	fprintf(stderr, "Error: %s\n", Str);
-}
-
-
-llvm::Value* juli::NDoubleLiteral::generateCode(llvm::IRBuilder<>& builder) const {
-	return llvm::ConstantFP::get(translationUnit->getContext(), llvm::APFloat(value));
+llvm::Value* juli::NDoubleLiteral::generateCode(
+		llvm::IRBuilder<>& builder) const {
+	return llvm::ConstantFP::get(translationUnit->getContext(),
+			llvm::APFloat(value));
 }
 
 llvm::Value* juli::NIdentifier::generateCode(llvm::IRBuilder<>& builder) const {
-	llvm::Value* v = translationUnit->namedValues[name];
+	llvm::Value* v = translationUnit->getSymbolTable()[name];
 	if (!v)
-		error("Unknown variable name");
-	return v;
+		std::cerr << "Unknown variable name " << name << std::endl;
+	return builder.CreateLoad(v);
 }
 
-llvm::Value* juli::NBinaryOperator::generateCode(llvm::IRBuilder<>& builder) const {
+llvm::Value* juli::NBinaryOperator::generateCode(
+		llvm::IRBuilder<>& builder) const {
 	llvm::Value* left = lhs->generateCode(builder);
 	llvm::Value* right = rhs->generateCode(builder);
 
@@ -39,7 +37,7 @@ llvm::Value* juli::NBinaryOperator::generateCode(llvm::IRBuilder<>& builder) con
 //    return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
 //                                "booltmp");
 	default:
-		error("invalid binary operator");
+		std::cerr << "Invalid binary operator " << op << std::endl;
 		return 0;
 	}
 }
@@ -48,13 +46,13 @@ llvm::Value* juli::NMethodCall::generateCode(llvm::IRBuilder<>& builder) const {
 	// Look up the name in the global module table.
 	llvm::Function* function = translationUnit->module->getFunction(id->name);
 	if (function == 0)
-		error("Unknown function referenced");
-		return 0;
+		std::cerr <<  "Unknown function " << id->name << std::endl;
+	return 0;
 
 	// If argument mismatch error.
 	if (function->arg_size() != arguments.size())
-		error("Incorrect # arguments passed");
-		return 0;
+		std::cerr << "Incorrect # arguments passed" << std::endl;
+	return 0;
 
 	std::vector<llvm::Value*> argValues;
 	for (unsigned i = 0, e = arguments.size(); i != e; ++i) {
@@ -67,43 +65,46 @@ llvm::Value* juli::NMethodCall::generateCode(llvm::IRBuilder<>& builder) const {
 }
 
 void juli::NAssignment::generateCode(llvm::IRBuilder<>& builder) const {
-	translationUnit->namedValues[lhs->name] = rhs->generateCode(builder);
-	//return namedValues[lhs->name];
+	llvm::Value* addr = translationUnit->getSymbolTable()[lhs->name];
+	llvm::Value* value = rhs->generateCode(builder);
+	builder.CreateStore(value, addr);
 }
 
 void juli::NBlock::generateCode(llvm::IRBuilder<>& builder) const {
 
-	Constant* s = ConstantDataArray::getString(translationUnit->getContext(),
-				StringRef("%f\n"));
-	GlobalVariable* gvar_array__str = new GlobalVariable(
-			*translationUnit->module, s->getType(), true,
-			GlobalValue::PrivateLinkage, 0, ".str");
-	gvar_array__str->setInitializer(s);
-
-	std::vector<Type*> paramTypes1;
-	Type* returnType = Type::getInt32Ty(translationUnit->getContext());
-
-	paramTypes1.push_back(Type::getInt8PtrTy(translationUnit->getContext()));
-	FunctionType* printFDeclFT = FunctionType::get(returnType, paramTypes1,
-			true);
-
-	Function* printFDecl = Function::Create(printFDeclFT,
-			Function::ExternalLinkage, "printf", translationUnit->module);
-	printFDecl->setCallingConv(CallingConv::C);
-	//printFDecl->setDoesNotCapture(1U, true);
-	//printFDecl->setDoesNotThrow(true);
-
-	std::vector<Type*> paramTypes2;
-	FunctionType* mainFunctionType = FunctionType::get(returnType, paramTypes2,
-			false);
-
-	Function* mainFunction = Function::Create(mainFunctionType,
-			Function::ExternalLinkage, "main", translationUnit->module);
-	//mainFunction->setDoesNotThrow(true);
-
-	BasicBlock* block = BasicBlock::Create(translationUnit->getContext(), "entry",
-			mainFunction);
-	builder.SetInsertPoint(block);
+//	Constant* s = ConstantDataArray::getString(translationUnit->getContext(),
+//			StringRef("%f\n"));
+//	GlobalVariable* gvar_array__str = new GlobalVariable(
+//			*translationUnit->module, s->getType(), true,
+//			GlobalValue::PrivateLinkage, 0, ".str");
+//	gvar_array__str->setInitializer(s);
+//
+//	std::vector<llvm::Type*> paramTypes1;
+//	llvm::Type* returnType = llvm::Type::getInt32Ty(
+//			translationUnit->getContext());
+//
+//	paramTypes1.push_back(
+//			llvm::Type::getInt8PtrTy(translationUnit->getContext()));
+//	FunctionType* printFDeclFT = FunctionType::get(returnType, paramTypes1,
+//			true);
+//
+//	Function* printFDecl = Function::Create(printFDeclFT,
+//			Function::ExternalLinkage, "printf", translationUnit->module);
+//	printFDecl->setCallingConv(CallingConv::C);
+//	//printFDecl->setDoesNotCapture(1U, true);
+//	//printFDecl->setDoesNotThrow(true);
+//
+//	std::vector<llvm::Type*> paramTypes2;
+//	FunctionType* mainFunctionType = FunctionType::get(returnType, paramTypes2,
+//			false);
+//
+//	Function* mainFunction = Function::Create(mainFunctionType,
+//			Function::ExternalLinkage, "main", translationUnit->module);
+//	//mainFunction->setDoesNotThrow(true);
+//
+//	BasicBlock* block = BasicBlock::Create(translationUnit->getContext(),
+//			"entry", mainFunction);
+//	builder.SetInsertPoint(block);
 
 	//llvm::Value* v = builder.CreateFAdd(ConstantFP::get(getGlobalContext(), APFloat(4.0)), ConstantFP::get(getGlobalContext(), APFloat(5.0)), "a");
 	//builder.CreateRet(v);
@@ -113,27 +114,73 @@ void juli::NBlock::generateCode(llvm::IRBuilder<>& builder) const {
 		(*i)->generateCode(builder);
 	}
 
-	builder.CreateRet(ConstantInt::get(translationUnit->getContext(), APInt(64, StringRef("0"), 10)));
+//	builder.CreateRet(
+//			ConstantInt::get(translationUnit->getContext(),
+//					APInt(64, StringRef("0"), 10)));
 }
 
-void juli::NExpressionStatement::generateCode(llvm::IRBuilder<>& builder) const {
+void juli::NExpressionStatement::generateCode(
+		llvm::IRBuilder<>& builder) const {
 	llvm::Value* value = expression->generateCode(builder);
+}
 
-	Function* function = translationUnit->module->getFunction("printf");
+llvm::Type* juli::NVariableDeclaration::getLLVMType() const {
+	return translationUnit->resolveType(type)->getLLVMType();
+}
 
-	GlobalVariable* globalStr = translationUnit->module->getGlobalVariable(".str", true);
-	std::vector<Constant*> indices;
-	ConstantInt* const_int64_8 = ConstantInt::get(translationUnit->getContext(), APInt(64, StringRef("0"), 10));
-	indices.push_back(const_int64_8);
-	indices.push_back(const_int64_8);
-	Constant* s = ConstantExpr::getGetElementPtr(globalStr, indices);
+void juli::NVariableDeclaration::generateCode(
+		llvm::IRBuilder<>& builder) const {
+	llvm::Value* param = builder.CreateAlloca(getLLVMType());
+	if (assignmentExpr)
+		builder.CreateStore(assignmentExpr->generateCode(builder), param);
+	translationUnit->getSymbolTable()[id->name] = param;
+}
 
-	std::vector<llvm::Value*> argValues;
-	argValues.push_back(s);
-	argValues.push_back(value);
+llvm::FunctionType* juli::NFunctionDeclaration::createFunctionType() const {
+	llvm::Type* returnType = translationUnit->resolveType(type)->getLLVMType();
+	std::vector<llvm::Type*> argumentTypes;
 
-	builder.CreateCall(function, argValues);
+	for (std::vector<NVariableDeclaration*>::const_iterator i =
+			arguments.begin(); i != arguments.end(); ++i) {
+		argumentTypes.push_back((*i)->getLLVMType());
+	}
 
+	return FunctionType::get(returnType, argumentTypes, false);
+}
+
+llvm::Function* juli::NFunctionDeclaration::createFunction() const {
+	return Function::Create(createFunctionType(), Function::ExternalLinkage,
+			id->name, translationUnit->module);
+}
+
+void juli::NFunctionDefinition::generateCode(llvm::IRBuilder<>& builder) const {
+	llvm::Function* f = declaration->createFunction();
+
+	llvm::BasicBlock* llvmBlock = llvm::BasicBlock::Create(
+			translationUnit->getContext(), "entry", f);
+	builder.SetInsertPoint(llvmBlock);
+
+	Function::arg_iterator i = f->getArgumentList().begin();
+	for (VariableList::const_iterator vi = declaration->arguments.begin();
+			vi != declaration->arguments.end(); ++i, ++vi) {
+		(*vi)->generateCode(builder);
+
+		llvm::Value* param = builder.CreateAlloca(i->getType());
+		builder.CreateStore(i, param);
+		translationUnit->getSymbolTable()[(*vi)->id->name] = param;
+	}
+
+	block->generateCode(builder);
+
+	for (std::vector<NVariableDeclaration*>::const_iterator i =
+			declaration->arguments.begin(); i != declaration->arguments.end();
+			++i) {
+		translationUnit->getSymbolTable().erase((*i)->id->name);
+	}
+}
+
+void juli::NReturnStatement::generateCode(llvm::IRBuilder<>& builder) const {
+	builder.CreateRet(expression->generateCode(builder));
 }
 
 //Function* NFunctionDeclaration::generateCode() const {

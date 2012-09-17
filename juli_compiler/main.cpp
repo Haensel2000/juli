@@ -40,11 +40,25 @@ int main(int argc, char **argv) {
 	for (int i = 1; i < argc; ++i) {
 		std::cout << "Building file: " << argv[i] << std::endl;
 		TranslationUnit* unit = parser.parse(argv[i]);
-		unit->generateCode();
-		std::string filename(argv[i]);
-		std::string basename = filename.substr(0, filename.find_last_of('.', filename.size()));
-		filename = basename + ".o";
-		emitter.emitCode(filename.c_str(), unit->module);
+		try {
+			unit->generateCode();
+
+			if (unit->getErrors().empty()) {
+				std::string filename(argv[i]);
+				std::string basename = filename.substr(0, filename.find_last_of('.', filename.size()));
+				filename = basename + ".o";
+				emitter.emitCode(filename.c_str(), unit->module);
+			} else {
+				std::vector<CompilerError> errors = unit->getErrors();
+				for (std::vector<CompilerError>::iterator i = errors.begin(); i != errors.end(); ++i) {
+					std::cerr << *i;
+				}
+			}
+
+		} catch (CompilerError& ce) {
+			cerr << "Uncaught error: " << ce;
+		}
+
 	}
 
 }
