@@ -44,17 +44,18 @@ llvm::Value* juli::NBinaryOperator::generateCode(
 	}
 }
 
-llvm::Value* juli::NMethodCall::generateCode(llvm::IRBuilder<>& builder) const {
+llvm::Value* juli::NFunctionCall::generateCode(llvm::IRBuilder<>& builder) const {
 	// Look up the name in the global module table.
 	llvm::Function* function = translationUnit->module->getFunction(id->name);
-	if (function == 0)
+	if (function == 0) {
 		std::cerr <<  "Unknown function " << id->name << std::endl;
-	return 0;
-
+		return 0;
+	}
 	// If argument mismatch error.
-	if (function->arg_size() != arguments.size())
+	if (function->arg_size() != arguments.size()) {
 		std::cerr << "Incorrect # arguments passed" << std::endl;
-	return 0;
+		return 0;
+	}
 
 	std::vector<llvm::Value*> argValues;
 	for (unsigned i = 0, e = arguments.size(); i != e; ++i) {
@@ -166,7 +167,7 @@ void juli::NFunctionDefinition::generateCode(llvm::IRBuilder<>& builder) const {
 	Function::arg_iterator i = f->getArgumentList().begin();
 	for (VariableList::const_iterator vi = declaration->arguments.begin();
 			vi != declaration->arguments.end(); ++i, ++vi) {
-		(*vi)->generateCode(builder);
+		//(*vi)->generateCode(builder);
 
 		llvm::Value* param = builder.CreateAlloca(i->getType());
 		builder.CreateStore(i, param);

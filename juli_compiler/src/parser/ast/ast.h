@@ -93,16 +93,16 @@ public:
 	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
 };
 
-class NMethodCall: public NExpression {
+class NFunctionCall: public NExpression {
 public:
 	const NIdentifier* id;
 	ExpressionList arguments;
-	NMethodCall(TranslationUnit* module, const NIdentifier* id,
+	NFunctionCall(TranslationUnit* module, const NIdentifier* id,
 			ExpressionList& arguments) :
 			NExpression(module), id(id), arguments(arguments) {
 	}
 
-	NMethodCall(TranslationUnit* module, const NIdentifier* id) :
+	NFunctionCall(TranslationUnit* module, const NIdentifier* id) :
 			NExpression(module), id(id) {
 	}
 

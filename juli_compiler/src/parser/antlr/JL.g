@@ -31,8 +31,10 @@ statement returns [juli::NStatement* result]:
 stmt1=assignment { result = stmt1; } | 
 stmt2=expression_statement { result = stmt2; } |
 stmt3=return_statement { result = stmt3; } |
-stmt4=function_definition { result = stmt4; }
+stmt4=function_definition { result = stmt4; } |
+stmt5=variable_declaration ';' { result = stmt5; }
 ;
+
 
 function_definition returns [juli::NFunctionDefinition* result]:
 decl=function_declaration bl=block
@@ -107,12 +109,28 @@ expression returns [juli::NExpression* result]
   )*
 ;
 
+
+
 literal returns [juli::NExpression* result]: 
-val=double_literal { result = val; }
-| 
-val=identifier { result = val; } | 
-'(' val=expression ')'
-{ result = val; }
+val=double_literal { result = val; } | 
+val=identifier { result = val; } |
+val=function_call { result = val; } | 
+'(' val=expression ')' { result = val; }
+;
+
+function_call returns [juli::NFunctionCall* result]
+@declarations 
+{
+  juli::ExpressionList arguments;
+}:
+id=identifier 
+  '(' 
+    (arg=expression { arguments.push_back(arg); })? 
+    (',' arg=expression { arguments.push_back(arg); })* 
+  ')'
+{
+  result = new juli::NFunctionCall(translationUnit, id, arguments);
+}
 ;
 
 identifier returns [juli::NIdentifier* result]:
