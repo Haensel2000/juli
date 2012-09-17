@@ -77,10 +77,12 @@ type=identifier id=identifier
 ;
 
 return_statement returns [juli::NReturnStatement* result]:
-'return' exp=expression ';' 
 {
-  result = new juli::NReturnStatement(translationUnit, exp);
+  result = new juli::NReturnStatement(translationUnit, 0);
 }
+'return' 
+(exp=expression {result = new juli::NReturnStatement(translationUnit, exp);})? 
+';'
 ;
 
 expression_statement returns [juli::NExpressionStatement* result]:

@@ -2,6 +2,8 @@
 #include <parser/ast/translationUnit.h>
 #include <iostream>
 
+#include <llvm/Analysis/Verifier.h>
+
 using namespace juli;
 using namespace llvm;
 
@@ -149,8 +151,9 @@ llvm::FunctionType* juli::NFunctionDeclaration::createFunctionType() const {
 }
 
 llvm::Function* juli::NFunctionDeclaration::createFunction() const {
-	return Function::Create(createFunctionType(), Function::ExternalLinkage,
+	llvm::Function* f = Function::Create(createFunctionType(), Function::ExternalLinkage,
 			id->name, translationUnit->module);
+	return f;
 }
 
 void juli::NFunctionDefinition::generateCode(llvm::IRBuilder<>& builder) const {
@@ -172,15 +175,24 @@ void juli::NFunctionDefinition::generateCode(llvm::IRBuilder<>& builder) const {
 
 	block->generateCode(builder);
 
+//	if (f->getReturnType() == llvm::Type::getVoidTy(translationUnit->getContext())) {
+//		builder.CreateRet(0);
+//	}
+
 	for (std::vector<NVariableDeclaration*>::const_iterator i =
 			declaration->arguments.begin(); i != declaration->arguments.end();
 			++i) {
 		translationUnit->getSymbolTable().erase((*i)->id->name);
 	}
+
+	llvm::verifyFunction(*f);
 }
 
 void juli::NReturnStatement::generateCode(llvm::IRBuilder<>& builder) const {
-	builder.CreateRet(expression->generateCode(builder));
+	if (expression)
+		builder.CreateRet(expression->generateCode(builder));
+	else
+		builder.CreateRet(0);
 }
 
 //Function* NFunctionDeclaration::generateCode() const {
