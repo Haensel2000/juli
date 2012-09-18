@@ -65,6 +65,8 @@ public:
 };
 
 class NStringLiteral: public NLiteral<std::string> {
+protected:
+	std::string origValue;
 public:
 	NStringLiteral(TranslationUnit* module, std::string value) :
 			NLiteral<std::string>(module, value) {
@@ -84,7 +86,7 @@ public:
 					break;
 				}
 				escCount = 0;
-			} else if (escCount > 1){
+			} else if (escCount > 1) {
 				for (int j = 0; j < escCount; ++j)
 					sstream << "\\";
 				sstream << *i;
@@ -93,13 +95,14 @@ public:
 			}
 		}
 
+		origValue = value;
 		this->value = sstream.str();
 
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
-		os << "\"" << value << "\"";
+		os << "\"" << origValue << "\"";
 	}
 
 	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
@@ -219,8 +222,8 @@ public:
 	virtual void print(std::ostream& os, int indent) const {
 		for (std::vector<NStatement*>::const_iterator i = statements.begin();
 				i != statements.end(); ++i) {
-			beginLine(os, indent);
 			(*i)->print(os, indent + 2);
+			beginLine(os, indent);
 			os << ";" << std::endl;
 			//os << **i << std::endl;
 		}
@@ -343,6 +346,53 @@ public:
 	}
 
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;
+};
+
+class NIfClause: Node {
+private:
+
+public:
+
+	NExpression* condition;
+	NBlock* body;
+
+	NIfClause(NExpression* condition, NBlock* body) :
+			Node(0), condition(condition), body(body) {
+	}
+
+	virtual void print(std::ostream& os, int indent) const {
+		beginLine(os, indent);
+
+	}
+
+};
+
+class NIfStatement: public NStatement {
+private:
+	std::vector<NIfClause*> clauses;
+public:
+
+	NIfStatement(TranslationUnit* module, std::vector<NIfClause*> clauses) :
+			NStatement(module), clauses(clauses) {
+	}
+
+	virtual void print(std::ostream& os, int indent) const {
+		beginLine(os, indent);
+		std::vector<NIfClause*>::const_iterator first = clauses.begin();
+		os << "if " << (*first)->condition << std::endl;
+		os << (*first)->body;
+		for (std::vector<NIfClause*>::const_iterator i = ++first; i != clauses.end(); ++i) {
+			if ((*i)->condition)
+				os << "else if " << (*i)->condition << std::endl;
+			else
+				os << "else" << std::endl;
+			os << (*i)->body;
+		}
+
+	}
+
+	virtual void generateCode(llvm::IRBuilder<>& builder) const;
+
 };
 
 }

@@ -16,10 +16,9 @@ llvm::Value* juli::NDoubleLiteral::generateCode(
 llvm::Value* juli::NStringLiteral::generateCode(
 		llvm::IRBuilder<>& builder) const {
 	Constant* s = ConstantDataArray::getString(translationUnit->getContext(),
-					StringRef(value));
-	GlobalVariable* globalStr = new GlobalVariable(
-			*translationUnit->module, s->getType(), true,
-			GlobalValue::PrivateLinkage, 0, ".str");
+			StringRef(value));
+	GlobalVariable* globalStr = new GlobalVariable(*translationUnit->module,
+			s->getType(), true, GlobalValue::PrivateLinkage, 0, ".str");
 	globalStr->setInitializer(s);
 
 //	GlobalVariable* globalStr = translationUnit->module->getGlobalVariable(
@@ -49,7 +48,9 @@ llvm::Value* juli::NBinaryOperator::generateCode(
 
 	switch (op) {
 	case PLUS:
-		return builder.CreateFAdd(left, right, "addtmp");
+		return builder.CreateFAdd(left, right, "add_res");
+	case EQ:
+		return builder.CreateFCmpOEQ(left, right, "eq_res");
 //  case '-': return Builder.CreateFSub(L, R, "subtmp");
 //  case '*': return Builder.CreateFMul(L, R, "multmp");
 //  case '<':
@@ -211,7 +212,9 @@ void juli::NFunctionDefinition::generateCode(llvm::IRBuilder<>& builder) const {
 		translationUnit->getSymbolTable().erase((*i)->id->name);
 	}
 
-	llvm::verifyFunction(*f);
+	if (llvm::verifyFunction(*f, PrintMessageAction)) {
+		f->dump();
+	}
 }
 
 void juli::NReturnStatement::generateCode(llvm::IRBuilder<>& builder) const {
@@ -219,6 +222,42 @@ void juli::NReturnStatement::generateCode(llvm::IRBuilder<>& builder) const {
 		builder.CreateRet(expression->generateCode(builder));
 	else
 		builder.CreateRet(0);
+}
+
+void juli::NIfStatement::generateCode(llvm::IRBuilder<>& builder) const {
+
+	llvm::Function* f = builder.GetInsertBlock()->getParent();
+
+	std::vector<NIfClause*>::const_iterator ifc = clauses.begin();
+
+	BasicBlock* contBlock = BasicBlock::Create(translationUnit->getContext(),
+			"continue", f);
+
+	while (ifc != clauses.end()) {
+		if ((*ifc)->condition) {
+			BasicBlock* thenBlock = BasicBlock::Create(
+					translationUnit->getContext(), "then", f);
+			BasicBlock* elseBlock = BasicBlock::Create(
+					translationUnit->getContext(), "else", f);
+
+			builder.CreateCondBr((*ifc)->condition->generateCode(builder),
+					thenBlock, elseBlock);
+
+			builder.SetInsertPoint(thenBlock);
+			(*ifc)->body->generateCode(builder);
+			builder.CreateBr(contBlock);
+
+			//f->getBasicBlockList().push_back(elseBlock);
+			builder.SetInsertPoint(elseBlock);
+		} else {
+			(*ifc)->body->generateCode(builder);
+		}
+		++ifc;
+	}
+	builder.CreateBr(contBlock);
+
+	builder.SetInsertPoint(contBlock);
+
 }
 
 //Function* NFunctionDeclaration::generateCode() const {

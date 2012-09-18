@@ -12,7 +12,7 @@
 namespace juli {
 
 enum Operator {
-	PLUS, UNKNOWN
+	PLUS, EQ, UNKNOWN
 };
 
 class CodeGenContext;

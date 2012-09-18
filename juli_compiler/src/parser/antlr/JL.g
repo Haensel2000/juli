@@ -33,7 +33,8 @@ stmt2=expression_statement { result = stmt2; } |
 stmt3=return_statement { result = stmt3; } |
 stmt4=function_definition { result = stmt4; } |
 stmt5=variable_declaration ';' { result = stmt5; } |
-stmt6=function_declaration ';' { result = stmt6; }
+stmt6=function_declaration ';' { result = stmt6; } | 
+stmt7=if_statement { result = stmt7; }
 ;
 
 
@@ -51,6 +52,33 @@ block returns [juli::NBlock* result]:
 '{'
 (stmt=statement { result->addStatement(stmt); })*
 '}' 
+;
+
+if_statement returns [juli::NStatement* result]
+@declarations
+{
+  std::vector<juli::NIfClause*> clauses;
+}:
+cl=if_clause { clauses.push_back(cl); }
+('else' cl=if_clause { clauses.push_back(cl); })*
+(cl=else_clause { clauses.push_back(cl); })?
+{
+  result = new juli::NIfStatement(translationUnit, clauses);
+}
+;
+
+if_clause returns [juli::NIfClause* result]:
+'if' '(' cond=expression ')' bl=block
+{
+  result = new juli::NIfClause(cond, bl);
+}
+;
+
+else_clause returns [juli::NIfClause* result]:
+'else' bl=block
+{
+  result = new juli::NIfClause(0, bl);
+}
 ;
 
 function_declaration returns [juli::NFunctionDeclaration* result]
@@ -101,6 +129,19 @@ id=identifier '=' exp=expression ';'
 ;
 
 expression returns [juli::NExpression* result]
+@declarations
+{
+   juli::Operator type = juli::UNKNOWN;
+}
+:
+  op1=add { result = op1; }
+  (
+    OP_EQ      { type = juli::EQ; } 
+    op2=add  { result = new juli::NBinaryOperator(translationUnit, result, type, op2); }
+  )*
+;
+
+add returns [juli::NExpression* result]
 @declarations
 {
    juli::Operator type = juli::UNKNOWN;
@@ -218,6 +259,7 @@ UnicodeEscape
     ;
     
 OP_PLUS : '+' ;
+OP_EQ : '==' ;
     
 Identifier 
     :   Letter (Letter|JavaIDDigit)*
