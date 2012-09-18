@@ -2,7 +2,7 @@
 #include <fstream>
 
 #include <parser/parser.h>
-#include <codegen/codegen.h>
+#include <codegen/native.h>
 
 
 #include <debug/print.h>
