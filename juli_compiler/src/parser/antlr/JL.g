@@ -13,6 +13,7 @@ options {
   #include <parser/ast/ast.h>
   #include <parser/ast/translationUnit.h>
   #include <parser/antlr/antlr_utils.h>
+  #include <parser/ast/types.h>
 }
 
 @postinclude {
@@ -104,9 +105,9 @@ sign=variable_declaration { id = sign->id; type = sign->type; }
 
 
 variable_declaration returns [juli::NVariableDeclaration* result]:
-type=identifier id=identifier
+vtype=identifier id=identifier
 {
-  result = new juli::NVariableDeclaration(translationUnit, type, id);
+  result = new juli::NVariableDeclaration(translationUnit, vtype, id);
 }
 ;
 

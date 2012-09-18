@@ -55,15 +55,6 @@ public:
 	}
 };
 
-class NDoubleLiteral: public NLiteral<double> {
-public:
-	NDoubleLiteral(TranslationUnit* module, double value) :
-			NLiteral<double>(module, value) {
-	}
-
-	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
-};
-
 class NStringLiteral: public NLiteral<std::string> {
 protected:
 	std::string origValue;
@@ -105,6 +96,10 @@ public:
 		os << "\"" << origValue << "\"";
 	}
 
+	virtual NodeType getType() {
+		return STRING_LITERAL;
+	}
+
 	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
 };
 
@@ -127,6 +122,7 @@ public:
 class NIdentifier: public NExpression {
 public:
 	std::string name;
+
 	NIdentifier(TranslationUnit* module, const std::string& name) :
 			NExpression(module), name(name) {
 	}
@@ -136,7 +132,36 @@ public:
 		os << name;
 	}
 
+	virtual NodeType getType() {
+		return VARIABLE_REF;
+	}
+
 	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
+};
+
+class NType: public Node {
+public:
+	NType(TranslationUnit* module) :
+			Node(module) {
+	}
+};
+
+class NBasicType: public NType {
+public:
+	NIdentifier* name;
+
+	NBasicType(TranslationUnit* module, NIdentifier* name) :
+			NType(module), name(name) {
+	}
+};
+
+class NArrayType: public NType {
+public:
+	NBasicType* elementType;
+
+	NArrayType(TranslationUnit* module, NBasicType* elementType) :
+			NType(module), elementType(elementType) {
+	}
 };
 
 class NFunctionCall: public NExpression {
@@ -155,6 +180,23 @@ public:
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
 		os << id << "(" << arguments << ")";
+	}
+
+	virtual NodeType getType() {
+		return FUNCTION_CALL;
+	}
+
+	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
+};
+
+class NDoubleLiteral: public NLiteral<double> {
+public:
+	NDoubleLiteral(TranslationUnit* module, double value) :
+			NLiteral<double>(module, value) {
+	}
+
+	virtual NodeType getType() {
+		return DOUBLE_LITERAL;
 	}
 
 	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
@@ -186,6 +228,10 @@ public:
 		os << "(" << lhs << " " << opStr << " " << rhs << ")";
 	}
 
+	virtual NodeType getType() {
+		return BINARY_OPERATOR;
+	}
+
 	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
 };
 
@@ -202,6 +248,10 @@ public:
 		beginLine(os, indent);
 
 		os << lhs << " = " << rhs;
+	}
+
+	virtual NodeType getType() {
+		return ASSIGNMENT;
 	}
 
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;
@@ -229,6 +279,10 @@ public:
 		}
 	}
 
+	virtual NodeType getType() {
+		return BLOCK;
+	}
+
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
@@ -244,6 +298,10 @@ public:
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
 		os << expression;
+	}
+
+	virtual NodeType getType() {
+		return EXPRESSION;
 	}
 
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;
@@ -275,6 +333,10 @@ public:
 		}
 	}
 
+	virtual NodeType getType() {
+		return VARIABLE_DECL;
+	}
+
 	llvm::Type* getLLVMType() const;
 
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;
@@ -304,6 +366,10 @@ public:
 		os << ")";
 	}
 
+	virtual NodeType getType() {
+		return FUNCTION_DECL;
+	}
+
 	llvm::Function* createFunction() const;
 
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;
@@ -326,6 +392,10 @@ public:
 		os << declaration << std::endl << block;
 	}
 
+	virtual NodeType getType() {
+		return FUNCTION_DEF;
+	}
+
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
@@ -345,24 +415,21 @@ public:
 
 	}
 
+	virtual NodeType getType() {
+		return RETURN;
+	}
+
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
-class NIfClause: Node {
-private:
-
+class NIfClause {
 public:
 
 	NExpression* condition;
 	NBlock* body;
 
 	NIfClause(NExpression* condition, NBlock* body) :
-			Node(0), condition(condition), body(body) {
-	}
-
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-
+			condition(condition), body(body) {
 	}
 
 };
@@ -381,7 +448,8 @@ public:
 		std::vector<NIfClause*>::const_iterator first = clauses.begin();
 		os << "if " << (*first)->condition << std::endl;
 		os << (*first)->body;
-		for (std::vector<NIfClause*>::const_iterator i = ++first; i != clauses.end(); ++i) {
+		for (std::vector<NIfClause*>::const_iterator i = ++first;
+				i != clauses.end(); ++i) {
 			if ((*i)->condition)
 				os << "else if " << (*i)->condition << std::endl;
 			else
@@ -389,6 +457,10 @@ public:
 			os << (*i)->body;
 		}
 
+	}
+
+	virtual NodeType getType() {
+		return IF;
 	}
 
 	virtual void generateCode(llvm::IRBuilder<>& builder) const;

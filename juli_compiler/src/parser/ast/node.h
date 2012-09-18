@@ -26,6 +26,22 @@ typedef std::vector<NVariableDeclaration*> VariableList;
 
 class TranslationUnit;
 
+enum NodeType {
+	DOUBLE_LITERAL,
+	STRING_LITERAL,
+	VARIABLE_REF,
+	FUNCTION_CALL,
+	BINARY_OPERATOR,
+	EXPRESSION,
+	VARIABLE_DECL,
+	ASSIGNMENT,
+	BLOCK,
+	IF,
+	RETURN,
+	FUNCTION_DECL,
+	FUNCTION_DEF
+};
+
 class Node {
 protected:
 	TranslationUnit* translationUnit;
@@ -46,6 +62,8 @@ public:
 	const TranslationUnit& getTranslationUnit() const  {
 		return *translationUnit;
 	}
+
+	virtual NodeType getType() = 0;
 //
 //	const llvm::Module& getModule() const {
 //		return *(translationUnit->module);
