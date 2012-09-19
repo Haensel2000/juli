@@ -45,9 +45,10 @@ enum NodeType {
 class Node {
 protected:
 	TranslationUnit* translationUnit;
+	const NodeType nodeType;
 public:
-	Node(TranslationUnit* module) :
-			translationUnit(module) {
+	Node(TranslationUnit* module, const NodeType nodeType) :
+			translationUnit(module), nodeType(nodeType) {
 	}
 
 	virtual ~Node() {
@@ -63,7 +64,9 @@ public:
 		return *translationUnit;
 	}
 
-	virtual NodeType getType() = 0;
+	const NodeType& getType() const {
+		return nodeType;
+	}
 //
 //	const llvm::Module& getModule() const {
 //		return *(translationUnit->module);
