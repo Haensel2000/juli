@@ -171,19 +171,23 @@ public:
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
 		os << id << "(" << arguments << ")";
+		for (ExpressionList::const_iterator i = arguments.begin(); i != arguments.end(); ++i) {
+			os << std::endl << (*i)->getType();
+		}
+
 	}
 
 	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
 };
 
-class NDoubleLiteral: public NLiteral<double> {
-public:
-	NDoubleLiteral(double value) :
-			NLiteral<double>(DOUBLE_LITERAL, value) {
-	}
-
-	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
-};
+//class NDoubleLiteral: public NLiteral<double> {
+//public:
+//	NDoubleLiteral(double value) :
+//			NLiteral<double>(DOUBLE_LITERAL, value) {
+//	}
+//
+//	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
+//};
 
 class NBinaryOperator: public NExpression {
 public:
@@ -396,6 +400,21 @@ public:
 
 	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
 
+};
+
+class NArrayAccess: public NExpression {
+public:
+	NExpression* ref;
+	NExpression* index;
+
+	NArrayAccess(NExpression* ref, NExpression* index) :
+			NExpression(ARRAY_ACCESS), ref(ref), index(index) {
+	}
+
+	virtual void print(std::ostream& os, int indent) const {
+		beginLine(os, indent);
+		os << ref << "[" << index << "]";
+	}
 };
 
 }

@@ -13,8 +13,12 @@ llvm::Type* juli::IRGenerator::resolveType(const NType* n) {
 	return translationUnit.resolveLLVMType(n);
 }
 
-llvm::Value* juli::IRGenerator::visitDoubleLiteral(const NDoubleLiteral* n) {
+llvm::Value* juli::IRGenerator::visitDoubleLiteral(const NLiteral<double>* n) {
 	return llvm::ConstantFP::get(context, llvm::APFloat(n->value));
+}
+
+llvm::Value* juli::IRGenerator::visitIntegerLiteral(const NLiteral<uint64_t>* n) {
+	return llvm::ConstantInt::get(context, llvm::APInt(32, n->value, true));
 }
 
 llvm::Value* juli::IRGenerator::visitStringLiteral(const NStringLiteral* n) {
@@ -68,6 +72,11 @@ llvm::Value* juli::IRGenerator::visitFunctionCall(const NFunctionCall* n) {
 	}
 
 	return builder.CreateCall(function, argValues, "calltmp");
+}
+
+llvm::Value* juli::IRGenerator::visitArrayAccess(const NArrayAccess* n) {
+	llvm::Value* ptr = builder.CreateGEP(visit(n->ref), visit(n->index));
+	return builder.CreateLoad(ptr);
 }
 
 llvm::Value* juli::IRGenerator::visitAssignment(const NAssignment* n) {
@@ -207,13 +216,17 @@ llvm::Value* juli::IRGenerator::visitIf(const NIfStatement* n) {
 llvm::Value* juli::IRGenerator::visit(const Node* n) {
 	switch (n->getType()) {
 	case DOUBLE_LITERAL:
-		return visitDoubleLiteral((NDoubleLiteral*)n);
+		return visitDoubleLiteral((NLiteral<double>*)n);
+	case INTEGER_LITERAL:
+		return visitIntegerLiteral((NLiteral<uint64_t>*)n);
 	case STRING_LITERAL:
 		return visitStringLiteral((NStringLiteral*)n);
 	case VARIABLE_REF:
 		return visitVariableRef((NIdentifier*)n);
 	case FUNCTION_CALL:
 		return visitFunctionCall((NFunctionCall*)n);
+	case ARRAY_ACCESS:
+		return visitArrayAccess((NArrayAccess*)n);
 	case BINARY_OPERATOR:
 		return visitBinaryOperator((NBinaryOperator*)n);
 	case EXPRESSION:

@@ -2,7 +2,7 @@ grammar JL;
 
 options {
   language = C;
-  backtrack = true;
+  //backtrack = true;
 }
 
 @includes {
@@ -13,7 +13,6 @@ options {
   
   #include <parser/ast/ast.h>
   #include <parser/antlr/antlr_utils.h>
-  #include <parser/ast/types.h>
 }
 
 @postinclude {
@@ -146,21 +145,29 @@ add returns [juli::NExpression* result = 0]
    juli::Operator type = juli::UNKNOWN;
 }
 :
-  op1=literal { result=op1; }
+  op1=array_access { result=op1; }
   (
     OP_PLUS      { type = juli::PLUS; } 
-    op2=literal  { result = new juli::NBinaryOperator(result, type, op2); }
+    op2=array_access  { result = new juli::NBinaryOperator(result, type, op2); }
   )*
 ;
 
+array_access returns [juli::NExpression* result = 0]:
+vref=term { result = vref; }
+('[' vindex=expression ']' { result = new juli::NArrayAccess(result, vindex); })*
+;
 
+term returns [juli::NExpression* result = 0]:
+val=literal { result = val; } |
+s=identifier { result = new juli::NIdentifier(s); } |
+val=function_call { result = val; } | 
+'(' val=expression ')' { result = val; }
+;
 
 literal returns [juli::NExpression* result = 0]: 
 val=double_literal { result = val; } | 
 val=string_literal { result = val; } |
-s=identifier { result = new juli::NIdentifier(s); } |
-val=function_call { result = val; } | 
-'(' val=expression ')' { result = val; }
+val=integer_literal { result = val; }
 ;
 
 function_call returns [juli::NFunctionCall* result = 0]
@@ -195,22 +202,32 @@ identifier returns [std::string result]:
 Identifier { result = getTokenString($Identifier); } 
 ;
 
-double_literal returns [juli::NDoubleLiteral* result = 0]:
+double_literal returns [juli::NExpression* result = 0]:
 FloatingPointLiteral
 { 
   std::stringstream valueStr(getTokenString($FloatingPointLiteral));
   double value = 0.0;
   valueStr >> value;
-  result = new juli::NDoubleLiteral(value); 
+  result = new juli::NLiteral<double>(juli::DOUBLE_LITERAL, value); 
 } 
 ;
 
-string_literal returns [juli::NStringLiteral* result = 0]:
+string_literal returns [juli::NExpression* result = 0]:
 StringLiteral
 {
   std::string tokenText = getTokenString($StringLiteral);
   tokenText = tokenText.substr(1, tokenText.size() - 2);
   result = new juli::NStringLiteral(tokenText);
+}
+;
+
+integer_literal returns [juli::NExpression* result = 0]:
+DecimalLiteral
+{ 
+  std::stringstream valueStr(getTokenString($DecimalLiteral));
+  uint64_t value = 0;
+  valueStr >> value;
+  result = new juli::NLiteral<uint64_t>(juli::INTEGER_LITERAL, value); 
 }
 ;
 

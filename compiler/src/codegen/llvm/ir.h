@@ -11,7 +11,7 @@
 #include <string>
 
 #include <parser/ast/ast.h>
-#include <parser/ast/translationUnit.h>
+#include <codegen/llvm/translationUnit.h>
 
 namespace juli {
 
@@ -24,7 +24,9 @@ private:
 
 	llvm::Value* visit(const Node* n);
 
-	llvm::Value* visitDoubleLiteral(const NDoubleLiteral* n);
+	llvm::Value* visitDoubleLiteral(const NLiteral<double>*  n);
+
+	llvm::Value* visitIntegerLiteral(const NLiteral<uint64_t>* n);
 
 	llvm::Value* visitStringLiteral(const NStringLiteral* n);
 
@@ -33,6 +35,8 @@ private:
 	llvm::Value* visitBinaryOperator(const NBinaryOperator* n);
 
 	llvm::Value* visitFunctionCall(const NFunctionCall* n);
+
+	llvm::Value* visitArrayAccess(const NArrayAccess* n);
 
 	llvm::Value* visitAssignment(const NAssignment* n);
 

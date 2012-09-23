@@ -10,7 +10,7 @@
 
 #include <string>
 #include <antlr3.h>
-#include <parser/ast/translationUnit.h>
+#include <codegen/llvm/translationUnit.h>
 
 using std::string;
 
