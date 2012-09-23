@@ -1,5 +1,7 @@
 #include "ir.h"
 
+#include <parser/ast/visitor.h>
+
 #include <llvm/Analysis/Verifier.h>
 #include <llvm/DerivedTypes.h>
 #include <llvm/IRBuilder.h>
@@ -37,7 +39,7 @@ llvm::Value* juli::IRGenerator::visitStringLiteral(const NStringLiteral* n) {
 }
 
 llvm::Value* juli::IRGenerator::visitVariableRef(const NIdentifier* n) {
-	llvm::Value* v = translationUnit.getSymbolTable()[n->name];
+	llvm::Value* v = translationUnit.getLLVMSymbolTable()[n->name];
 	if (!v)
 		std::cerr << "Unknown variable name " << n->name << std::endl;
 	return builder.CreateLoad(v);
@@ -80,7 +82,7 @@ llvm::Value* juli::IRGenerator::visitArrayAccess(const NArrayAccess* n) {
 }
 
 llvm::Value* juli::IRGenerator::visitAssignment(const NAssignment* n) {
-	llvm::Value* addr = translationUnit.getSymbolTable()[n->lhs];
+	llvm::Value* addr = translationUnit.getLLVMSymbolTable()[n->lhs];
 	llvm::Value* value = visit(n->rhs);
 	builder.CreateStore(value, addr);
 	return 0;
@@ -104,7 +106,7 @@ llvm::Value* juli::IRGenerator::visitVariableDecl(const NVariableDeclaration* n)
 	llvm::Value* param = builder.CreateAlloca(resolveType(n->type));
 	if (n->assignmentExpr)
 		builder.CreateStore(visit(n->assignmentExpr), param);
-	translationUnit.getSymbolTable()[n->name] = param;
+	translationUnit.getLLVMSymbolTable()[n->name] = param;
 	return 0;
 }
 
@@ -147,7 +149,7 @@ llvm::Value* juli::IRGenerator::visitFunctionDef(const NFunctionDefinition* n) {
 
 		llvm::Value* param = builder.CreateAlloca(i->getType());
 		builder.CreateStore(i, param);
-		translationUnit.getSymbolTable()[(*vi)->name] = param;
+		translationUnit.getLLVMSymbolTable()[(*vi)->name] = param;
 	}
 
 	visit(n->body);
@@ -159,7 +161,7 @@ llvm::Value* juli::IRGenerator::visitFunctionDef(const NFunctionDefinition* n) {
 	for (std::vector<NVariableDeclaration*>::const_iterator i =
 			n->declaration->arguments.begin(); i != n->declaration->arguments.end();
 			++i) {
-		translationUnit.getSymbolTable().erase((*i)->name);
+		translationUnit.getLLVMSymbolTable().erase((*i)->name);
 	}
 
 	if (llvm::verifyFunction(*f, llvm::PrintMessageAction)) {
@@ -214,38 +216,7 @@ llvm::Value* juli::IRGenerator::visitIf(const NIfStatement* n) {
 }
 
 llvm::Value* juli::IRGenerator::visit(const Node* n) {
-	switch (n->getType()) {
-	case DOUBLE_LITERAL:
-		return visitDoubleLiteral((NLiteral<double>*)n);
-	case INTEGER_LITERAL:
-		return visitIntegerLiteral((NLiteral<uint64_t>*)n);
-	case STRING_LITERAL:
-		return visitStringLiteral((NStringLiteral*)n);
-	case VARIABLE_REF:
-		return visitVariableRef((NIdentifier*)n);
-	case FUNCTION_CALL:
-		return visitFunctionCall((NFunctionCall*)n);
-	case ARRAY_ACCESS:
-		return visitArrayAccess((NArrayAccess*)n);
-	case BINARY_OPERATOR:
-		return visitBinaryOperator((NBinaryOperator*)n);
-	case EXPRESSION:
-		return visitExpressionStatement((NExpressionStatement*)n);
-	case VARIABLE_DECL:
-		return visitVariableDecl((NVariableDeclaration*)n);
-	case ASSIGNMENT:
-		return visitAssignment((NAssignment*)n);
-	case BLOCK:
-		return visitBlock((NBlock*)n);
-	case IF:
-		return visitIf((NIfStatement*)n);
-	case RETURN:
-		return visitReturn((NReturnStatement*)n);
-	case FUNCTION_DECL:
-		return visitFunctionDecl((NFunctionDeclaration*)n);
-	case FUNCTION_DEF:
-		return visitFunctionDef((NFunctionDefinition*)n);
-	}
+	return visitAST<IRGenerator, llvm::Value*>(*this, n);
 }
 
 void juli::IRGenerator::process(const Node* n) {

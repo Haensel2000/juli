@@ -30,6 +30,12 @@ class PrimitiveType: public Type {
 private:
 	Primitive primitive;
 public:
+
+	static const PrimitiveType VOID_TYPE;
+	static const PrimitiveType INT8_TYPE;
+	static const PrimitiveType INT32_TYPE;
+	static const PrimitiveType FLOAT64_TYPE;
+
 	PrimitiveType(Primitive primitive) :
 		primitive(primitive) {
 	}

@@ -12,6 +12,7 @@ options {
   #include <cstdio>
   
   #include <parser/ast/ast.h>
+  #include <parser/ast/types.h>
   #include <parser/antlr/antlr_utils.h>
 }
 
@@ -208,7 +209,7 @@ FloatingPointLiteral
   std::stringstream valueStr(getTokenString($FloatingPointLiteral));
   double value = 0.0;
   valueStr >> value;
-  result = new juli::NLiteral<double>(juli::DOUBLE_LITERAL, value); 
+  result = new juli::NLiteral<double>(juli::DOUBLE_LITERAL, value, &juli::PrimitiveType::FLOAT64_TYPE); 
 } 
 ;
 
@@ -227,7 +228,7 @@ DecimalLiteral
   std::stringstream valueStr(getTokenString($DecimalLiteral));
   uint64_t value = 0;
   valueStr >> value;
-  result = new juli::NLiteral<uint64_t>(juli::INTEGER_LITERAL, value); 
+  result = new juli::NLiteral<uint64_t>(juli::INTEGER_LITERAL, value, &juli::PrimitiveType::INT32_TYPE); 
 }
 ;
 

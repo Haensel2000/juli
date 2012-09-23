@@ -22,9 +22,11 @@ private:
 	llvm::Module& module;
 	llvm::LLVMContext& context;
 
+public:
+
 	llvm::Value* visit(const Node* n);
 
-	llvm::Value* visitDoubleLiteral(const NLiteral<double>*  n);
+	llvm::Value* visitDoubleLiteral(const NLiteral<double>* n);
 
 	llvm::Value* visitIntegerLiteral(const NLiteral<uint64_t>* n);
 
@@ -59,11 +61,11 @@ private:
 	llvm::Value* visitIf(const NIfStatement* n);
 
 	llvm::Type* resolveType(const NType* n);
-public:
 
 	IRGenerator(const std::string& moduleName) :
-			translationUnit(moduleName), builder(translationUnit.getContext()),
-			module(*translationUnit.module), context(translationUnit.getContext()){
+			translationUnit(moduleName), builder(translationUnit.getContext()), module(
+					*translationUnit.module), context(
+					translationUnit.getContext()) {
 	}
 
 	void process(const Node* n);

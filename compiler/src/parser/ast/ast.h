@@ -18,8 +18,14 @@ namespace juli {
 
 class NExpression: public Node {
 public:
-	NExpression(NodeType nodeType) :
-			Node(nodeType) {
+	const Type* expressionType;
+
+	NExpression(NodeType nodeType, const Type* expressionType = 0) :
+			Node(nodeType), expressionType(expressionType) {
+	}
+
+	const Type* getExpressionType() const {
+		return expressionType;
 	}
 
 	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const = 0;
@@ -36,14 +42,11 @@ public:
 
 template<typename T>
 class NLiteral: public NExpression {
-protected:
-
 public:
 	T value;
 
-
-	NLiteral(NodeType nodeType, T value) :
-			NExpression(nodeType), value(value) {
+	NLiteral(NodeType nodeType, T value, const Type* type) :
+			NExpression(nodeType, type), value(value) {
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
@@ -57,7 +60,8 @@ protected:
 	std::string origValue;
 public:
 	NStringLiteral(std::string value) :
-			NLiteral<std::string>(STRING_LITERAL, value) {
+			NLiteral<std::string>(STRING_LITERAL, value,
+					new ArrayType(&PrimitiveType::INT8_TYPE)) {
 
 		std::stringstream sstream;
 		unsigned char escCount = 0;
@@ -117,7 +121,8 @@ public:
 	virtual ~NType() {
 	}
 
-	virtual const juli::Type* resolve(const TranslationUnit& module) const throw (CompilerError) = 0;
+	virtual const juli::Type* resolve(const TranslationUnit& module) const
+			throw (CompilerError) = 0;
 };
 
 class NBasicType: public NType {
@@ -136,7 +141,8 @@ public:
 		os << name;
 	}
 
-	virtual const juli::Type* resolve(const TranslationUnit& module) const throw (CompilerError) ;
+	virtual const juli::Type* resolve(const TranslationUnit& module) const
+			throw (CompilerError);
 
 };
 
@@ -156,7 +162,8 @@ public:
 		os << elementType << "[]";
 	}
 
-	virtual const juli::Type* resolve(const TranslationUnit& module) const throw (CompilerError) ;
+	virtual const juli::Type* resolve(const TranslationUnit& module) const
+			throw (CompilerError);
 };
 
 class NFunctionCall: public NExpression {

@@ -27,7 +27,9 @@ namespace juli {
 	private:
 		StatementList statements;
 		std::map<std::string, Type*> typeTable;
-		std::map<std::string, llvm::Value*> symbolTable;
+		std::map<std::string, llvm::Value*> llvmSymbolTable;
+
+		std::map<std::string, const Type*> symbolTable;
 
 		mutable std::vector<CompilerError> compilerErrors;
 
@@ -41,11 +43,13 @@ namespace juli {
 
 		llvm::LLVMContext& getContext() const;
 
+		const Type* getVariableType(const std::string& name) const throw (CompilerError);
+
 		const Type* getType(const std::string& name) const throw (CompilerError);
 		llvm::Type* resolveLLVMType(const NType* t) const throw (CompilerError);
 
-		std::map<std::string, llvm::Value*>& getSymbolTable() {
-			return symbolTable;
+		std::map<std::string, llvm::Value*>& getLLVMSymbolTable() {
+			return llvmSymbolTable;
 		}
 
 		const std::vector<CompilerError>& getErrors() const {
