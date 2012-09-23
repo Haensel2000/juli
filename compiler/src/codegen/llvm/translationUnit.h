@@ -11,7 +11,7 @@
 #include <map>
 
 #include <parser/ast/ast.h>
-#include <parser/ast/types.h>
+#include <codegen/llvm/types.h>
 
 #include <llvm/DerivedTypes.h>
 #include <llvm/IRBuilder.h>
@@ -29,9 +29,11 @@ namespace juli {
 		std::map<std::string, llvm::Value*> symbolTable;
 
 		mutable std::vector<CompilerError> compilerErrors;
+
+		const Type* resolveBasicType(const NBasicType* t) const throw (CompilerError);
+		const Type* resolveArrayType(const NArrayType* t) const throw (CompilerError);
 	public:
 		llvm::Module* module;
-
 
 		TranslationUnit(const std::string& name);
 
@@ -39,15 +41,8 @@ namespace juli {
 
 		llvm::LLVMContext& getContext();
 
-		void generateCode();
-
-		void generateCode(llvm::IRBuilder<> builder);
-
-		void addStatement(NStatement* statement);
-
-		const StatementList getStatements();
-
-		const Type* resolveType(const NIdentifier* id) const throw (CompilerError);
+		const Type* resolveType(const NType* t) const throw (CompilerError);
+		llvm::Type* resolveLLVMType(const NType* t) const throw (CompilerError);
 
 		std::map<std::string, llvm::Value*>& getSymbolTable() {
 			return symbolTable;

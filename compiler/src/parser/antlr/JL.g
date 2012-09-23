@@ -2,6 +2,7 @@ grammar JL;
 
 options {
   language = C;
+  backtrack = true;
 }
 
 @includes {
@@ -11,24 +12,21 @@ options {
   #include <cstdio>
   
   #include <parser/ast/ast.h>
-  #include <parser/ast/translationUnit.h>
   #include <parser/antlr/antlr_utils.h>
   #include <parser/ast/types.h>
 }
 
 @postinclude {
-  juli::TranslationUnit* translationUnit;
 }
 
-translation_unit [const char* moduleName] returns [juli::TranslationUnit* result]:
+translation_unit returns [juli::NBlock* result = 0]:
 { 
-  result = new juli::TranslationUnit("test");
-  translationUnit = result;
+  result = new juli::NBlock();
 }
 (stmt=statement { result->addStatement(stmt); })+ 
 ;
 
-statement returns [juli::NStatement* result]: 
+statement returns [juli::NStatement* result = 0]: 
 stmt1=assignment { result = stmt1; } | 
 stmt2=expression_statement { result = stmt2; } |
 stmt3=return_statement { result = stmt3; } |
@@ -39,23 +37,23 @@ stmt7=if_statement { result = stmt7; }
 ;
 
 
-function_definition returns [juli::NFunctionDefinition* result]:
+function_definition returns [juli::NFunctionDefinition* result = 0]:
 decl=function_declaration bl=block
 {
-  result = new juli::NFunctionDefinition(translationUnit, decl, bl);
+  result = new juli::NFunctionDefinition(decl, bl);
 }
 ;
 
-block returns [juli::NBlock* result]:
+block returns [juli::NBlock* result = 0]:
 {
-  result = new juli::NBlock(translationUnit);
+  result = new juli::NBlock();
 }
 '{'
 (stmt=statement { result->addStatement(stmt); })*
 '}' 
 ;
 
-if_statement returns [juli::NStatement* result]
+if_statement returns [juli::NStatement* result = 0]
 @declarations
 {
   std::vector<juli::NIfClause*> clauses;
@@ -64,33 +62,33 @@ cl=if_clause { clauses.push_back(cl); }
 ('else' cl=if_clause { clauses.push_back(cl); })*
 (cl=else_clause { clauses.push_back(cl); })?
 {
-  result = new juli::NIfStatement(translationUnit, clauses);
+  result = new juli::NIfStatement(clauses);
 }
 ;
 
-if_clause returns [juli::NIfClause* result]:
+if_clause returns [juli::NIfClause* result = 0]:
 'if' '(' cond=expression ')' bl=block
 {
   result = new juli::NIfClause(cond, bl);
 }
 ;
 
-else_clause returns [juli::NIfClause* result]:
+else_clause returns [juli::NIfClause* result = 0]:
 'else' bl=block
 {
   result = new juli::NIfClause(0, bl);
 }
 ;
 
-function_declaration returns [juli::NFunctionDeclaration* result]
+function_declaration returns [juli::NFunctionDeclaration* result = 0]
 @declarations
 {
    juli::VariableList arguments;
-   juli::NIdentifier* type;
-   juli::NIdentifier* id;
+   juli::NType* type;
+   std::string name;
    bool varArgs = false;
 }:
-sign=variable_declaration { id = sign->id; type = sign->type; }
+sign=variable_declaration { name = sign->name; type = sign->type; }
 '(' 
 (first_arg=variable_declaration { arguments.push_back(first_arg); }
 (',' arg=variable_declaration { arguments.push_back(arg); } )
@@ -99,37 +97,37 @@ sign=variable_declaration { id = sign->id; type = sign->type; }
 (',' VarArgs { varArgs = true; } )?
 ')'
 {
-  result = new juli::NFunctionDeclaration(translationUnit, type, id, arguments, varArgs);
+  result = new juli::NFunctionDeclaration(type, name, arguments, varArgs);
 }
 ;
 
 
-variable_declaration returns [juli::NVariableDeclaration* result]:
-vtype=identifier id=identifier
+variable_declaration returns [juli::NVariableDeclaration* result = 0]:
+vtype=type id=identifier
 {
-  result = new juli::NVariableDeclaration(translationUnit, vtype, id);
+  result = new juli::NVariableDeclaration(vtype, id);
 }
 ;
 
-return_statement returns [juli::NReturnStatement* result]:
+return_statement returns [juli::NReturnStatement* result = 0]:
 {
-  result = new juli::NReturnStatement(translationUnit, 0);
+  result = new juli::NReturnStatement(0);
 }
 'return' 
-(exp=expression {result = new juli::NReturnStatement(translationUnit, exp);})? 
+(exp=expression {result = new juli::NReturnStatement(exp);})? 
 ';'
 ;
 
-expression_statement returns [juli::NExpressionStatement* result]:
-exp=expression ';' { result = new juli::NExpressionStatement(translationUnit, exp); }
+expression_statement returns [juli::NExpressionStatement* result = 0]:
+exp=expression ';' { result = new juli::NExpressionStatement(exp); }
 ;
 
-assignment returns [juli::NAssignment* result]: 
+assignment returns [juli::NAssignment* result = 0]: 
 id=identifier '=' exp=expression ';' 
-{ result = new juli::NAssignment(translationUnit, id, exp); }
+{ result = new juli::NAssignment(id, exp); }
 ;
 
-expression returns [juli::NExpression* result]
+expression returns [juli::NExpression* result = 0]
 @declarations
 {
    juli::Operator type = juli::UNKNOWN;
@@ -138,11 +136,11 @@ expression returns [juli::NExpression* result]
   op1=add { result = op1; }
   (
     OP_EQ      { type = juli::EQ; } 
-    op2=add  { result = new juli::NBinaryOperator(translationUnit, result, type, op2); }
+    op2=add  { result = new juli::NBinaryOperator(result, type, op2); }
   )*
 ;
 
-add returns [juli::NExpression* result]
+add returns [juli::NExpression* result = 0]
 @declarations
 {
    juli::Operator type = juli::UNKNOWN;
@@ -151,21 +149,21 @@ add returns [juli::NExpression* result]
   op1=literal { result=op1; }
   (
     OP_PLUS      { type = juli::PLUS; } 
-    op2=literal  { result = new juli::NBinaryOperator(translationUnit, result, type, op2); }
+    op2=literal  { result = new juli::NBinaryOperator(result, type, op2); }
   )*
 ;
 
 
 
-literal returns [juli::NExpression* result]: 
+literal returns [juli::NExpression* result = 0]: 
 val=double_literal { result = val; } | 
 val=string_literal { result = val; } |
-val=identifier { result = val; } |
+s=identifier { result = new juli::NIdentifier(s); } |
 val=function_call { result = val; } | 
 '(' val=expression ')' { result = val; }
 ;
 
-function_call returns [juli::NFunctionCall* result]
+function_call returns [juli::NFunctionCall* result = 0]
 @declarations 
 {
   juli::ExpressionList arguments;
@@ -176,30 +174,43 @@ id=identifier
     (',' arg=expression { arguments.push_back(arg); })* 
   ')'
 {
-  result = new juli::NFunctionCall(translationUnit, id, arguments);
+  result = new juli::NFunctionCall(id, arguments);
 }
 ;
 
-identifier returns [juli::NIdentifier* result]:
-Identifier { result = new juli::NIdentifier(translationUnit, getTokenString($Identifier)); } 
+type returns [juli::NType* result = 0]:
+t=array_type  { result = t; }
 ;
 
-double_literal returns [juli::NDoubleLiteral* result]:
+array_type returns [juli::NType* result = 0]:
+t=basic_type { result = t; }
+('[]' { result = new juli::NArrayType(result); })* 
+;
+
+basic_type returns [juli::NType* result = 0]:
+s=identifier          { result = new juli::NBasicType(s); } 
+;
+
+identifier returns [std::string result]:
+Identifier { result = getTokenString($Identifier); } 
+;
+
+double_literal returns [juli::NDoubleLiteral* result = 0]:
 FloatingPointLiteral
 { 
   std::stringstream valueStr(getTokenString($FloatingPointLiteral));
   double value = 0.0;
   valueStr >> value;
-  result = new juli::NDoubleLiteral(translationUnit, value); 
+  result = new juli::NDoubleLiteral(value); 
 } 
 ;
 
-string_literal returns [juli::NStringLiteral* result]:
+string_literal returns [juli::NStringLiteral* result = 0]:
 StringLiteral
 {
   std::string tokenText = getTokenString($StringLiteral);
   tokenText = tokenText.substr(1, tokenText.size() - 2);
-  result = new juli::NStringLiteral(translationUnit, tokenText);
+  result = new juli::NStringLiteral(tokenText);
 }
 ;
 

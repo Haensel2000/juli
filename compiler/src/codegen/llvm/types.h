@@ -37,6 +37,27 @@ public:
 	}
 };
 
+class ArrayType: public Type {
+private:
+	llvm::Type* llvmType;
+	const Type& elementType;
+public:
+	ArrayType(const Type& elementType) :
+			elementType(elementType), llvmType(llvm::PointerType::get(elementType.getLLVMType(), 0)) {
+	}
+
+	virtual ~ArrayType() {
+	}
+
+	virtual llvm::Type* getLLVMType() const {
+		return llvmType;
+	}
+
+	const Type& getElementType() const {
+		return elementType;
+	}
+};
+
 }
 
 #endif /* TYPES_H_ */

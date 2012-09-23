@@ -42,16 +42,9 @@ enum NodeType {
 	FUNCTION_DEF
 };
 
-class Node {
-protected:
-	TranslationUnit* translationUnit;
-	const NodeType nodeType;
+class Indentable {
 public:
-	Node(TranslationUnit* module, const NodeType nodeType) :
-			translationUnit(module), nodeType(nodeType) {
-	}
-
-	virtual ~Node() {
+	virtual ~Indentable() {
 	}
 
 	void beginLine(std::ostream& os, int indent) const {
@@ -60,8 +53,17 @@ public:
 
 	virtual void print(std::ostream& os, int indent) const = 0;
 
-	const TranslationUnit& getTranslationUnit() const  {
-		return *translationUnit;
+};
+
+class Node : public Indentable {
+protected:
+	const NodeType nodeType;
+public:
+	Node(const NodeType nodeType) :
+			nodeType(nodeType) {
+	}
+
+	virtual ~Node() {
 	}
 
 	const NodeType& getType() const {
@@ -76,8 +78,8 @@ public:
 
 }
 
-std::ostream& operator<<(std::ostream& os, const juli::Node* object);
+std::ostream& operator<<(std::ostream& os, const juli::Indentable* object);
 
-std::ostream& operator<<(std::ostream& os, const juli::Node& object);
+std::ostream& operator<<(std::ostream& os, const juli::Indentable& object);
 
 #endif

@@ -27,7 +27,7 @@ public:
 
 	static pANTLR3_STRING getString(const char* s);
 
-	TranslationUnit* parse(const string& filename);
+	NBlock* parse(const string& filename);
 
 };
 

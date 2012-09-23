@@ -21,7 +21,7 @@ juli::Parser::~Parser() {
 	delete strFactory;
 }
 
-TranslationUnit* juli::Parser::parse(const string& filename) {
+NBlock* juli::Parser::parse(const string& filename) {
 	pANTLR3_INPUT_STREAM input;
 	pANTLR3_COMMON_TOKEN_STREAM tokenStream;
 	pJLParser parser;
@@ -54,8 +54,7 @@ TranslationUnit* juli::Parser::parse(const string& filename) {
 		return 0;
 	}
 
-	TranslationUnit* translationUnit = parser->translation_unit(parser,
-			filename.c_str());
+	NBlock* ast = parser->translation_unit(parser);
 
 	//std::cout << translationUnit->getAST() << std::endl;
 
@@ -68,5 +67,5 @@ TranslationUnit* juli::Parser::parse(const string& filename) {
 	input->close(input);
 	input = NULL;
 
-	return translationUnit;
+	return ast;
 }

@@ -2,8 +2,7 @@
 #include <fstream>
 
 #include <parser/parser.h>
-#include <codegen/native.h>
-
+#include <codegen/llvm/native.h>
 
 #include <debug/print.h>
 #include <parser/ast/node.h>
@@ -25,6 +24,8 @@
 
 #include "llvm/Support/Host.h"
 
+#include <codegen/llvm/ir.h>
+
 //extern NBlock* programBlock;
 //extern int yyparse();
 
@@ -40,21 +41,26 @@ int main(int argc, char **argv) {
 
 	for (int i = 1; i < argc; ++i) {
 		std::cout << "Building file: " << argv[i] << std::endl;
-		TranslationUnit* unit = parser.parse(argv[i]);
-		unit->printStatements(std::cout);
+		NBlock* ast = parser.parse(argv[i]);
+		std::cout << ast << std::endl;
 		try {
-			unit->generateCode();
+			IRGenerator irgen("test");
+			irgen.process(ast);
 
-			unit->module->dump();
+			irgen.getTranslationUnit().module->dump();
 
-			if (unit->getErrors().empty()) {
+			if (irgen.getTranslationUnit().getErrors().empty()) {
 				std::string filename(argv[i]);
-				std::string basename = filename.substr(0, filename.find_last_of('.', filename.size()));
+				std::string basename = filename.substr(0,
+						filename.find_last_of('.', filename.size()));
 				filename = basename + ".o";
-				emitter.emitCode(filename.c_str(), unit->module);
+				emitter.emitCode(filename.c_str(),
+						irgen.getTranslationUnit().module);
 			} else {
-				std::vector<CompilerError> errors = unit->getErrors();
-				for (std::vector<CompilerError>::iterator i = errors.begin(); i != errors.end(); ++i) {
+				std::vector<CompilerError> errors =
+						irgen.getTranslationUnit().getErrors();
+				for (std::vector<CompilerError>::iterator i = errors.begin();
+						i != errors.end(); ++i) {
 					std::cerr << *i;
 				}
 			}

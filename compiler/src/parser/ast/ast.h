@@ -22,20 +22,20 @@ namespace juli {
 
 class NExpression: public Node {
 public:
-	NExpression(TranslationUnit* module, NodeType nodeType) :
-			Node(module, nodeType) {
+	NExpression(NodeType nodeType) :
+			Node(nodeType) {
 	}
 
-	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const = 0;
+	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const = 0;
 };
 
 class NStatement: public Node {
 public:
-	NStatement(TranslationUnit* module, NodeType nodeType) :
-			Node(module, nodeType) {
+	NStatement(NodeType nodeType) :
+			Node(nodeType) {
 	}
 
-	virtual void generateCode(llvm::IRBuilder<>& builder) const = 0;
+	//virtual void generateCode(llvm::IRBuilder<>& builder) const = 0;
 };
 
 template<typename T>
@@ -45,8 +45,8 @@ protected:
 public:
 	T value;
 
-	NLiteral(TranslationUnit* module, NodeType nodeType, T value) :
-			NExpression(module, nodeType), value(value) {
+	NLiteral(NodeType nodeType, T value) :
+			NExpression(nodeType), value(value) {
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
@@ -59,8 +59,8 @@ class NStringLiteral: public NLiteral<std::string> {
 protected:
 	std::string origValue;
 public:
-	NStringLiteral(TranslationUnit* module, std::string value) :
-			NLiteral<std::string>(module, STRING_LITERAL, value) {
+	NStringLiteral(std::string value) :
+			NLiteral<std::string>(STRING_LITERAL, value) {
 
 		std::stringstream sstream;
 		unsigned char escCount = 0;
@@ -96,15 +96,15 @@ public:
 		os << "\"" << origValue << "\"";
 	}
 
-	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
 };
 
 class NIdentifier: public NExpression {
 public:
 	std::string name;
 
-	NIdentifier(TranslationUnit* module, const std::string& name) :
-			NExpression(module, VARIABLE_REF), name(name) {
+	NIdentifier(const std::string& name) :
+			NExpression(VARIABLE_REF), name(name) {
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
@@ -112,42 +112,60 @@ public:
 		os << name;
 	}
 
-	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
 };
 
-class NType {
+class NType: public Indentable {
 public:
-	NType() {
+	virtual ~NType() {
 	}
 };
 
 class NBasicType: public NType {
 public:
-	NIdentifier* name;
+	const std::string name;
 
-	NBasicType(NIdentifier* name) : name(name) {
+	virtual ~NBasicType() {
 	}
+
+	NBasicType(const std::string& name) :
+			name(name) {
+	}
+
+	virtual void print(std::ostream& os, int indent) const {
+		beginLine(os, indent);
+		os << name;
+	}
+
 };
 
 class NArrayType: public NType {
 public:
-	NBasicType* elementType;
+	NType* elementType;
 
-	NArrayType(NBasicType* elementType) : elementType(elementType) {
+	virtual ~NArrayType() {
+	}
+
+	NArrayType(NType* elementType) :
+			elementType(elementType) {
+	}
+
+	virtual void print(std::ostream& os, int indent) const {
+		beginLine(os, indent);
+		os << elementType << "[]";
 	}
 };
 
 class NFunctionCall: public NExpression {
 public:
-	const NIdentifier* id;
+	const std::string id;
 	ExpressionList arguments;
-	NFunctionCall(TranslationUnit* module, const NIdentifier* id,
-			ExpressionList& arguments) :
-			NExpression(module, FUNCTION_CALL), id(id), arguments(arguments) {
+	NFunctionCall(const std::string& id, ExpressionList& arguments) :
+			NExpression(FUNCTION_CALL), id(id), arguments(arguments) {
 	}
 
-	NFunctionCall(TranslationUnit* module, const NIdentifier* id) :
-			NExpression(module, FUNCTION_CALL), id(id) {
+	NFunctionCall(const std::string& id) :
+			NExpression(FUNCTION_CALL), id(id) {
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
@@ -155,16 +173,16 @@ public:
 		os << id << "(" << arguments << ")";
 	}
 
-	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
 };
 
 class NDoubleLiteral: public NLiteral<double> {
 public:
-	NDoubleLiteral(TranslationUnit* module, double value) :
-			NLiteral<double>(module, DOUBLE_LITERAL, value) {
+	NDoubleLiteral(double value) :
+			NLiteral<double>(DOUBLE_LITERAL, value) {
 	}
 
-	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
 };
 
 class NBinaryOperator: public NExpression {
@@ -172,9 +190,8 @@ public:
 	NExpression* lhs;
 	Operator op;
 	NExpression* rhs;
-	NBinaryOperator(TranslationUnit* module, NExpression* lhs, Operator op,
-			NExpression* rhs) :
-			NExpression(module, BINARY_OPERATOR), lhs(lhs), op(op), rhs(rhs) {
+	NBinaryOperator(NExpression* lhs, Operator op, NExpression* rhs) :
+			NExpression(BINARY_OPERATOR), lhs(lhs), op(op), rhs(rhs) {
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
@@ -193,15 +210,15 @@ public:
 		os << "(" << lhs << " " << opStr << " " << rhs << ")";
 	}
 
-	virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
 };
 
 class NAssignment: public NStatement {
 public:
-	NIdentifier* lhs;
+	const std::string lhs;
 	NExpression* rhs;
-	NAssignment(TranslationUnit* module, NIdentifier* lhs, NExpression* rhs) :
-			NStatement(module, ASSIGNMENT), lhs(lhs), rhs(rhs) {
+	NAssignment(const std::string& lhs, NExpression* rhs) :
+			NStatement(ASSIGNMENT), lhs(lhs), rhs(rhs) {
 	}
 	//virtual llvm::Value* codeGen(CodeGenContext& context);
 
@@ -211,14 +228,14 @@ public:
 		os << lhs << " = " << rhs;
 	}
 
-	virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
 class NBlock: public NStatement {
 public:
 	StatementList statements;
-	NBlock(TranslationUnit* module) :
-			NStatement(module, BLOCK) {
+	NBlock() :
+			NStatement(BLOCK) {
 	}
 	//virtual llvm::Value* codeGen(CodeGenContext& context);
 
@@ -236,15 +253,15 @@ public:
 		}
 	}
 
-	virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
 class NExpressionStatement: public NStatement {
 public:
 	NExpression* expression;
 
-	NExpressionStatement(TranslationUnit* module, NExpression* expression) :
-			NStatement(module, EXPRESSION), expression(expression) {
+	NExpressionStatement(NExpression* expression) :
+			NStatement(EXPRESSION), expression(expression) {
 	}
 	//virtual llvm::Value* codeGen(CodeGenContext& context);
 
@@ -253,89 +270,81 @@ public:
 		os << expression;
 	}
 
-	virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
 class NVariableDeclaration: public NStatement {
 public:
-	NIdentifier* type;
-	NIdentifier* id;
+	const std::string name;
+	NType* type;
 	NExpression* assignmentExpr;
 
-	NVariableDeclaration(TranslationUnit* module, NIdentifier* type,
-			NIdentifier* id, NExpression *assignmentExpr = 0) :
-			NStatement(module, VARIABLE_DECL), type(type), id(id), assignmentExpr(
+	NVariableDeclaration(NType* type, const std::string& name,
+			NExpression *assignmentExpr = 0) :
+			NStatement(VARIABLE_DECL), name(name), type(type), assignmentExpr(
 					assignmentExpr) {
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
-		os << type << " " << id;
+		os << type << " " << name;
 		if (assignmentExpr) {
 			os << " = " << assignmentExpr;
 		}
 	}
 
-	llvm::Type* getLLVMType() const;
-
-	virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
 class NFunctionDeclaration: public NStatement {
-protected:
-	llvm::FunctionType* createFunctionType() const;
 public:
-	const NIdentifier* type;
-	const NIdentifier* id;
+	const std::string name;
+	const NType* type;
 	VariableList arguments;
 	bool varArgs;
 
-	NFunctionDeclaration(TranslationUnit* module, const NIdentifier* type,
-			const NIdentifier* id, const VariableList arguments, bool varArgs =
-					false) :
-			NStatement(module, FUNCTION_DECL), type(type), id(id), arguments(arguments), varArgs(
-					varArgs) {
+	NFunctionDeclaration(const NType* type, const std::string& name,
+			const VariableList arguments, bool varArgs = false) :
+			NStatement(FUNCTION_DECL), name(name), type(type), arguments(
+					arguments), varArgs(varArgs) {
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
-		os << type << " " << id << "(" << arguments;
+		os << type << " " << name << "(" << arguments;
 		if (varArgs)
 			os << ", ...";
 		os << ")";
 	}
 
-	llvm::Function* createFunction() const;
-
-	virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
 
 };
 
 class NFunctionDefinition: public NStatement {
 public:
 	NFunctionDeclaration* declaration;
-	NBlock* block;
+	NBlock* body;
 
-	NFunctionDefinition(TranslationUnit* module, NFunctionDeclaration* decl,
-			NBlock* block) :
-			NStatement(module, FUNCTION_DEF), declaration(decl), block(block) {
+	NFunctionDefinition(NFunctionDeclaration* decl, NBlock* body) :
+			NStatement(FUNCTION_DEF), declaration(decl), body(body) {
 	}
 	//virtual llvm::Value* codeGen(CodeGenContext& context);
 
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
-		os << declaration << std::endl << block;
+		os << declaration << std::endl << body;
 	}
 
-	virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
 class NReturnStatement: public NStatement {
-private:
-	NExpression* expression;
 public:
-	NReturnStatement(TranslationUnit* module, NExpression* expression) :
-			NStatement(module, RETURN), expression(expression) {
+	NExpression* expression;
+
+	NReturnStatement(NExpression* expression) :
+			NStatement(RETURN), expression(expression) {
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
@@ -346,7 +355,7 @@ public:
 
 	}
 
-	virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
 class NIfClause {
@@ -362,12 +371,11 @@ public:
 };
 
 class NIfStatement: public NStatement {
-private:
-	std::vector<NIfClause*> clauses;
 public:
+	std::vector<NIfClause*> clauses;
 
-	NIfStatement(TranslationUnit* module, std::vector<NIfClause*> clauses) :
-			NStatement(module, IF), clauses(clauses) {
+	NIfStatement(std::vector<NIfClause*> clauses) :
+			NStatement(IF), clauses(clauses) {
 	}
 
 	virtual void print(std::ostream& os, int indent) const {
@@ -386,7 +394,7 @@ public:
 
 	}
 
-	virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
 
 };
 
