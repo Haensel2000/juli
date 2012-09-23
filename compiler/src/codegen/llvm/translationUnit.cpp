@@ -8,13 +8,11 @@ using namespace juli;
 juli::TranslationUnit::TranslationUnit(const std::string& name) {
 	module = new llvm::Module(name, llvm::getGlobalContext());
 
-	llvm::LLVMContext& c = getContext();
-
 	// initialize primitive types:
-	typeTable["double"] = new PrimitiveType(llvm::Type::getDoubleTy(c));
-	typeTable["void"] = new PrimitiveType(llvm::Type::getVoidTy(c));
-	typeTable["int"] = new PrimitiveType(llvm::Type::getInt32Ty(c));
-	typeTable["char"] = new PrimitiveType(llvm::Type::getInt8Ty(c));
+	typeTable["double"] = new PrimitiveType(FLOAT64);
+	typeTable["void"] = new PrimitiveType(VOID);
+	typeTable["int"] = new PrimitiveType(INT32);
+	typeTable["char"] = new PrimitiveType(INT8);
 }
 
 juli::TranslationUnit::~TranslationUnit() {
@@ -25,41 +23,48 @@ juli::TranslationUnit::~TranslationUnit() {
 	}
 }
 
-llvm::LLVMContext& juli::TranslationUnit::getContext() {
+llvm::LLVMContext& juli::TranslationUnit::getContext() const {
 	return module->getContext();
 }
 
-const Type* juli::TranslationUnit::resolveBasicType(const NBasicType* t) const
+const Type* juli::TranslationUnit::getType(const std::string& name) const
 		throw (CompilerError) {
 	try {
-		return typeTable.at(t->name);
+		return typeTable.at(name);
 	} catch (std::out_of_range& e) {
 		CompilerError err;
-		err.getStream() << "Unknown type '" << t->name << "'";
+		err.getStream() << "Unknown type '" << name << "'";
 		reportError(err);
 		throw err;
 	}
 	return 0;
 }
 
-const Type* juli::TranslationUnit::resolveArrayType(const NArrayType* t) const
+llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 		throw (CompilerError) {
-	return new ArrayType(*resolveType(t->elementType));
+	llvm::LLVMContext& c = getContext();
+
+	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(t);
+	if (pt) {
+		switch (pt->getPrimitive()) {
+		case INT8:
+			return llvm::Type::getInt8Ty(c);
+		case INT32:
+			return llvm::Type::getInt32Ty(c);
+		case FLOAT64:
+			return llvm::Type::getDoubleTy(c);
+		case VOID:
+			return llvm::Type::getVoidTy(c);
+		}
+	}
+
+	const ArrayType* at = dynamic_cast<const ArrayType*>(t);
+	if (at) {
+		return llvm::PointerType::get(resolveLLVMType(at->getElementType()), 0);
+	}
 }
 
-const Type* juli::TranslationUnit::resolveType(const NType* t) const
+llvm::Type* juli::TranslationUnit::resolveLLVMType(const NType* nt) const
 		throw (CompilerError) {
-	const NBasicType* bt = dynamic_cast<const NBasicType*>(t);
-	if (bt)
-		return resolveBasicType(bt);
-	const NArrayType* at = dynamic_cast<const NArrayType*>(t);
-	if (at)
-		return resolveArrayType(at);
-
-	return 0;
-}
-
-llvm::Type* juli::TranslationUnit::resolveLLVMType(const NType* t) const
-		throw (CompilerError) {
-	return resolveType(t)->getLLVMType();
+	return resolveLLVMType(nt->resolve(*this));
 }

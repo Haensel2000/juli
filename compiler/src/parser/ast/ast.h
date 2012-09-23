@@ -11,12 +11,8 @@
 #include <sstream>
 
 #include <parser/ast/node.h>
-
-#include <llvm/DerivedTypes.h>
-#include <llvm/IRBuilder.h>
-#include <llvm/LLVMContext.h>
-#include <llvm/Module.h>
-#include <llvm/Value.h>
+#include <parser/ast/types.h>
+#include <parser/ast/error.h>
 
 namespace juli {
 
@@ -44,6 +40,7 @@ protected:
 
 public:
 	T value;
+
 
 	NLiteral(NodeType nodeType, T value) :
 			NExpression(nodeType), value(value) {
@@ -119,6 +116,8 @@ class NType: public Indentable {
 public:
 	virtual ~NType() {
 	}
+
+	virtual const juli::Type* resolve(const TranslationUnit& module) const throw (CompilerError) = 0;
 };
 
 class NBasicType: public NType {
@@ -137,6 +136,8 @@ public:
 		os << name;
 	}
 
+	virtual const juli::Type* resolve(const TranslationUnit& module) const throw (CompilerError) ;
+
 };
 
 class NArrayType: public NType {
@@ -154,6 +155,8 @@ public:
 		beginLine(os, indent);
 		os << elementType << "[]";
 	}
+
+	virtual const juli::Type* resolve(const TranslationUnit& module) const throw (CompilerError) ;
 };
 
 class NFunctionCall: public NExpression {
@@ -171,10 +174,6 @@ public:
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
 		os << id << "(" << arguments << ")";
-		for (ExpressionList::const_iterator i = arguments.begin(); i != arguments.end(); ++i) {
-			os << std::endl << (*i)->getType();
-		}
-
 	}
 
 	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
