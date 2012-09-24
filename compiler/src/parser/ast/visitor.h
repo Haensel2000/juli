@@ -44,8 +44,6 @@ ReturnValue visitAST(Handler& handler, const Node* n) {
 		return handler.visitIf((NIfStatement*) n);
 	case RETURN:
 		return handler.visitReturn((NReturnStatement*) n);
-	case FUNCTION_DECL:
-		return handler.visitFunctionDecl((NFunctionDeclaration*) n);
 	case FUNCTION_DEF:
 		return handler.visitFunctionDef((NFunctionDefinition*) n);
 	}

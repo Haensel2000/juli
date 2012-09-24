@@ -19,7 +19,8 @@ llvm::Value* juli::IRGenerator::visitDoubleLiteral(const NLiteral<double>* n) {
 	return llvm::ConstantFP::get(context, llvm::APFloat(n->value));
 }
 
-llvm::Value* juli::IRGenerator::visitIntegerLiteral(const NLiteral<uint64_t>* n) {
+llvm::Value* juli::IRGenerator::visitIntegerLiteral(
+		const NLiteral<uint64_t>* n) {
 	return llvm::ConstantInt::get(context, llvm::APInt(32, n->value, true));
 }
 
@@ -102,7 +103,8 @@ llvm::Value* juli::IRGenerator::visitExpressionStatement(
 	return 0;
 }
 
-llvm::Value* juli::IRGenerator::visitVariableDecl(const NVariableDeclaration* n) {
+llvm::Value* juli::IRGenerator::visitVariableDecl(
+		const NVariableDeclaration* n) {
 	llvm::Value* param = builder.CreateAlloca(resolveType(n->type));
 	if (n->assignmentExpr)
 		builder.CreateStore(visit(n->assignmentExpr), param);
@@ -111,7 +113,7 @@ llvm::Value* juli::IRGenerator::visitVariableDecl(const NVariableDeclaration* n)
 }
 
 llvm::FunctionType* juli::IRGenerator::createFunctionType(
-		const NFunctionDeclaration* n) {
+		const NFunctionSignature * n) {
 	llvm::Type* returnType = resolveType(n->type);
 	std::vector<llvm::Type*> argumentTypes;
 
@@ -124,48 +126,53 @@ llvm::FunctionType* juli::IRGenerator::createFunctionType(
 }
 
 llvm::Function* juli::IRGenerator::createFunction(
-		const NFunctionDeclaration* n) {
+		const NFunctionSignature * n) {
 	llvm::Function* f = llvm::Function::Create(createFunctionType(n),
 			llvm::Function::ExternalLinkage, n->name, &module);
 	return f;
 }
 
-llvm::Value* juli::IRGenerator::visitFunctionDecl(const NFunctionDeclaration* n) {
+llvm::Value* juli::IRGenerator::visitFunctionDecl(
+		const NFunctionSignature * n) {
 	createFunction(n);
 	return 0;
 }
 
 llvm::Value* juli::IRGenerator::visitFunctionDef(const NFunctionDefinition* n) {
-	llvm::Function* f = createFunction(n->declaration);
+	llvm::Function* f = createFunction(n->signature);
 
-	llvm::BasicBlock* llvmBlock = llvm::BasicBlock::Create(
-			context, "entry", f);
-	builder.SetInsertPoint(llvmBlock);
+	if (n->body) {
 
-	llvm::Function::arg_iterator i = f->getArgumentList().begin();
-	for (VariableList::const_iterator vi = n->declaration->arguments.begin();
-			vi != n->declaration->arguments.end(); ++i, ++vi) {
-		//(*vi)->generateCode(builder);
+		llvm::BasicBlock* llvmBlock = llvm::BasicBlock::Create(context, "entry",
+				f);
+		builder.SetInsertPoint(llvmBlock);
 
-		llvm::Value* param = builder.CreateAlloca(i->getType());
-		builder.CreateStore(i, param);
-		translationUnit.getLLVMSymbolTable()[(*vi)->name] = param;
-	}
+		llvm::Function::arg_iterator i = f->getArgumentList().begin();
+		for (VariableList::const_iterator vi = n->signature->arguments.begin();
+				vi != n->signature->arguments.end(); ++i, ++vi) {
+			//(*vi)->generateCode(builder);
 
-	visit(n->body);
+			llvm::Value* param = builder.CreateAlloca(i->getType());
+			builder.CreateStore(i, param);
+			translationUnit.getLLVMSymbolTable()[(*vi)->name] = param;
+		}
+
+		visit(n->body);
 
 //	if (f->getReturnType() == llvm::Type::getVoidTy(translationUnit->getContext())) {
 //		builder.CreateRet(0);
 //	}
 
-	for (std::vector<NVariableDeclaration*>::const_iterator i =
-			n->declaration->arguments.begin(); i != n->declaration->arguments.end();
-			++i) {
-		translationUnit.getLLVMSymbolTable().erase((*i)->name);
-	}
+		for (std::vector<NVariableDeclaration*>::const_iterator i =
+				n->signature->arguments.begin();
+				i != n->signature->arguments.end(); ++i) {
+			translationUnit.getLLVMSymbolTable().erase((*i)->name);
+		}
 
-	if (llvm::verifyFunction(*f, llvm::PrintMessageAction)) {
-		f->dump();
+		if (llvm::verifyFunction(*f, llvm::PrintMessageAction)) {
+			f->dump();
+		}
+
 	}
 	return 0;
 }
@@ -184,18 +191,18 @@ llvm::Value* juli::IRGenerator::visitIf(const NIfStatement* n) {
 
 	std::vector<NIfClause*>::const_iterator ifc = n->clauses.begin();
 
-	llvm::BasicBlock* contBlock = llvm::BasicBlock::Create(context,
-			"continue", f);
+	llvm::BasicBlock* contBlock = llvm::BasicBlock::Create(context, "continue",
+			f);
 
 	while (ifc != n->clauses.end()) {
 		if ((*ifc)->condition) {
-			llvm::BasicBlock* thenBlock = llvm::BasicBlock::Create(
-					context, "then", f);
-			llvm::BasicBlock* elseBlock = llvm::BasicBlock::Create(
-					context, "else", f);
+			llvm::BasicBlock* thenBlock = llvm::BasicBlock::Create(context,
+					"then", f);
+			llvm::BasicBlock* elseBlock = llvm::BasicBlock::Create(context,
+					"else", f);
 
-			builder.CreateCondBr(visit((*ifc)->condition),
-					thenBlock, elseBlock);
+			builder.CreateCondBr(visit((*ifc)->condition), thenBlock,
+					elseBlock);
 
 			builder.SetInsertPoint(thenBlock);
 			visit((*ifc)->body);

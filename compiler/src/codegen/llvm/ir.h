@@ -48,11 +48,11 @@ public:
 
 	llvm::Value* visitVariableDecl(const NVariableDeclaration* n);
 
-	llvm::FunctionType* createFunctionType(const NFunctionDeclaration* n);
+	llvm::FunctionType* createFunctionType(const NFunctionSignature * n);
 
-	llvm::Function* createFunction(const NFunctionDeclaration* n);
+	llvm::Function* createFunction(const NFunctionSignature * n);
 
-	llvm::Value* visitFunctionDecl(const NFunctionDeclaration* n);
+	llvm::Value* visitFunctionDecl(const NFunctionSignature * n);
 
 	llvm::Value* visitFunctionDef(const NFunctionDefinition* n);
 
@@ -62,8 +62,8 @@ public:
 
 	llvm::Type* resolveType(const NType* n);
 
-	IRGenerator(const std::string& moduleName) :
-			translationUnit(moduleName), builder(translationUnit.getContext()), module(
+	IRGenerator(const std::string& moduleName, const TypeInfo& typeInfo) :
+			translationUnit(moduleName, typeInfo), builder(translationUnit.getContext()), module(
 					*translationUnit.module), context(
 					translationUnit.getContext()) {
 	}

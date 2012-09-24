@@ -24,6 +24,8 @@
 
 #include "llvm/Support/Host.h"
 
+#include <analysis/type/declare.h>
+#include <analysis/type/typecheck.h>
 #include <codegen/llvm/ir.h>
 
 //extern NBlock* programBlock;
@@ -44,7 +46,13 @@ int main(int argc, char **argv) {
 		NBlock* ast = parser.parse(argv[i]);
 		std::cout << ast << std::endl;
 		try {
-			IRGenerator irgen("test");
+			Declarator declarator;
+			declarator.visit(ast);
+
+			TypeChecker typeChecker(declarator.getTypeInfo());
+			typeChecker.visit(ast);
+
+			IRGenerator irgen("test", declarator.getTypeInfo());
 			irgen.process(ast);
 
 			irgen.getTranslationUnit().module->dump();

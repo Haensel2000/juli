@@ -12,7 +12,9 @@
 
 #include <parser/ast/node.h>
 #include <parser/ast/types.h>
-#include <parser/ast/error.h>
+#include <analysis/error.h>
+
+#include <analysis/type/typeinfo.h>
 
 namespace juli {
 
@@ -121,7 +123,7 @@ public:
 	virtual ~NType() {
 	}
 
-	virtual const juli::Type* resolve(const TranslationUnit& module) const
+	virtual const juli::Type* resolve(const TypeInfo& types) const
 			throw (CompilerError) = 0;
 };
 
@@ -141,7 +143,7 @@ public:
 		os << name;
 	}
 
-	virtual const juli::Type* resolve(const TranslationUnit& module) const
+	virtual const juli::Type* resolve(const TypeInfo& types) const
 			throw (CompilerError);
 
 };
@@ -162,7 +164,7 @@ public:
 		os << elementType << "[]";
 	}
 
-	virtual const juli::Type* resolve(const TranslationUnit& module) const
+	virtual const juli::Type* resolve(const TypeInfo& types) const
 			throw (CompilerError);
 };
 
@@ -306,14 +308,14 @@ public:
 	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
 };
 
-class NFunctionDeclaration: public NStatement {
+class NFunctionSignature : public NStatement {
 public:
 	const std::string name;
 	const NType* type;
 	VariableList arguments;
 	bool varArgs;
 
-	NFunctionDeclaration(const NType* type, const std::string& name,
+	NFunctionSignature (const NType* type, const std::string& name,
 			const VariableList arguments, bool varArgs = false) :
 			NStatement(FUNCTION_DECL), name(name), type(type), arguments(
 					arguments), varArgs(varArgs) {
@@ -331,19 +333,22 @@ public:
 
 };
 
-class NFunctionDefinition: public NStatement {
+class NFunctionDefinition: public NStatement  {
 public:
-	NFunctionDeclaration* declaration;
+	NFunctionSignature * signature;
 	NBlock* body;
 
-	NFunctionDefinition(NFunctionDeclaration* decl, NBlock* body) :
-			NStatement(FUNCTION_DEF), declaration(decl), body(body) {
+	NFunctionDefinition(NFunctionSignature * signature, NBlock* body) :
+			NStatement(FUNCTION_DEF), signature(signature), body(body) {
 	}
 	//virtual llvm::Value* codeGen(CodeGenContext& context);
 
 	virtual void print(std::ostream& os, int indent) const {
 		beginLine(os, indent);
-		os << declaration << std::endl << body;
+		os << signature << std::endl;
+		if (body) {
+			os << body;
+		}
 	}
 
 	//virtual void generateCode(llvm::IRBuilder<>& builder) const;

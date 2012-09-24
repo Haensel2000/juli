@@ -32,13 +32,16 @@ stmt2=expression_statement { result = stmt2; } |
 stmt3=return_statement { result = stmt3; } |
 stmt4=function_definition { result = stmt4; } |
 stmt5=variable_declaration ';' { result = stmt5; } |
-stmt6=function_declaration ';' { result = stmt6; } | 
 stmt7=if_statement { result = stmt7; }
 ;
 
 
-function_definition returns [juli::NFunctionDefinition* result = 0]:
-decl=function_declaration bl=block
+function_definition returns [juli::NFunctionDefinition* result = 0]
+@declarations 
+{
+  juli::NBlock* bl = 0;
+}:
+decl=function_declaration (b=block { bl = b; } | ';')
 {
   result = new juli::NFunctionDefinition(decl, bl);
 }
@@ -80,7 +83,7 @@ else_clause returns [juli::NIfClause* result = 0]:
 }
 ;
 
-function_declaration returns [juli::NFunctionDeclaration* result = 0]
+function_declaration returns [juli::NFunctionSignature* result = 0]
 @declarations
 {
    juli::VariableList arguments;
@@ -97,7 +100,7 @@ sign=variable_declaration { name = sign->name; type = sign->type; }
 (',' VarArgs { varArgs = true; } )?
 ')'
 {
-  result = new juli::NFunctionDeclaration(type, name, arguments, varArgs);
+  result = new juli::NFunctionSignature(type, name, arguments, varArgs);
 }
 ;
 

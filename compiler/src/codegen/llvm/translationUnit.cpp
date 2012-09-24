@@ -5,14 +5,10 @@
 
 using namespace juli;
 
-juli::TranslationUnit::TranslationUnit(const std::string& name) {
+juli::TranslationUnit::TranslationUnit(const std::string& name,
+		const TypeInfo& types) :
+		types(types) {
 	module = new llvm::Module(name, llvm::getGlobalContext());
-
-	// initialize primitive types:
-	typeTable["double"] = new PrimitiveType(FLOAT64);
-	typeTable["void"] = new PrimitiveType(VOID);
-	typeTable["int"] = new PrimitiveType(INT32);
-	typeTable["char"] = new PrimitiveType(INT8);
 }
 
 juli::TranslationUnit::~TranslationUnit() {
@@ -34,19 +30,6 @@ const Type* juli::TranslationUnit::getVariableType(
 	} catch (std::out_of_range& e) {
 		CompilerError err;
 		err.getStream() << "Undeclared variable '" << name << "'";
-		reportError(err);
-		throw err;
-	}
-	return 0;
-}
-
-const Type* juli::TranslationUnit::getType(const std::string& name) const
-		throw (CompilerError) {
-	try {
-		return typeTable.at(name);
-	} catch (std::out_of_range& e) {
-		CompilerError err;
-		err.getStream() << "Unknown type '" << name << "'";
 		reportError(err);
 		throw err;
 	}
@@ -79,5 +62,5 @@ llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 
 llvm::Type* juli::TranslationUnit::resolveLLVMType(const NType* nt) const
 		throw (CompilerError) {
-	return resolveLLVMType(nt->resolve(*this));
+	return resolveLLVMType(nt->resolve(types));
 }
