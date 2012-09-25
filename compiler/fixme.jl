@@ -5,8 +5,8 @@ double add(double x, double y) {
 }
 
 void main(int argc, char[][] argv) {
-	printf("%d, %d\n", argc, argv[1][0]);
+	printf("%d, %d\n", argc, argv[1][add(1,2)]);
 	double y;
-	y = add(2.0, 1.0);
+	y = add(2.0, 1, 3);
 	return;
 }

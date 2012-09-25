@@ -48,9 +48,12 @@ private:
 	const TypeInfo& typeInfo;
 
 	bool _newScope;
+	NFunctionDefinition* _currentFunction;
 public:
 
 	TypeChecker(const TypeInfo& typeInfo);
+
+	void checkAssignment(const Type* left, const Type* right, const std::string& message = "") const;
 
 	const Type* visit(Node* n);
 

@@ -49,10 +49,21 @@ void juli::SymbolTable::addSymbol(NVariableDeclaration* node) {
 
 juli::TypeChecker::TypeChecker(const TypeInfo& typeInfo) :
 		symbolTable(typeInfo), typeInfo(typeInfo) {
+	_newScope = false;
+	_currentFunction = 0;
+}
+
+void juli::TypeChecker::checkAssignment(const Type* left, const Type* right,
+		const std::string& message) const {
+	if (!right->isAssignableTo(left)) {
+		CompilerError err;
+		err.getStream() << message << "Invalid Types: Cannot assign " << right
+				<< " to " << left;
+		throw err;
+	}
 }
 
 const Type* juli::TypeChecker::visit(Node* n) {
-	_newScope = false;
 	return visitAST<TypeChecker, const Type*>(*this, n);
 }
 
@@ -90,26 +101,53 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 }
 
 const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
-	n->expressionType = typeInfo.getFunction(n->id)->signature->type->resolve(
-			typeInfo);
+	NFunctionSignature* signature = typeInfo.getFunction(n->id)->signature;
+
+	n->expressionType = 0;
 
 	ExpressionList args = n->arguments;
-	for (ExpressionList::iterator i = args.begin(); i != args.end(); ++i) {
-		visit(*i);
+	VariableList formalArgs = signature->arguments;
+
+	if (args.size() < formalArgs.size()
+			|| (args.size() > formalArgs.size() && !signature->varArgs)) {
+		CompilerError err;
+		err.getStream() << "Invalid number of arguments for function '"
+				<< signature->name << "'. Expected " << formalArgs.size()
+				<< " got " << args.size();
+		throw err;
 	}
 
+	ExpressionList::iterator i = args.begin();
+	VariableList::iterator fi = formalArgs.begin();
+	int c = 1;
+	while (i != args.end()) {
+		visit(*i);
+		if (fi != formalArgs.end()) {
+			const Type* formalType = (*fi)->type->resolve(typeInfo);
+			checkAssignment(formalType, (*i)->expressionType);
+			++fi;
+		}
+
+		++i;
+	}
+
+	n->expressionType = signature->type->resolve(typeInfo);
 	return n->expressionType;
 }
 
 const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
+	n->expressionType = 0;
 	const ArrayType* t = dynamic_cast<const ArrayType*>(visit(n->ref));
 	if (t == 0) {
-		n->expressionType = 0;
 		CompilerError err;
 		err.getStream()
 				<< "Left hand side of array access must be of array type";
 		throw err;
 	}
+
+	visit(n->index);
+
+	checkAssignment(&PrimitiveType::INT32_TYPE, n->index->expressionType);
 
 	n->expressionType = t->getElementType();
 	return n->expressionType;
@@ -117,6 +155,8 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 
 const Type* juli::TypeChecker::visitAssignment(NAssignment* n) {
 	visit(n->rhs);
+	const Type* varType = symbolTable.getSymbol(n->lhs);
+	checkAssignment(varType, n->rhs->expressionType);
 	return 0;
 }
 
@@ -143,31 +183,46 @@ const Type* juli::TypeChecker::visitExpressionStatement(
 }
 
 const Type* juli::TypeChecker::visitVariableDecl(NVariableDeclaration* n) {
-	if (n->assignmentExpr)
+	if (n->assignmentExpr) {
 		visit(n->assignmentExpr);
+		const Type* varType = n->type->resolve(typeInfo);
+		checkAssignment(varType, n->assignmentExpr->expressionType);
+	}
+
 	symbolTable.addSymbol(n);
 	return 0;
 }
 
 const Type* juli::TypeChecker::visitFunctionDef(NFunctionDefinition* n) {
+	_currentFunction = n;
 	symbolTable.startScope(n->signature->arguments);
 	_newScope = false;
 	if (n->body)
 		visit(n->body);
+	_currentFunction = 0;
 	return 0;
 }
 
 const Type* juli::TypeChecker::visitReturn(NReturnStatement* n) {
-	if (n->expression)
+	if (n->expression) {
 		visit(n->expression);
+
+		checkAssignment(_currentFunction->signature->type->resolve(typeInfo),
+				n->expression->expressionType);
+	}
+
 	return 0;
 }
 
 const Type* juli::TypeChecker::visitIf(NIfStatement* n) {
 	for (vector<NIfClause*>::iterator i = n->clauses.begin();
 			i != n->clauses.end(); ++i) {
-		if ((*i)->condition)
+		if ((*i)->condition) {
 			visit((*i)->condition);
+			checkAssignment(&PrimitiveType::BOOLEAN_TYPE,
+					((*i)->condition->expressionType));
+		}
+
 		visit((*i)->body);
 	}
 	return 0;
