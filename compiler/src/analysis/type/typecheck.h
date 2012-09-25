@@ -12,13 +12,42 @@
 #include <analysis/type/declare.h>
 
 #include <map>
+#include <stack>
 
 namespace juli {
 
+class SymbolTable {
+private:
+
+	typedef std::map<std::string, const Type*> Scope;
+	typedef std::vector<Scope> ScopeStack;
+
+	ScopeStack scopes;
+	const TypeInfo& typeInfo;
+public:
+
+	SymbolTable(const TypeInfo& typeInfo);
+
+	void startScope(const std::vector<NVariableDeclaration*> functionParams);
+
+	void startScope();
+
+	void endScope();
+
+	const Type* getSymbol(const std::string& name) const;
+
+	void addSymbol(const std::string& name, const Type* type);
+
+	void addSymbol(NVariableDeclaration* node);
+
+};
+
 class TypeChecker {
 private:
-	std::map<std::string, const Type*> symbolTable;
+	SymbolTable symbolTable;
 	const TypeInfo& typeInfo;
+
+	bool _newScope;
 public:
 
 	TypeChecker(const TypeInfo& typeInfo);

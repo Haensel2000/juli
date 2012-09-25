@@ -6,10 +6,53 @@
 
 using namespace juli;
 
-juli::TypeChecker::TypeChecker(const TypeInfo& typeInfo) : typeInfo(typeInfo) {
+juli::SymbolTable::SymbolTable(const TypeInfo& typeInfo) :
+		typeInfo(typeInfo) {
+}
+
+void juli::SymbolTable::startScope(
+		const std::vector<NVariableDeclaration*> functionParams) {
+	startScope();
+	for (std::vector<NVariableDeclaration*>::const_iterator i =
+			functionParams.begin(); i != functionParams.end(); ++i) {
+		addSymbol(*i);
+	}
+}
+
+void juli::SymbolTable::startScope() {
+	scopes.push_back(std::map<std::string, const Type*>());
+}
+
+void juli::SymbolTable::endScope() {
+	scopes.pop_back();
+}
+
+const Type* juli::SymbolTable::getSymbol(const std::string& name) const {
+	for (ScopeStack::const_iterator i = --scopes.end(); i >= scopes.begin();
+			--i) {
+		Scope::const_iterator si = i->find(name);
+		if (si != i->end())
+			return si->second;
+	}
+	CompilerError err;
+	err.getStream() << "Unknown symbol " << name;
+	throw err;
+}
+
+void juli::SymbolTable::addSymbol(const std::string& name, const Type* type) {
+	scopes.back()[name] = type;
+}
+
+void juli::SymbolTable::addSymbol(NVariableDeclaration* node) {
+	addSymbol(node->name, node->type->resolve(typeInfo));
+}
+
+juli::TypeChecker::TypeChecker(const TypeInfo& typeInfo) :
+		symbolTable(typeInfo), typeInfo(typeInfo) {
 }
 
 const Type* juli::TypeChecker::visit(Node* n) {
+	_newScope = false;
 	return visitAST<TypeChecker, const Type*>(*this, n);
 }
 
@@ -26,14 +69,8 @@ const Type* juli::TypeChecker::visitStringLiteral(NStringLiteral* n) {
 }
 
 const Type* juli::TypeChecker::visitVariableRef(NIdentifier* n) {
-	try {
-		n->expressionType = symbolTable.at(n->name);
-		return n->expressionType;
-	} catch (std::out_of_range& e) {
-		CompilerError err;
-		err.getStream() << "Undeclared variable '" << n->name << "'";
-		throw err;
-	}
+	n->expressionType = symbolTable.getSymbol(n->name);
+	return n->expressionType;
 	return 0;
 }
 
@@ -44,7 +81,8 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 	n->expressionType = lhs->getCommonType(rhs);
 	if (n->expressionType == 0) {
 		CompilerError err;
-		err.getStream() << "Incompatible types '" << lhs << "' and '" << rhs << "'";
+		err.getStream() << "Incompatible types '" << lhs << "' and '" << rhs
+				<< "'";
 		throw err;
 	}
 
@@ -52,7 +90,8 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 }
 
 const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
-	n->expressionType = typeInfo.getFunction(n->id)->signature->type->resolve(typeInfo);
+	n->expressionType = typeInfo.getFunction(n->id)->signature->type->resolve(
+			typeInfo);
 
 	ExpressionList args = n->arguments;
 	for (ExpressionList::iterator i = args.begin(); i != args.end(); ++i) {
@@ -67,7 +106,8 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 	if (t == 0) {
 		n->expressionType = 0;
 		CompilerError err;
-		err.getStream() << "Left hand side of array access must be of array type";
+		err.getStream()
+				<< "Left hand side of array access must be of array type";
 		throw err;
 	}
 
@@ -81,7 +121,14 @@ const Type* juli::TypeChecker::visitAssignment(NAssignment* n) {
 }
 
 const Type* juli::TypeChecker::visitBlock(NBlock* n) {
-	for (StatementList::iterator i = n->statements.begin(); i != n->statements.end(); ++i) {
+	if (_newScope) {
+		symbolTable.startScope();
+	} else {
+		_newScope = true;
+	}
+
+	for (StatementList::iterator i = n->statements.begin();
+			i != n->statements.end(); ++i) {
 		visit(*i);
 	}
 	return 0;
@@ -96,15 +143,13 @@ const Type* juli::TypeChecker::visitExpressionStatement(
 const Type* juli::TypeChecker::visitVariableDecl(NVariableDeclaration* n) {
 	if (n->assignmentExpr)
 		visit(n->assignmentExpr);
-	symbolTable[n->name] = n->type->resolve(typeInfo);
+	symbolTable.addSymbol(n);
 	return 0;
 }
 
 const Type* juli::TypeChecker::visitFunctionDef(NFunctionDefinition* n) {
-	VariableList args = n->signature->arguments;
-	for (VariableList::iterator i = args.begin(); i != args.end(); ++i) {
-		symbolTable[(*i)->name] = (*i)->type->resolve(typeInfo);
-	}
+	symbolTable.startScope(n->signature->arguments);
+	_newScope = false;
 	if (n->body)
 		visit(n->body);
 	return 0;
@@ -117,7 +162,8 @@ const Type* juli::TypeChecker::visitReturn(NReturnStatement* n) {
 }
 
 const Type* juli::TypeChecker::visitIf(NIfStatement* n) {
-	for (vector<NIfClause*>::iterator i = n->clauses.begin(); i != n->clauses.end(); ++i) {
+	for (vector<NIfClause*>::iterator i = n->clauses.begin();
+			i != n->clauses.end(); ++i) {
 		if ((*i)->condition)
 			visit((*i)->condition);
 		visit((*i)->body);
