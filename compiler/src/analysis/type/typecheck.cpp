@@ -54,6 +54,11 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
 	n->expressionType = typeInfo.getFunction(n->id)->signature->type->resolve(typeInfo);
 
+	ExpressionList args = n->arguments;
+	for (ExpressionList::iterator i = args.begin(); i != args.end(); ++i) {
+		visit(*i);
+	}
+
 	return n->expressionType;
 }
 
@@ -71,30 +76,51 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 }
 
 const Type* juli::TypeChecker::visitAssignment(NAssignment* n) {
+	visit(n->rhs);
 	return 0;
 }
 
 const Type* juli::TypeChecker::visitBlock(NBlock* n) {
+	for (StatementList::iterator i = n->statements.begin(); i != n->statements.end(); ++i) {
+		visit(*i);
+	}
 	return 0;
 }
 
 const Type* juli::TypeChecker::visitExpressionStatement(
 		NExpressionStatement* n) {
+	visit(n->expression);
 	return 0;
 }
 
 const Type* juli::TypeChecker::visitVariableDecl(NVariableDeclaration* n) {
+	if (n->assignmentExpr)
+		visit(n->assignmentExpr);
+	symbolTable[n->name] = n->type->resolve(typeInfo);
 	return 0;
 }
 
 const Type* juli::TypeChecker::visitFunctionDef(NFunctionDefinition* n) {
+	VariableList args = n->signature->arguments;
+	for (VariableList::iterator i = args.begin(); i != args.end(); ++i) {
+		symbolTable[(*i)->name] = (*i)->type->resolve(typeInfo);
+	}
+	if (n->body)
+		visit(n->body);
 	return 0;
 }
 
 const Type* juli::TypeChecker::visitReturn(NReturnStatement* n) {
+	if (n->expression)
+		visit(n->expression);
 	return 0;
 }
 
 const Type* juli::TypeChecker::visitIf(NIfStatement* n) {
+	for (vector<NIfClause*>::iterator i = n->clauses.begin(); i != n->clauses.end(); ++i) {
+		if ((*i)->condition)
+			visit((*i)->condition);
+		visit((*i)->body);
+	}
 	return 0;
 }

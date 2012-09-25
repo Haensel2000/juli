@@ -36,6 +36,10 @@ void juli::Declarator::visitAssignment(const NAssignment* n) {
 }
 
 void juli::Declarator::visitBlock(const NBlock* n) {
+	StatementList st = n->statements;
+	for (StatementList::const_iterator i = st.begin(); i != st.end(); ++i) {
+		visit(*i);
+	}
 }
 
 void juli::Declarator::visitExpressionStatement(const NExpressionStatement* n) {
