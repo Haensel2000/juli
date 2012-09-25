@@ -23,6 +23,9 @@ void juli::Declarator::visitStringLiteral(const NStringLiteral* n) {
 void juli::Declarator::visitVariableRef(const NIdentifier* n) {
 }
 
+void juli::Declarator::visitCast(const NCast* n) {
+}
+
 void juli::Declarator::visitBinaryOperator(const NBinaryOperator* n) {
 }
 

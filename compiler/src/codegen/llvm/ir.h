@@ -13,6 +13,8 @@
 #include <parser/ast/ast.h>
 #include <codegen/llvm/translationUnit.h>
 
+#include <utility>
+
 namespace juli {
 
 class IRGenerator {
@@ -33,6 +35,8 @@ public:
 	llvm::Value* visitStringLiteral(const NStringLiteral* n);
 
 	llvm::Value* visitVariableRef(const NIdentifier* n);
+
+	llvm::Value* visitCast(const NCast* n);
 
 	llvm::Value* visitBinaryOperator(const NBinaryOperator* n);
 
@@ -61,6 +65,7 @@ public:
 	llvm::Value* visitIf(const NIfStatement* n);
 
 	llvm::Type* resolveType(const NType* n);
+	llvm::Type* resolveType(const Type* n);
 
 	IRGenerator(const std::string& moduleName, const TypeInfo& typeInfo) :
 			translationUnit(moduleName, typeInfo), builder(translationUnit.getContext()), module(

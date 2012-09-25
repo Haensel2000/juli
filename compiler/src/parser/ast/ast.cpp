@@ -124,6 +124,31 @@ void juli::NIdentifier::print(std::ostream& os, int indent,
 	}
 }
 
+juli::NCast::NCast(NExpression* expression, NType* target) : NExpression(CAST),
+		expression(expression), target(target) {
+
+}
+
+void juli::NCast::print(std::ostream& os, int indent, unsigned int flags) const {
+	beginLine(os, indent);
+
+	if (flags & FLAG_TREE) {
+		if (!target)
+			os << "Implicit ";
+		os << "Cast: ";
+		printType(os);
+		expression->print(os, indent+2, flags);
+		if (target)
+			target->print(os, indent+2, flags);
+	} else {
+		if (target)
+			os << "(" << target << ")";
+		else
+			os << "(implicit)";
+		os << expression;
+	}
+}
+
 juli::NFunctionCall::NFunctionCall(const std::string& id,
 		ExpressionList& arguments) :
 		NExpression(FUNCTION_CALL), id(id), arguments(arguments) {

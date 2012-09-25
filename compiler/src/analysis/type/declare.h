@@ -37,6 +37,8 @@ public:
 
 	void visitVariableRef(const NIdentifier* n);
 
+	void visitCast(const NCast* n);
+
 	void visitBinaryOperator(const NBinaryOperator* n);
 
 	void visitFunctionCall(const NFunctionCall* n);

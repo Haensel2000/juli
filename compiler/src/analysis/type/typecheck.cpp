@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include <debug/print.h>
+#include <cassert>
 
 using namespace juli;
 
@@ -53,13 +54,21 @@ juli::TypeChecker::TypeChecker(const TypeInfo& typeInfo) :
 	_currentFunction = 0;
 }
 
-void juli::TypeChecker::checkAssignment(const Type* left, const Type* right,
-		const std::string& message) const {
-	if (!right->isAssignableTo(left)) {
-		CompilerError err;
-		err.getStream() << message << "Invalid Types: Cannot assign " << right
-				<< " to " << left;
-		throw err;
+NExpression* juli::TypeChecker::checkAssignment(const Type* left,
+		NExpression* right, const std::string& message) const {
+	if (!(*left == *right->expressionType)) {
+
+		if (!right->expressionType->isAssignableTo(left)) {
+			CompilerError err;
+			err.getStream() << message << "Invalid Types: Cannot assign "
+					<< right << " to " << left;
+			throw err;
+		}
+		NCast* c = new NCast(right, 0);
+		c->expressionType = left;
+		return c;
+	} else {
+		return right;
 	}
 }
 
@@ -85,6 +94,20 @@ const Type* juli::TypeChecker::visitVariableRef(NIdentifier* n) {
 	return 0;
 }
 
+const Type* juli::TypeChecker::visitCast(NCast* n) {
+	assert(n->target);
+	n->expressionType = n->target->resolve(typeInfo);
+	visit(n->expression);
+
+	if (!n->expression->expressionType->canCastTo(n->expressionType)) {
+		n->expressionType = 0;
+		CompilerError err;
+		err.getStream() << "Invalid Explicit Cast: Cannot cast "
+				<< n->expression->expressionType << " to " << n->expressionType;
+	}
+	return n->expressionType;
+}
+
 const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 	const Type* lhs = visit(n->lhs);
 	const Type* rhs = visit(n->rhs);
@@ -105,8 +128,8 @@ const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
 
 	n->expressionType = 0;
 
-	ExpressionList args = n->arguments;
-	VariableList formalArgs = signature->arguments;
+	ExpressionList& args = n->arguments;
+	VariableList& formalArgs = signature->arguments;
 
 	if (args.size() < formalArgs.size()
 			|| (args.size() > formalArgs.size() && !signature->varArgs)) {
@@ -119,15 +142,17 @@ const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
 
 	ExpressionList::iterator i = args.begin();
 	VariableList::iterator fi = formalArgs.begin();
+
 	int c = 1;
 	while (i != args.end()) {
 		visit(*i);
 		if (fi != formalArgs.end()) {
 			const Type* formalType = (*fi)->type->resolve(typeInfo);
-			checkAssignment(formalType, (*i)->expressionType);
+			*i = checkAssignment(formalType, *i);
 			++fi;
 		}
 
+		++c;
 		++i;
 	}
 
@@ -147,7 +172,7 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 
 	visit(n->index);
 
-	checkAssignment(&PrimitiveType::INT32_TYPE, n->index->expressionType);
+	n->index = checkAssignment(&PrimitiveType::INT32_TYPE, n->index);
 
 	n->expressionType = t->getElementType();
 	return n->expressionType;
@@ -156,7 +181,7 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 const Type* juli::TypeChecker::visitAssignment(NAssignment* n) {
 	visit(n->rhs);
 	const Type* varType = symbolTable.getSymbol(n->lhs);
-	checkAssignment(varType, n->rhs->expressionType);
+	n->rhs = checkAssignment(varType, n->rhs);
 	return 0;
 }
 
@@ -186,7 +211,7 @@ const Type* juli::TypeChecker::visitVariableDecl(NVariableDeclaration* n) {
 	if (n->assignmentExpr) {
 		visit(n->assignmentExpr);
 		const Type* varType = n->type->resolve(typeInfo);
-		checkAssignment(varType, n->assignmentExpr->expressionType);
+		n->assignmentExpr = checkAssignment(varType, n->assignmentExpr);
 	}
 
 	symbolTable.addSymbol(n);
@@ -207,8 +232,9 @@ const Type* juli::TypeChecker::visitReturn(NReturnStatement* n) {
 	if (n->expression) {
 		visit(n->expression);
 
-		checkAssignment(_currentFunction->signature->type->resolve(typeInfo),
-				n->expression->expressionType);
+		n->expression = checkAssignment(
+				_currentFunction->signature->type->resolve(typeInfo),
+				n->expression);
 	}
 
 	return 0;
@@ -219,8 +245,8 @@ const Type* juli::TypeChecker::visitIf(NIfStatement* n) {
 			i != n->clauses.end(); ++i) {
 		if ((*i)->condition) {
 			visit((*i)->condition);
-			checkAssignment(&PrimitiveType::BOOLEAN_TYPE,
-					((*i)->condition->expressionType));
+			(*i)->condition = checkAssignment(&PrimitiveType::BOOLEAN_TYPE,
+					((*i)->condition));
 		}
 
 		visit((*i)->body);

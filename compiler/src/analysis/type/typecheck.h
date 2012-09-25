@@ -53,7 +53,7 @@ public:
 
 	TypeChecker(const TypeInfo& typeInfo);
 
-	void checkAssignment(const Type* left, const Type* right, const std::string& message = "") const;
+	NExpression* checkAssignment(const Type* left, NExpression* right, const std::string& message = "") const;
 
 	const Type* visit(Node* n);
 
@@ -64,6 +64,8 @@ public:
 	const Type* visitStringLiteral(NStringLiteral* n);
 
 	const Type* visitVariableRef(NIdentifier* n);
+
+	const Type* visitCast(NCast* n);
 
 	const Type* visitBinaryOperator(NBinaryOperator* n);
 

@@ -16,9 +16,17 @@ enum Primitive {
 	INT8 = 0, INT32 = 1, FLOAT64 = 2, BOOLEAN = -1, VOID = -2
 };
 
-class Type: public cpputils::debug::Printable {
+enum TypeCategory {
+	PRIMITIVE,
+	ARRAY
+};
 
+class Type: public cpputils::debug::Printable {
+private:
+	TypeCategory category;
 public:
+	Type(TypeCategory category);
+
 	virtual ~Type() {
 	}
 
@@ -26,7 +34,11 @@ public:
 
 	virtual bool isAssignableTo(const Type* t) const = 0;
 
+	virtual bool canCastTo(const Type* t) const = 0;
+
 	virtual bool operator==(const Type& t) const = 0;
+
+	TypeCategory getCategory() const;
 };
 
 class PrimitiveType: public Type {
@@ -53,6 +65,8 @@ public:
 	virtual const Type* getCommonType(const Type* t) const;
 
 	virtual bool isAssignableTo(const Type* t) const;
+
+	virtual bool canCastTo(const Type* t) const;
 };
 
 class ArrayType: public Type {
@@ -72,6 +86,8 @@ public:
 	virtual const Type* getCommonType(const Type* t) const;
 
 	virtual bool isAssignableTo(const Type* t) const;
+
+	virtual bool canCastTo(const Type* t) const;
 };
 
 }

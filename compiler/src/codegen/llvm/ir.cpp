@@ -11,6 +11,10 @@
 
 using namespace juli;
 
+llvm::Type* juli::IRGenerator::resolveType(const Type* n) {
+	return translationUnit.resolveLLVMType(n);
+}
+
 llvm::Type* juli::IRGenerator::resolveType(const NType* n) {
 	return translationUnit.resolveLLVMType(n);
 }
@@ -44,6 +48,69 @@ llvm::Value* juli::IRGenerator::visitVariableRef(const NIdentifier* n) {
 	if (!v)
 		std::cerr << "Unknown variable name " << n->name << std::endl;
 	return builder.CreateLoad(v);
+}
+
+llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
+	llvm::Value* v = visit(n->expression);
+	llvm::Type* targetType = resolveType(n->expressionType);
+	const Type* tfrom = n->expression->expressionType;
+	const Type* tto = n->expressionType;
+	if (tfrom->getCategory() == PRIMITIVE) {
+		if (tto->getCategory() == PRIMITIVE) {
+			const PrimitiveType* from =
+					dynamic_cast<const PrimitiveType*>(tfrom);
+			const PrimitiveType* to = dynamic_cast<const PrimitiveType*>(tto);
+
+			Primitive fp = from->getPrimitive();
+			Primitive tp = to->getPrimitive();
+			bool firstIsInt = (fp >= INT8 && fp <= INT32);
+			bool secondIsInt = (tp >= INT8 && tp <= INT32);
+			bool firstIsUnsigned = (firstIsInt);
+			bool secondIsUnsigned = (secondIsInt);
+
+//			std::cerr << "VISITING CAST:" << std::endl;
+//			std::cerr << "From = " << from << std::endl;
+//			std::cerr << "To = " << to << std::endl;
+//
+//			std::cerr << "fp = " << fp << std::endl;
+//			std::cerr << "tp = " << tp << std::endl;
+//			std::cerr << "firstIsInt = " << firstIsInt << std::endl;
+//			std::cerr << "secondIsInt = " << secondIsInt << std::endl;
+//			std::cerr << "firstIsUnsigned = " << firstIsUnsigned << std::endl;
+//			std::cerr << "secondIsUnsigned = " << secondIsUnsigned << std::endl;
+//
+//			std::cerr << "targetType = ";
+//			targetType->dump();
+//			std::cerr << "  valueType = ";
+//			v->getType()->dump();
+//			std::cerr << std::endl;
+
+			if (firstIsInt && secondIsInt) {
+				if (fp > tp) {
+					return builder.CreateTrunc(v, targetType);
+				} else {
+					if (firstIsUnsigned) {
+						return builder.CreateSExt(v, targetType);
+					} else {
+						return builder.CreateZExt(v, targetType);
+					}
+				}
+			} else if (firstIsInt) {
+				if (firstIsUnsigned) {
+					return builder.CreateUIToFP(v, targetType);
+				} else {
+					return builder.CreateSIToFP(v, targetType);
+				}
+			} else if (secondIsInt) {
+				if (secondIsUnsigned) {
+					return builder.CreateFPToUI(v, targetType);
+				} else {
+					return builder.CreateFPToSI(v, targetType);
+				}
+			}
+
+		}
+	}
 }
 
 llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {

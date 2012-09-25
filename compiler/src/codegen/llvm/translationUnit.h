@@ -32,7 +32,7 @@ namespace juli {
 		const TypeInfo& types;
 		mutable std::vector<CompilerError> compilerErrors;
 
-		llvm::Type* resolveLLVMType(const Type* t) const throw (CompilerError);
+
 	public:
 		llvm::Module* module;
 
@@ -43,6 +43,7 @@ namespace juli {
 		llvm::LLVMContext& getContext() const;
 
 		const Type* getVariableType(const std::string& name) const throw (CompilerError);
+		llvm::Type* resolveLLVMType(const Type* t) const throw (CompilerError);
 		llvm::Type* resolveLLVMType(const NType* t) const throw (CompilerError);
 
 		std::map<std::string, llvm::Value*>& getLLVMSymbolTable() {

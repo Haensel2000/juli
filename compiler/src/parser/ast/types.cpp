@@ -8,8 +8,16 @@ const PrimitiveType juli::PrimitiveType::INT8_TYPE(INT8);
 const PrimitiveType juli::PrimitiveType::INT32_TYPE(INT32);
 const PrimitiveType juli::PrimitiveType::FLOAT64_TYPE(FLOAT64);
 
+juli::Type::Type(TypeCategory category) :
+		category(category) {
+}
+
+TypeCategory juli::Type::getCategory() const {
+	return category;
+}
+
 juli::PrimitiveType::PrimitiveType(Primitive primitive) :
-		primitive(primitive) {
+		Type(PRIMITIVE), primitive(primitive) {
 }
 
 juli::PrimitiveType::~PrimitiveType() {
@@ -75,8 +83,17 @@ bool juli::PrimitiveType::isAssignableTo(const Type* t) const {
 	}
 }
 
+bool juli::PrimitiveType::canCastTo(const Type* t) const {
+	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(t);
+	if (pt) {
+		return (primitive != VOID && pt->primitive != VOID);
+	} else {
+		return false;
+	}
+}
+
 juli::ArrayType::ArrayType(const Type* elementType) :
-		elementType(elementType) {
+		Type(ARRAY), elementType(elementType) {
 }
 
 juli::ArrayType::~ArrayType() {
@@ -106,4 +123,8 @@ const Type* juli::ArrayType::getCommonType(const Type* t) const {
 
 bool juli::ArrayType::isAssignableTo(const Type* t) const {
 	return (*this == *t);
+}
+
+bool juli::ArrayType::canCastTo(const Type* t) const {
+	return isAssignableTo(t);
 }

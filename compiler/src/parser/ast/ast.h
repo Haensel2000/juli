@@ -113,6 +113,16 @@ public:
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
+class NCast : public NExpression {
+public:
+	NExpression* expression;
+	NType* target;
+
+	NCast(NExpression* expression, NType* target);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+};
+
 class NFunctionCall: public NExpression {
 public:
 	const std::string id;
