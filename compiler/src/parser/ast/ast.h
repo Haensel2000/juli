@@ -18,106 +18,6 @@
 
 namespace juli {
 
-class NExpression: public Node {
-public:
-	const Type* expressionType;
-
-	NExpression(NodeType nodeType, const Type* expressionType = 0) :
-			Node(nodeType), expressionType(expressionType) {
-	}
-
-	const Type* getExpressionType() const {
-		return expressionType;
-	}
-
-	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const = 0;
-};
-
-class NStatement: public Node {
-public:
-	NStatement(NodeType nodeType) :
-			Node(nodeType) {
-	}
-
-	//virtual void generateCode(llvm::IRBuilder<>& builder) const = 0;
-};
-
-template<typename T>
-class NLiteral: public NExpression {
-public:
-	T value;
-
-	NLiteral(NodeType nodeType, T value, const Type* type) :
-			NExpression(nodeType, type), value(value) {
-	}
-
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << value;
-	}
-};
-
-class NStringLiteral: public NLiteral<std::string> {
-protected:
-	std::string origValue;
-public:
-	NStringLiteral(std::string value) :
-			NLiteral<std::string>(STRING_LITERAL, value,
-					new ArrayType(&PrimitiveType::INT8_TYPE)) {
-
-		std::stringstream sstream;
-		unsigned char escCount = 0;
-		for (std::string::iterator i = value.begin(); i != value.end(); ++i) {
-			if (*i == '\\') {
-				escCount++;
-			} else if (escCount == 1) {
-				switch (*i) {
-				case 'n':
-					sstream << "\n";
-					break;
-				default:
-					sstream << "\\" << *i;
-					break;
-				}
-				escCount = 0;
-			} else if (escCount > 1) {
-				for (int j = 0; j < escCount; ++j)
-					sstream << "\\";
-				sstream << *i;
-			} else {
-				sstream << *i;
-			}
-		}
-
-		origValue = value;
-		this->value = sstream.str();
-
-	}
-
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << "\"" << origValue << "\"";
-	}
-
-	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
-};
-
-class NIdentifier: public NExpression {
-public:
-	std::string name;
-
-	NIdentifier(const std::string& name) :
-			NExpression(VARIABLE_REF), name(name) {
-	}
-
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << name;
-	}
-
-	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
-};
-
 class NType: public Indentable {
 public:
 	virtual ~NType() {
@@ -134,14 +34,9 @@ public:
 	virtual ~NBasicType() {
 	}
 
-	NBasicType(const std::string& name) :
-			name(name) {
-	}
+	NBasicType(const std::string& name);
 
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << name;
-	}
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 
 	virtual const juli::Type* resolve(const TypeInfo& types) const
 			throw (CompilerError);
@@ -155,134 +50,132 @@ public:
 	virtual ~NArrayType() {
 	}
 
-	NArrayType(NType* elementType) :
-			elementType(elementType) {
-	}
+	NArrayType(NType* elementType);
 
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << elementType << "[]";
-	}
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 
 	virtual const juli::Type* resolve(const TypeInfo& types) const
 			throw (CompilerError);
+};
+
+class NExpression: public Node {
+public:
+	const Type* expressionType;
+
+	NExpression(NodeType nodeType, const Type* expressionType = 0);
+
+	const Type* getExpressionType() const;
+
+	void printType(std::ostream& os) const;
+};
+
+class NStatement: public Node {
+public:
+	NStatement(NodeType nodeType);
+};
+
+template<typename T>
+class NLiteral: public NExpression {
+public:
+	T value;
+
+	NLiteral(NodeType nodeType, T value, const Type* type) :
+			NExpression(nodeType, type), value(value) {
+	}
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const {
+		beginLine(os, indent);
+
+		if (flags & FLAG_TREE) {
+			os << "Literal: " << value;
+			printType(os);
+		} else {
+			os << value;
+		}
+	}
+};
+
+class NStringLiteral: public NLiteral<std::string> {
+protected:
+	std::string origValue;
+public:
+	NStringLiteral(std::string value);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+};
+
+class NIdentifier: public NExpression {
+public:
+	std::string name;
+
+	NIdentifier(const std::string& name);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
 class NFunctionCall: public NExpression {
 public:
 	const std::string id;
 	ExpressionList arguments;
-	NFunctionCall(const std::string& id, ExpressionList& arguments) :
-			NExpression(FUNCTION_CALL), id(id), arguments(arguments) {
-	}
 
-	NFunctionCall(const std::string& id) :
-			NExpression(FUNCTION_CALL), id(id) {
-	}
+	NFunctionCall(const std::string& id, ExpressionList& arguments);
 
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << id << "(" << arguments << ")";
-	}
+	NFunctionCall(const std::string& id);
 
-	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
-//class NDoubleLiteral: public NLiteral<double> {
-//public:
-//	NDoubleLiteral(double value) :
-//			NLiteral<double>(DOUBLE_LITERAL, value) {
-//	}
-//
-//	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
-//};
+class NArrayAccess: public NExpression {
+public:
+	NExpression* ref;
+	NExpression* index;
+
+	NArrayAccess(NExpression* ref, NExpression* index);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+};
 
 class NBinaryOperator: public NExpression {
 public:
 	NExpression* lhs;
 	Operator op;
 	NExpression* rhs;
-	NBinaryOperator(NExpression* lhs, Operator op, NExpression* rhs) :
-			NExpression(BINARY_OPERATOR), lhs(lhs), op(op), rhs(rhs) {
-	}
 
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
+	NBinaryOperator(NExpression* lhs, Operator op, NExpression* rhs);
 
-		std::string opStr;
-		switch (op) {
-		case PLUS:
-			opStr = "+";
-			break;
-		default:
-			opStr = "?";
-			break;
-		}
+	std::string opStr() const;
 
-		os << "(" << lhs << " " << opStr << " " << rhs << ")";
-	}
-
-	//virtual llvm::Value* generateCode(llvm::IRBuilder<>& builder) const;
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
 class NAssignment: public NStatement {
 public:
 	const std::string lhs;
 	NExpression* rhs;
-	NAssignment(const std::string& lhs, NExpression* rhs) :
-			NStatement(ASSIGNMENT), lhs(lhs), rhs(rhs) {
-	}
-	//virtual llvm::Value* codeGen(CodeGenContext& context);
 
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
+	NAssignment(const std::string& lhs, NExpression* rhs);
 
-		os << lhs << " = " << rhs;
-	}
-
-	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
 class NBlock: public NStatement {
 public:
 	StatementList statements;
-	NBlock() :
-			NStatement(BLOCK) {
-	}
-	//virtual llvm::Value* codeGen(CodeGenContext& context);
 
-	void addStatement(NStatement* statement) {
-		statements.push_back(statement);
-	}
+	NBlock();
 
-	virtual void print(std::ostream& os, int indent) const {
-		for (std::vector<NStatement*>::const_iterator i = statements.begin();
-				i != statements.end(); ++i) {
-			(*i)->print(os, indent + 2);
-			beginLine(os, indent);
-			os << ";" << std::endl;
-			//os << **i << std::endl;
-		}
-	}
+	void addStatement(NStatement* statement);
 
-	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
 class NExpressionStatement: public NStatement {
 public:
 	NExpression* expression;
 
-	NExpressionStatement(NExpression* expression) :
-			NStatement(EXPRESSION), expression(expression) {
-	}
-	//virtual llvm::Value* codeGen(CodeGenContext& context);
+	NExpressionStatement(NExpression* expression);
 
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << expression;
-	}
-
-	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
 class NVariableDeclaration: public NStatement {
@@ -292,85 +185,42 @@ public:
 	NExpression* assignmentExpr;
 
 	NVariableDeclaration(NType* type, const std::string& name,
-			NExpression *assignmentExpr = 0) :
-			NStatement(VARIABLE_DECL), name(name), type(type), assignmentExpr(
-					assignmentExpr) {
-	}
+			NExpression *assignmentExpr = 0);
 
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << type << " " << name;
-		if (assignmentExpr) {
-			os << " = " << assignmentExpr;
-		}
-	}
-
-	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
-class NFunctionSignature : public NStatement {
+class NFunctionSignature: public Indentable {
 public:
 	const std::string name;
 	const NType* type;
 	VariableList arguments;
 	bool varArgs;
 
-	NFunctionSignature (const NType* type, const std::string& name,
-			const VariableList arguments, bool varArgs = false) :
-			NStatement(FUNCTION_DECL), name(name), type(type), arguments(
-					arguments), varArgs(varArgs) {
-	}
+	NFunctionSignature(const NType* type, const std::string& name,
+			const VariableList arguments, bool varArgs = false);
 
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << type << " " << name << "(" << arguments;
-		if (varArgs)
-			os << ", ...";
-		os << ")";
-	}
-
-	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 
 };
 
-class NFunctionDefinition: public NStatement  {
+class NFunctionDefinition: public NStatement {
 public:
 	NFunctionSignature * signature;
 	NBlock* body;
 
-	NFunctionDefinition(NFunctionSignature * signature, NBlock* body) :
-			NStatement(FUNCTION_DEF), signature(signature), body(body) {
-	}
-	//virtual llvm::Value* codeGen(CodeGenContext& context);
+	NFunctionDefinition(NFunctionSignature * signature, NBlock* body);
 
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << signature << std::endl;
-		if (body) {
-			os << body;
-		}
-	}
-
-	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
 class NReturnStatement: public NStatement {
 public:
 	NExpression* expression;
 
-	NReturnStatement(NExpression* expression) :
-			NStatement(RETURN), expression(expression) {
-	}
+	NReturnStatement(NExpression* expression);
 
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << "return ";
-		if (expression)
-			os << expression;
-
-	}
-
-	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
 class NIfClause {
@@ -379,9 +229,7 @@ public:
 	NExpression* condition;
 	NBlock* body;
 
-	NIfClause(NExpression* condition, NBlock* body) :
-			condition(condition), body(body) {
-	}
+	NIfClause(NExpression* condition, NBlock* body);
 
 };
 
@@ -389,43 +237,10 @@ class NIfStatement: public NStatement {
 public:
 	std::vector<NIfClause*> clauses;
 
-	NIfStatement(std::vector<NIfClause*> clauses) :
-			NStatement(IF), clauses(clauses) {
-	}
+	NIfStatement(std::vector<NIfClause*> clauses);
 
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		std::vector<NIfClause*>::const_iterator first = clauses.begin();
-		os << "if " << (*first)->condition << std::endl;
-		os << (*first)->body;
-		for (std::vector<NIfClause*>::const_iterator i = ++first;
-				i != clauses.end(); ++i) {
-			if ((*i)->condition)
-				os << "else if " << (*i)->condition << std::endl;
-			else
-				os << "else" << std::endl;
-			os << (*i)->body;
-		}
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 
-	}
-
-	//virtual void generateCode(llvm::IRBuilder<>& builder) const;
-
-};
-
-class NArrayAccess: public NExpression {
-public:
-	NExpression* ref;
-	NExpression* index;
-
-	NArrayAccess(NExpression* ref, NExpression* index) :
-			NExpression(ARRAY_ACCESS), ref(ref), index(index) {
-	}
-
-	virtual void print(std::ostream& os, int indent) const {
-		beginLine(os, indent);
-		os << ref << "[" << index << "]";
-	}
 };
 
 }

@@ -44,13 +44,14 @@ int main(int argc, char **argv) {
 	for (int i = 1; i < argc; ++i) {
 		std::cout << "Building file: " << argv[i] << std::endl;
 		NBlock* ast = parser.parse(argv[i]);
-		std::cout << ast << std::endl;
 		try {
 			Declarator declarator;
 			declarator.visit(ast);
 
 			TypeChecker typeChecker(declarator.getTypeInfo());
 			typeChecker.visit(ast);
+
+			ast->print(std::cout, 0, Indentable::FLAG_TREE);
 
 			IRGenerator irgen("test", declarator.getTypeInfo());
 			irgen.process(ast);

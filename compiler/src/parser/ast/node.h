@@ -40,7 +40,6 @@ enum NodeType {
 	BLOCK,
 	IF,
 	RETURN,
-	FUNCTION_DECL,
 	FUNCTION_DEF
 };
 
@@ -53,7 +52,9 @@ public:
 		os << std::string(indent * 2, ' ');
 	}
 
-	virtual void print(std::ostream& os, int indent) const = 0;
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const = 0;
+
+	static const unsigned int FLAG_TREE;
 
 };
 
