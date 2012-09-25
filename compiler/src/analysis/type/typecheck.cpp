@@ -131,6 +131,8 @@ const Type* juli::TypeChecker::visitBlock(NBlock* n) {
 			i != n->statements.end(); ++i) {
 		visit(*i);
 	}
+
+	symbolTable.endScope();
 	return 0;
 }
 
