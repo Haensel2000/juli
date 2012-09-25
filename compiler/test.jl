@@ -1,6 +1,6 @@
 int printf(char[] s, ...);
 
-double add(double x, double y) {
+double add(double x, int y) {
 	return x + y;
 }
 

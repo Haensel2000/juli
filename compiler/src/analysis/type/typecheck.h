@@ -55,6 +55,8 @@ public:
 
 	NExpression* checkAssignment(const Type* left, NExpression* right, const std::string& message = "") const;
 
+	NExpression* coerce(NExpression* e, const Type* type);
+
 	const Type* visit(Node* n);
 
 	const Type* visitDoubleLiteral(NLiteral<double>* n);

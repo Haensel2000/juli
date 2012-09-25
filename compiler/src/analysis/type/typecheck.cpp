@@ -72,6 +72,16 @@ NExpression* juli::TypeChecker::checkAssignment(const Type* left,
 	}
 }
 
+NExpression* juli::TypeChecker::coerce(NExpression* e, const Type* type) {
+	if (!(*e->expressionType == *type)) {
+		NCast* c = new NCast(e, 0);
+		c->expressionType = type;
+		return c;
+	} else {
+		return e;
+	}
+}
+
 const Type* juli::TypeChecker::visit(Node* n) {
 	return visitAST<TypeChecker, const Type*>(*this, n);
 }
@@ -118,6 +128,9 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 		err.getStream() << "Incompatible types '" << lhs << "' and '" << rhs
 				<< "'";
 		throw err;
+	} else {
+		n->lhs = coerce(n->lhs, n->expressionType);
+		n->rhs = coerce(n->rhs, n->expressionType);
 	}
 
 	return n->expressionType;

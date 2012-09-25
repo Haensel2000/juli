@@ -62,9 +62,9 @@ const Type* juli::PrimitiveType::getCommonType(const Type* t) const {
 			return 0;
 
 		if (primitive < pt->primitive)
-			return this;
-		else
 			return pt;
+		else
+			return this;
 	} else {
 		return 0;
 	}
