@@ -193,6 +193,24 @@ void juli::NArrayAccess::print(std::ostream& os, int indent,
 	}
 }
 
+juli::NUnaryOperator::NUnaryOperator(NExpression* expression, Operator op) :
+		NExpression(UNARY_OPERATOR), expression(expression), op(op) {
+
+}
+
+void juli::NUnaryOperator::print(std::ostream& os, int indent,
+		unsigned int flags) const {
+	beginLine(os, indent);
+
+	if (flags & FLAG_TREE) {
+		os << "UnaryOperator: " << op;
+		printType(os);
+		expression->print(os, indent + 2, flags);
+	} else {
+		os << op << expression;
+	}
+}
+
 juli::NBinaryOperator::NBinaryOperator(NExpression* lhs, Operator op,
 		NExpression* rhs) :
 		NExpression(BINARY_OPERATOR), lhs(lhs), op(op), rhs(rhs) {
@@ -351,11 +369,11 @@ void juli::NWhileStatement::print(std::ostream& os, int indent,
 
 	if (flags & FLAG_TREE) {
 		os << "While: " << std::endl;
-		condition->print(os, indent+2, flags);
-		body->print(os, indent+2, flags);
+		condition->print(os, indent + 2, flags);
+		body->print(os, indent + 2, flags);
 	} else {
 		os << "while (" << condition << ")" << std::endl;
-		body->print(os, indent+2, flags);
+		body->print(os, indent + 2, flags);
 	}
 }
 

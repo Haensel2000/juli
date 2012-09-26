@@ -59,5 +59,10 @@ int factor(int v)
 void main(int argc, char[][] argv) 
 {
 	factor(parse(argv[1]));
+	int i = 3;
+	if ((i > 3)) {
+		printf("haha");
+	}
+
 	return;
 }

@@ -38,6 +38,8 @@ public:
 
 	llvm::Value* visitCast(const NCast* n);
 
+	llvm::Value* visitUnaryOperator(const NUnaryOperator* n);
+
 	llvm::Value* visitBinaryOperator(const NBinaryOperator* n);
 
 	llvm::Value* visitFunctionCall(const NFunctionCall* n);

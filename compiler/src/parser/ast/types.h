@@ -39,6 +39,8 @@ public:
 
 	virtual bool operator==(const Type& t) const = 0;
 
+	virtual const Type* getUnaryOperatorType(Operator op) const = 0;
+
 	virtual const Type* supportsBinaryOperator(Operator op, const Type* t) const = 0;
 
 	TypeCategory getCategory() const;
@@ -79,6 +81,8 @@ public:
 
 	virtual bool canCastTo(const Type* t) const;
 
+	virtual const Type* getUnaryOperatorType(Operator op) const;
+
 	virtual const Type* supportsBinaryOperator(Operator op, const Type* t) const;
 };
 
@@ -101,6 +105,8 @@ public:
 	virtual bool isAssignableTo(const Type* t) const;
 
 	virtual bool canCastTo(const Type* t) const;
+
+	virtual const Type* getUnaryOperatorType(Operator op) const;
 
 	virtual const Type* supportsBinaryOperator(Operator op, const Type* t) const;
 };

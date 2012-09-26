@@ -131,6 +131,26 @@ bool juli::PrimitiveType::canCastTo(const Type* t) const {
 	}
 }
 
+const Type* juli::PrimitiveType::getUnaryOperatorType(Operator op) const {
+
+	switch (op) {
+	case NOT:
+		if (primitive == BOOLEAN)
+			return &PrimitiveType::BOOLEAN_TYPE;
+		else
+			return 0;
+	case TILDE:
+		// bitwise inverse:
+		if (isInteger() || primitive == BOOLEAN)
+			return this;
+		else
+			return 0;
+	case HASH:
+		return 0;
+	}
+
+}
+
 const Type* juli::PrimitiveType::supportsBinaryOperator(Operator op,
 		const Type* t) const {
 	if (*this == *t)
@@ -145,7 +165,7 @@ const Type* juli::PrimitiveType::supportsBinaryOperator(Operator op,
 			else
 				return 0;
 		case PLUS:
-		case MINUS:
+		case SUB:
 		case MUL:
 		case DIV:
 		case EQ:
@@ -211,6 +231,18 @@ bool juli::ArrayType::isAssignableTo(const Type* t) const {
 
 bool juli::ArrayType::canCastTo(const Type* t) const {
 	return isAssignableTo(t);
+}
+
+const Type* juli::ArrayType::getUnaryOperatorType(Operator op) const {
+
+	switch (op) {
+	case NOT:
+	case TILDE:
+		return 0;
+	case HASH:
+		return &PrimitiveType::INT32_TYPE;
+	}
+
 }
 
 const Type* juli::ArrayType::supportsBinaryOperator(Operator op,

@@ -113,6 +113,24 @@ llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
 	}
 }
 
+llvm::Value* juli::IRGenerator::visitUnaryOperator(const NUnaryOperator* n) {
+	llvm::Value* expressionValue = visit(n->expression);
+
+	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(n->expressionType);
+
+	switch (n->op) {
+	case NOT:
+	case TILDE:
+		return builder.CreateNot(expressionValue, "not_res");
+	case HASH:
+		return 0; /* TODO */
+	default:
+		std::cerr << "Unsupported unary operator " << n->op << std::endl;
+		return 0;
+	}
+	return 0;
+}
+
 llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 	llvm::Value* left = visit(n->lhs);
 	llvm::Value* right = visit(n->rhs);
@@ -129,7 +147,7 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 		else if (pt->isInteger())
 			return builder.CreateAdd(left, right, "add_res");
 		break;
-	case MINUS:
+	case SUB:
 		if (pt->isFloatingPoint())
 			return builder.CreateFSub(left, right, "sub_res");
 		else if (pt->isInteger())

@@ -203,14 +203,45 @@ mul returns [juli::NExpression* result = 0]
    juli::Operator type = juli::UNKNOWN;
 }
 :
-  op1=array_access { result=op1; }
+  op1=unary { result=op1; }
   (
     ( OP_MUL    { type = juli::MUL; }
     | OP_DIV    { type = juli::DIV; }
     | OP_MOD    { type = juli::MOD; }
     )
-    op2=array_access  { result = new juli::NBinaryOperator(result, type, op2); }
+    op2=unary  { result = new juli::NBinaryOperator(result, type, op2); }
   )*
+;
+
+unary returns [juli::NExpression* result = 0]
+@declarations
+{
+  juli::Operator type = juli::UNKNOWN;
+  juli::NUnaryOperator* current = 0;
+}:
+  (
+    ( OP_NOT    { type = juli::NOT; }
+    | OP_TILDE  { type = juli::TILDE; }
+    | OP_HASH   { type = juli::HASH; }
+    )
+    {
+      if (current) {
+        juli::NUnaryOperator* uop = new juli::NUnaryOperator(0, type);
+        current->expression = uop;
+        current = uop;
+      } else {
+        current = new juli::NUnaryOperator(0, type);
+      }
+    }
+  )*
+  
+  op=array_access  
+  { 
+    if (current)
+      current->expression = op;
+    else
+      result = op;
+  }
 ;
 
 array_access returns [juli::NExpression* result = 0]:
@@ -361,6 +392,9 @@ OP_LEQ : '<=' ;
 OP_GEQ : '>=' ;
 OP_LOR : 'or' ;
 OP_LAND : 'and' ;
+OP_NOT : 'not' ;
+OP_TILDE : '~' ;
+OP_HASH : '#' ;
     
 Identifier 
     :   Letter (Letter|JavaIDDigit)*

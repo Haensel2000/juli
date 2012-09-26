@@ -32,6 +32,8 @@ ReturnValue visitAST(Handler& handler, const Node* n) {
 		return handler.visitFunctionCall((NFunctionCall*) n);
 	case ARRAY_ACCESS:
 		return handler.visitArrayAccess((NArrayAccess*) n);
+	case UNARY_OPERATOR:
+		return handler.visitUnaryOperator((NUnaryOperator*) n);
 	case BINARY_OPERATOR:
 		return handler.visitBinaryOperator((NBinaryOperator*) n);
 	case EXPRESSION:

@@ -39,6 +39,8 @@ public:
 
 	void visitCast(const NCast* n);
 
+	void visitUnaryOperator(const NUnaryOperator* n);
+
 	void visitBinaryOperator(const NBinaryOperator* n);
 
 	void visitFunctionCall(const NFunctionCall* n);

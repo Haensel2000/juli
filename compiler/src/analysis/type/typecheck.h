@@ -69,6 +69,8 @@ public:
 
 	const Type* visitCast(NCast* n);
 
+	const Type* visitUnaryOperator(NUnaryOperator* n);
+
 	const Type* visitBinaryOperator(NBinaryOperator* n);
 
 	const Type* visitFunctionCall(NFunctionCall* n);

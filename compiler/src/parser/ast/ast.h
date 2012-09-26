@@ -145,6 +145,16 @@ public:
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
+class NUnaryOperator : public NExpression {
+public:
+	NExpression* expression;
+	Operator op;
+
+	NUnaryOperator(NExpression* expression, Operator op);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+};
+
 class NBinaryOperator: public NExpression {
 public:
 	const Type* commonType;

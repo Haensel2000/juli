@@ -13,7 +13,7 @@ namespace juli {
 
 enum Operator {
 	PLUS,
-	MINUS,
+	SUB,
 	MUL,
 	DIV,
 	MOD,
@@ -25,6 +25,10 @@ enum Operator {
 	GEQ,
 	LOR,
 	LAND,
+	NOT,
+	MINUS,
+	TILDE,
+	HASH,
 	UNKNOWN
 };
 
@@ -47,6 +51,7 @@ enum NodeType {
 	CAST,
 	FUNCTION_CALL,
 	ARRAY_ACCESS,
+	UNARY_OPERATOR,
 	BINARY_OPERATOR,
 	EXPRESSION,
 	VARIABLE_DECL,

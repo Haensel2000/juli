@@ -18,7 +18,7 @@ std::ostream& operator<<(std::ostream& os, const juli::Operator& op) {
 	case juli::PLUS:
 		os << "+";
 		break;
-	case juli::MINUS:
+	case juli::SUB:
 		os << "-";
 		break;
 	case juli::MUL:
@@ -53,6 +53,15 @@ std::ostream& operator<<(std::ostream& os, const juli::Operator& op) {
 		break;
 	case juli::LAND:
 		os << "and";
+		break;
+	case juli::NOT:
+		os << "not";
+		break;
+	case juli::TILDE:
+		os << "~";
+		break;
+	case juli::HASH:
+		os << "#";
 		break;
 	case juli::UNKNOWN:
 		os << "?";

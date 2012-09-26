@@ -118,6 +118,20 @@ const Type* juli::TypeChecker::visitCast(NCast* n) {
 	return n->expressionType;
 }
 
+const Type* juli::TypeChecker::visitUnaryOperator(NUnaryOperator* n) {
+	const Type* etype = visit(n->expression);
+
+	n->expressionType = etype->getUnaryOperatorType(n->op);
+	if (n->expressionType == 0) {
+		CompilerError err;
+		err.getStream() << "Cannot apply " << n->op
+				<< " to expression of type '" << etype << "'";
+		throw err;
+	}
+
+	return n->expressionType;
+}
+
 const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 	n->expressionType = 0;
 
@@ -137,7 +151,7 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 
 	switch (n->op) {
 	case PLUS:
-	case MINUS:
+	case SUB:
 	case MUL:
 	case DIV:
 	case MOD:
