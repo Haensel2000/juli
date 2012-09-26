@@ -27,6 +27,45 @@ Primitive juli::PrimitiveType::getPrimitive() const {
 	return primitive;
 }
 
+bool juli::PrimitiveType::isInteger() const {
+	return isSignedInteger() || isUnsignedInteger();
+}
+
+bool juli::PrimitiveType::isSignedInteger() const {
+	switch (primitive) {
+	case INT8:
+	case INT32:
+		return true;
+	case FLOAT64:
+	case BOOLEAN:
+	case VOID:
+		return false;
+	}
+}
+
+bool juli::PrimitiveType::isUnsignedInteger() const {
+	switch (primitive) {
+	case INT8:
+	case INT32:
+	case FLOAT64:
+	case BOOLEAN:
+	case VOID:
+		return false;
+	}
+}
+
+bool juli::PrimitiveType::isFloatingPoint() const {
+	switch (primitive) {
+	case FLOAT64:
+		return true;
+	case INT8:
+	case INT32:
+	case BOOLEAN:
+	case VOID:
+		return false;
+	}
+}
+
 bool juli::PrimitiveType::operator==(const Type& t) const {
 	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(&t);
 	return (pt != 0) ? primitive == pt->primitive : false;
@@ -100,6 +139,11 @@ const Type* juli::PrimitiveType::supportsBinaryOperator(Operator op,
 	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(t);
 	if (pt) {
 		switch (op) {
+		case MOD:
+			if (isInteger() && pt->isInteger())
+				return this;
+			else
+				return 0;
 		case PLUS:
 		case MINUS:
 		case MUL:

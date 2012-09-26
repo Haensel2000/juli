@@ -27,6 +27,9 @@ std::ostream& operator<<(std::ostream& os, const juli::Operator& op) {
 	case juli::DIV:
 		os << "/";
 		break;
+	case juli::MOD:
+		os << "%";
+		break;
 	case juli::EQ:
 		os << "==";
 		break;

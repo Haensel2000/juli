@@ -124,15 +124,15 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 	const Type* lhs = visit(n->lhs);
 	const Type* rhs = visit(n->rhs);
 
-	const Type* commonType = lhs->supportsBinaryOperator(n->op, rhs);
-	if (commonType == 0) {
+	n->commonType = lhs->supportsBinaryOperator(n->op, rhs);
+	if (n->commonType == 0) {
 		CompilerError err;
 		err.getStream() << "Incompatible types '" << lhs << "' and '" << rhs
 				<< "'";
 		throw err;
 	} else {
-		n->lhs = coerce(n->lhs, commonType);
-		n->rhs = coerce(n->rhs, commonType);
+		n->lhs = coerce(n->lhs, n->commonType);
+		n->rhs = coerce(n->rhs, n->commonType);
 	}
 
 	switch (n->op) {
@@ -140,7 +140,8 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 	case MINUS:
 	case MUL:
 	case DIV:
-		n->expressionType = commonType;
+	case MOD:
+		n->expressionType = n->commonType;
 		break;
 	case EQ:
 	case NEQ:

@@ -147,6 +147,8 @@ public:
 
 class NBinaryOperator: public NExpression {
 public:
+	const Type* commonType;
+
 	NExpression* lhs;
 	Operator op;
 	NExpression* rhs;

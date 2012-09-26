@@ -144,10 +144,29 @@ expression returns [juli::NExpression* result = 0]
    juli::Operator type = juli::UNKNOWN;
 }
 :
+  op1=comparison { result = op1; }
+  (
+    ( OP_LAND      { type = juli::LAND; }
+    | OP_LOR     { type = juli::LOR; }
+    )
+    op2=comparison  { result = new juli::NBinaryOperator(result, type, op2); }
+  )*
+;
+
+comparison returns [juli::NExpression* result = 0]
+@declarations
+{
+   juli::Operator type = juli::UNKNOWN;
+}
+:
   op1=add { result = op1; }
   (
     ( OP_EQ      { type = juli::EQ; }
     | OP_NEQ     { type = juli::NEQ; }
+    | OP_LT     { type = juli::LT; }
+    | OP_GT     { type = juli::GT; }
+    | OP_LEQ     { type = juli::LEQ; }
+    | OP_GEQ     { type = juli::GEQ; }
     )
     op2=add  { result = new juli::NBinaryOperator(result, type, op2); }
   )*
@@ -159,9 +178,27 @@ add returns [juli::NExpression* result = 0]
    juli::Operator type = juli::UNKNOWN;
 }
 :
+  op1=mul { result=op1; }
+  (
+    ( OP_PLUS      { type = juli::PLUS; }
+    | OP_MINUS   { type = juli::MINUS; }
+    )
+    op2=mul  { result = new juli::NBinaryOperator(result, type, op2); }
+  )*
+;
+
+mul returns [juli::NExpression* result = 0]
+@declarations
+{
+   juli::Operator type = juli::UNKNOWN;
+}
+:
   op1=array_access { result=op1; }
   (
-    OP_PLUS      { type = juli::PLUS; } 
+    ( OP_MUL    { type = juli::MUL; }
+    | OP_DIV    { type = juli::DIV; }
+    | OP_MOD    { type = juli::MOD; }
+    )
     op2=array_access  { result = new juli::NBinaryOperator(result, type, op2); }
   )*
 ;
@@ -302,8 +339,18 @@ UnicodeEscape
     ;
     
 OP_PLUS : '+' ;
+OP_MINUS : '-' ;
+OP_MUL : '*' ;
+OP_DIV : '/' ;
+OP_MOD : '%' ;
 OP_EQ : '==' ;
 OP_NEQ : '!=' ;
+OP_LT : '<' ;
+OP_GT : '>' ;
+OP_LEQ : '<=' ;
+OP_GEQ : '>=' ;
+OP_LOR : 'or' ;
+OP_LAND : 'and' ;
     
 Identifier 
     :   Letter (Letter|JavaIDDigit)*

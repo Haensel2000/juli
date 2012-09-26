@@ -120,15 +120,91 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 	if (left == 0 || right == 0) // error handling
 		return 0;
 
+	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(n->commonType);
+
 	switch (n->op) {
 	case PLUS:
-		return builder.CreateFAdd(left, right, "add_res");
+		if (pt->isFloatingPoint())
+			return builder.CreateFAdd(left, right, "add_res");
+		else if (pt->isInteger())
+			return builder.CreateAdd(left, right, "add_res");
+		break;
+	case MINUS:
+		if (pt->isFloatingPoint())
+			return builder.CreateFSub(left, right, "sub_res");
+		else if (pt->isInteger())
+			return builder.CreateSub(left, right, "sub_res");
+		break;
+	case MUL:
+		if (pt->isFloatingPoint())
+			return builder.CreateFMul(left, right, "mul_res");
+		else if (pt->isInteger())
+			return builder.CreateMul(left, right, "mul_res");
+		break;
+	case DIV:
+		if (pt->isFloatingPoint())
+			return builder.CreateFDiv(left, right, "div_res");
+		else if (pt->isUnsignedInteger())
+			return builder.CreateUDiv(left, right, "div_res");
+		else if (pt->isSignedInteger())
+			return builder.CreateSDiv(left, right, "div_res");
+		break;
 	case EQ:
-		return builder.CreateFCmpOEQ(left, right, "eq_res");
+		if (pt->isFloatingPoint())
+			return builder.CreateFCmpOEQ(left, right, "eq_res");
+		else if (pt->isInteger())
+			return builder.CreateICmpEQ(left, right, "eq_res");
+		break;
+	case NEQ:
+		if (pt->isFloatingPoint())
+			return builder.CreateFCmpONE(left, right, "ne_res");
+		else if (pt->isInteger())
+			return builder.CreateICmpNE(left, right, "ne_res");
+		break;
+	case LT:
+		if (pt->isFloatingPoint())
+			return builder.CreateFCmpOLT(left, right, "lt_res");
+		else if (pt->isUnsignedInteger())
+			return builder.CreateICmpULT(left, right, "lt_res");
+		else if (pt->isSignedInteger())
+			return builder.CreateICmpSLT(left, right, "lt_res");
+		break;
+	case GT:
+		if (pt->isFloatingPoint())
+			return builder.CreateFCmpOGT(left, right, "gt_res");
+		else if (pt->isUnsignedInteger())
+			return builder.CreateICmpUGT(left, right, "gt_res");
+		else if (pt->isSignedInteger())
+			return builder.CreateICmpSGT(left, right, "lt_res");
+		break;
+	case LEQ:
+		if (pt->isFloatingPoint())
+			return builder.CreateFCmpOLE(left, right, "le_res");
+		else if (pt->isUnsignedInteger())
+			return builder.CreateICmpULE(left, right, "le_res");
+		else if (pt->isSignedInteger())
+			return builder.CreateICmpSLE(left, right, "lt_res");
+		break;
+	case GEQ:
+		if (pt->isFloatingPoint())
+			return builder.CreateFCmpOGE(left, right, "ge_res");
+		else if (pt->isUnsignedInteger())
+			return builder.CreateICmpUGE(left, right, "ge_res");
+		else if (pt->isSignedInteger())
+			return builder.CreateICmpSGE(left, right, "lt_res");
+		break;
+	case LOR:
+		return builder.CreateAnd(left, right, "and_res");
+		break;
+	case LAND:
+		return builder.CreateOr(left, right, "and_res");
+		break;
+	case UNKNOWN:
 	default:
-		std::cerr << "Invalid binary operator " << n->op << std::endl;
+		std::cerr << "Unsupported binary operator " << n->op << std::endl;
 		return 0;
 	}
+	return 0;
 }
 
 llvm::Value* juli::IRGenerator::visitFunctionCall(const NFunctionCall* n) {

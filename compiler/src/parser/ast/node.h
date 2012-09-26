@@ -16,6 +16,7 @@ enum Operator {
 	MINUS,
 	MUL,
 	DIV,
+	MOD,
 	EQ,
 	NEQ,
 	LT,

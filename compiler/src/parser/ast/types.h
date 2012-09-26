@@ -61,6 +61,14 @@ public:
 
 	Primitive getPrimitive() const;
 
+	bool isInteger() const;
+
+	bool isSignedInteger() const;
+
+	bool isUnsignedInteger() const;
+
+	bool isFloatingPoint() const;
+
 	virtual bool operator==(const Type& t) const;
 
 	virtual void print(std::ostream& os) const;
