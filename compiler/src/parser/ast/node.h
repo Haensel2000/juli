@@ -99,4 +99,6 @@ std::ostream& operator<<(std::ostream& os, const juli::Indentable* object);
 
 std::ostream& operator<<(std::ostream& os, const juli::Indentable& object);
 
+std::ostream& operator<<(std::ostream& os, const juli::Operator& op);
+
 #endif

@@ -153,8 +153,6 @@ public:
 
 	NBinaryOperator(NExpression* lhs, Operator op, NExpression* rhs);
 
-	std::string opStr() const;
-
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 

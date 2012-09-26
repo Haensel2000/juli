@@ -198,26 +198,17 @@ juli::NBinaryOperator::NBinaryOperator(NExpression* lhs, Operator op,
 		NExpression(BINARY_OPERATOR), lhs(lhs), op(op), rhs(rhs) {
 }
 
-std::string juli::NBinaryOperator::opStr() const {
-	switch (op) {
-	case PLUS:
-		return "+";
-	default:
-		return "?";
-	}
-}
-
 void juli::NBinaryOperator::print(std::ostream& os, int indent,
 		unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
-		os << "BinaryOperator: " << opStr();
+		os << "BinaryOperator: " << op;
 		printType(os);
 		lhs->print(os, indent + 2, flags);
 		rhs->print(os, indent + 2, flags);
 	} else {
-		os << "(" << lhs << " " << opStr() << " " << rhs << ")";
+		os << "(" << lhs << " " << op << " " << rhs << ")";
 	}
 }
 
