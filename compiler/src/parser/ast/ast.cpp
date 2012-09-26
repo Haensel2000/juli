@@ -22,7 +22,7 @@ void juli::NBasicType::print(std::ostream& os, int indent,
 
 const Type* NBasicType::resolve(const TypeInfo& types) const
 		throw (CompilerError) {
-	return types.getType(name);
+	return types.getType(name, this);
 }
 
 juli::NArrayType::NArrayType(NType* elementType) :

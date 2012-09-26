@@ -31,7 +31,7 @@ public:
 	const NFunctionDefinition* getFunction(const std::string& name) const
 			throw (CompilerError);
 
-	const Type* getType(const std::string& name) const throw (CompilerError);
+	const Type* getType(const std::string& name, const Indentable* astNode) const throw (CompilerError);
 
 };
 

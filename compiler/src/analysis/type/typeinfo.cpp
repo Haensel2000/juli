@@ -23,19 +23,17 @@ const NFunctionDefinition* juli::TypeInfo::getFunction(
 	try {
 		return functions.at(name);
 	} catch (std::out_of_range& e) {
-		CompilerError err;
-		err.getStream() << "Undeclared function '" << name << "'";
-		throw err;
+		return 0;
 	}
 	return 0;
 }
 
-const Type* juli::TypeInfo::getType(const std::string& name) const
+const Type* juli::TypeInfo::getType(const std::string& name, const Indentable* astNode) const
 		throw (CompilerError) {
 	try {
 		return typeTable.at(name);
 	} catch (std::out_of_range& e) {
-		CompilerError err;
+		CompilerError err(astNode);
 		err.getStream() << "Unknown type '" << name << "'";
 		throw err;
 	}

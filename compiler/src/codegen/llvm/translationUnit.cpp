@@ -23,18 +23,18 @@ llvm::LLVMContext& juli::TranslationUnit::getContext() const {
 	return module->getContext();
 }
 
-const Type* juli::TranslationUnit::getVariableType(
-		const std::string& name) const throw (CompilerError) {
-	try {
-		return symbolTable.at(name);
-	} catch (std::out_of_range& e) {
-		CompilerError err;
-		err.getStream() << "Undeclared variable '" << name << "'";
-		reportError(err);
-		throw err;
-	}
-	return 0;
-}
+//const Type* juli::TranslationUnit::getVariableType(
+//		const std::string& name) const throw (CompilerError) {
+//	try {
+//		return symbolTable.at(name);
+//	} catch (std::out_of_range& e) {
+//		CompilerError err;
+//		err.getStream() << "Undeclared variable '" << name << "'";
+//		reportError(err);
+//		throw err;
+//	}
+//	return 0;
+//}
 
 llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 		throw (CompilerError) {

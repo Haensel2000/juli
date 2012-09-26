@@ -65,37 +65,38 @@ enum NodeType {
 
 class Indentable {
 public:
-	virtual ~Indentable() {
-	}
+	const std::string filename;
+	const unsigned int line;
+	const unsigned int start;
+	const unsigned int end;
 
-	void beginLine(std::ostream& os, int indent) const {
-		os << std::string(indent * 2, ' ');
-	}
+	Indentable(const std::string& filename = "<unknown>",
+				const unsigned int line = 0, const unsigned int start = 0,
+				const unsigned int end = 0);
 
-	virtual void print(std::ostream& os, int indent, unsigned int flags) const = 0;
+	virtual ~Indentable();
+
+	void beginLine(std::ostream& os, int indent) const;
+
+	virtual void print(std::ostream& os, int indent,
+			unsigned int flags) const = 0;
 
 	static const unsigned int FLAG_TREE;
 
 };
 
-class Node : public Indentable {
+class Node: public Indentable {
 protected:
 	const NodeType nodeType;
 public:
-	Node(const NodeType nodeType) :
-			nodeType(nodeType) {
-	}
 
-	virtual ~Node() {
-	}
+	Node(const NodeType nodeType, const std::string& filename = "<unknown>",
+			const unsigned int line = 0, const unsigned int start = 0,
+			const unsigned int end = 0);
 
-	const NodeType& getType() const {
-		return nodeType;
-	}
-//
-//	const llvm::Module& getModule() const {
-//		return *(translationUnit->module);
-//	}
+	virtual ~Node();
+
+	const NodeType& getType() const;
 
 };
 

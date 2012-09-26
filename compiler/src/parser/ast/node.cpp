@@ -2,6 +2,35 @@
 #include <llvm/GlobalVariable.h>
 #include <cassert>
 
+using namespace juli;
+
+juli::Indentable::Indentable(const std::string& filename,
+		const unsigned int line, const unsigned int start,
+		const unsigned int end) :
+		filename(filename), line(line), start(start), end(end) {
+
+}
+
+juli::Indentable::~Indentable() {
+}
+
+void juli::Indentable::beginLine(std::ostream& os, int indent) const {
+	os << std::string(indent * 2, ' ');
+}
+
+juli::Node::Node(const NodeType nodeType, const std::string& filename,
+		const unsigned int line, const unsigned int start,
+		const unsigned int end) :
+		nodeType(nodeType), Indentable(filename, line, start, end) {
+}
+
+juli::Node::~Node() {
+}
+
+const NodeType& juli::Node::getType() const {
+	return nodeType;
+}
+
 std::ostream& operator<<(std::ostream& os, const juli::Indentable* object) {
 	assert(object != 0);
 	object->print(os, 0, 0);

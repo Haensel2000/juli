@@ -35,9 +35,7 @@ const Type* juli::SymbolTable::getSymbol(const std::string& name) const {
 		if (si != i->end())
 			return si->second;
 	}
-	CompilerError err;
-	err.getStream() << "Unknown symbol " << name;
-	throw err;
+	return 0;
 }
 
 void juli::SymbolTable::addSymbol(const std::string& name, const Type* type) {
@@ -55,11 +53,11 @@ juli::TypeChecker::TypeChecker(const TypeInfo& typeInfo) :
 }
 
 NExpression* juli::TypeChecker::checkAssignment(const Type* left,
-		NExpression* right, const std::string& message) const {
+		NExpression* right, const Indentable* n, const std::string& message) const {
 	if (!(*left == *right->expressionType)) {
 
 		if (!right->expressionType->isAssignableTo(left)) {
-			CompilerError err;
+			CompilerError err(n);
 			err.getStream() << message << "Invalid Types: Cannot assign "
 					<< right->expressionType << " to " << left;
 			throw err;
@@ -100,8 +98,12 @@ const Type* juli::TypeChecker::visitStringLiteral(NStringLiteral* n) {
 
 const Type* juli::TypeChecker::visitVariableRef(NIdentifier* n) {
 	n->expressionType = symbolTable.getSymbol(n->name);
+	if (!n->expressionType) {
+		CompilerError err(n);
+		err.getStream() << "Unknown symbol " << n->name;
+		throw err;
+	}
 	return n->expressionType;
-	return 0;
 }
 
 const Type* juli::TypeChecker::visitCast(NCast* n) {
@@ -111,7 +113,7 @@ const Type* juli::TypeChecker::visitCast(NCast* n) {
 
 	if (!n->expression->expressionType->canCastTo(n->expressionType)) {
 		n->expressionType = 0;
-		CompilerError err;
+		CompilerError err(n);
 		err.getStream() << "Invalid Explicit Cast: Cannot cast "
 				<< n->expression->expressionType << " to " << n->expressionType;
 	}
@@ -123,7 +125,7 @@ const Type* juli::TypeChecker::visitUnaryOperator(NUnaryOperator* n) {
 
 	n->expressionType = etype->getUnaryOperatorType(n->op);
 	if (n->expressionType == 0) {
-		CompilerError err;
+		CompilerError err(n);
 		err.getStream() << "Cannot apply " << n->op
 				<< " to expression of type '" << etype << "'";
 		throw err;
@@ -140,7 +142,7 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 
 	n->commonType = lhs->supportsBinaryOperator(n->op, rhs);
 	if (n->commonType == 0) {
-		CompilerError err;
+		CompilerError err(n);
 		err.getStream() << "Incompatible types '" << lhs << "' and '" << rhs
 				<< "'";
 		throw err;
@@ -174,6 +176,11 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 
 const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
 	NFunctionSignature* signature = typeInfo.getFunction(n->id)->signature;
+	if (!signature) {
+		CompilerError err(n);
+		err.getStream() << "Undeclared function '" << n->id << "'";
+		throw err;
+	}
 
 	n->expressionType = 0;
 
@@ -182,7 +189,7 @@ const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
 
 	if (args.size() < formalArgs.size()
 			|| (args.size() > formalArgs.size() && !signature->varArgs)) {
-		CompilerError err;
+		CompilerError err(n);
 		err.getStream() << "Invalid number of arguments for function '"
 				<< signature->name << "'. Expected " << formalArgs.size()
 				<< " got " << args.size();
@@ -197,7 +204,7 @@ const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
 		visit(*i);
 		if (fi != formalArgs.end()) {
 			const Type* formalType = (*fi)->type->resolve(typeInfo);
-			*i = checkAssignment(formalType, *i);
+			*i = checkAssignment(formalType, *i, *i);
 			++fi;
 		}
 
@@ -213,7 +220,7 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 	n->expressionType = 0;
 	const ArrayType* t = dynamic_cast<const ArrayType*>(visit(n->ref));
 	if (t == 0) {
-		CompilerError err;
+		CompilerError err(n);
 		err.getStream()
 				<< "Left hand side of array access must be of array type";
 		throw err;
@@ -221,7 +228,7 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 
 	visit(n->index);
 
-	n->index = checkAssignment(&PrimitiveType::INT32_TYPE, n->index);
+	n->index = checkAssignment(&PrimitiveType::INT32_TYPE, n->index, n->index);
 
 	n->expressionType = t->getElementType();
 	return n->expressionType;
@@ -230,7 +237,12 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 const Type* juli::TypeChecker::visitAssignment(NAssignment* n) {
 	visit(n->rhs);
 	const Type* varType = symbolTable.getSymbol(n->lhs);
-	n->rhs = checkAssignment(varType, n->rhs);
+	if (!varType) {
+		CompilerError err(n);
+		err.getStream() << "Unknown symbol " << n->lhs;
+		throw err;
+	}
+	n->rhs = checkAssignment(varType, n->rhs, n);
 	return 0;
 }
 
@@ -260,7 +272,7 @@ const Type* juli::TypeChecker::visitVariableDecl(NVariableDeclaration* n) {
 	if (n->assignmentExpr) {
 		visit(n->assignmentExpr);
 		const Type* varType = n->type->resolve(typeInfo);
-		n->assignmentExpr = checkAssignment(varType, n->assignmentExpr);
+		n->assignmentExpr = checkAssignment(varType, n->assignmentExpr, n);
 	}
 
 	symbolTable.addSymbol(n);
@@ -283,7 +295,7 @@ const Type* juli::TypeChecker::visitReturn(NReturnStatement* n) {
 
 		n->expression = checkAssignment(
 				_currentFunction->signature->type->resolve(typeInfo),
-				n->expression);
+				n->expression, n);
 	}
 
 	return 0;
@@ -295,7 +307,7 @@ const Type* juli::TypeChecker::visitIf(NIfStatement* n) {
 		if ((*i)->condition) {
 			visit((*i)->condition);
 			(*i)->condition = checkAssignment(&PrimitiveType::BOOLEAN_TYPE,
-					((*i)->condition));
+					(*i)->condition, (*i)->condition);
 		}
 
 		visit((*i)->body);
@@ -305,7 +317,7 @@ const Type* juli::TypeChecker::visitIf(NIfStatement* n) {
 
 const Type* juli::TypeChecker::visitWhile(NWhileStatement* n) {
 	visit(n->condition);
-	n->condition = checkAssignment(&PrimitiveType::BOOLEAN_TYPE, n->condition);
+	n->condition = checkAssignment(&PrimitiveType::BOOLEAN_TYPE, n->condition, n->condition);
 	visit(n->body);
 	return 0;
 }

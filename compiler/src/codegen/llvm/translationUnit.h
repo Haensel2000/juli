@@ -42,7 +42,7 @@ namespace juli {
 
 		llvm::LLVMContext& getContext() const;
 
-		const Type* getVariableType(const std::string& name) const throw (CompilerError);
+		//const Type* getVariableType(const std::string& name) const throw (CompilerError);
 		llvm::Type* resolveLLVMType(const Type* t) const throw (CompilerError);
 		llvm::Type* resolveLLVMType(const NType* t) const throw (CompilerError);
 

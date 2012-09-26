@@ -11,52 +11,32 @@
 #include <string>
 #include <sstream>
 
+#include <parser/ast/node.h>
+
 namespace juli {
 
 class CompilerError {
 private:
 	std::stringstream msgstream;
-	std::string file;
-	unsigned int line;
-	unsigned int column;
+	const Indentable* node;
 public:
-	CompilerError(const CompilerError& ce) :
-			msgstream(ce.getMessage()), file(ce.file), line(ce.line), column(
-					ce.column) {
-	}
+	CompilerError(const CompilerError& ce);
 
-	void operator=(const CompilerError& ce) {
-		msgstream.str(ce.getMessage());
-		file = ce.file;
-		line = ce.line;
-		column = ce.column;
-	}
+	void operator=(const CompilerError& ce);
 
-	CompilerError(std::string msg = std::string(""), std::string file =
-			std::string("<unknown file>"), unsigned int line = 0,
-			unsigned int column = 0) :
-			msgstream(msg), file(file), line(line), column(column) {
-	}
+	CompilerError(const Indentable* node);
 
-	const std::string getMessage() const {
-		return msgstream.str();
-	}
+	const std::string getMessage() const;
 
-	std::stringstream& getStream() {
-		return msgstream;
-	}
+	std::stringstream& getStream();
 
-	const std::string& getFile() const {
-		return file;
-	}
+	const std::string& getFile() const;
 
-	unsigned int getLine() const {
-		return line;
-	}
+	unsigned int getLine() const;
 
-	unsigned int getColumn() const {
-		return column;
-	}
+	unsigned int getStart() const;
+
+	unsigned int getEnd() const;
 
 };
 

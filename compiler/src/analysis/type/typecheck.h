@@ -53,7 +53,7 @@ public:
 
 	TypeChecker(const TypeInfo& typeInfo);
 
-	NExpression* checkAssignment(const Type* left, NExpression* right, const std::string& message = "") const;
+	NExpression* checkAssignment(const Type* left, NExpression* right, const Indentable* n, const std::string& message = "") const;
 
 	NExpression* coerce(NExpression* e, const Type* type);
 
