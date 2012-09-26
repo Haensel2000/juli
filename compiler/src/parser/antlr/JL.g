@@ -31,7 +31,7 @@ stmt1=assignment { result = stmt1; } |
 stmt2=expression_statement { result = stmt2; } |
 stmt3=return_statement { result = stmt3; } |
 stmt4=function_definition { result = stmt4; } |
-stmt5=variable_declaration ';' { result = stmt5; } |
+stmt5=variable_definition { result = stmt5; } |
 stmt7=if_statement { result = stmt7; } |
 stmt8=while_statement { result = stmt8; }
 ;
@@ -112,6 +112,16 @@ sign=variable_declaration { name = sign->name; type = sign->type; }
 }
 ;
 
+variable_definition returns [juli::NVariableDeclaration* result = 0]
+@declarations
+{
+  juli::NExpression* exp = 0;
+}:
+vtype=type id=identifier ('=' e=expression { exp = e; })? ';'
+{
+  result = new juli::NVariableDeclaration(vtype, id, exp);
+}
+;
 
 variable_declaration returns [juli::NVariableDeclaration* result = 0]:
 vtype=type id=identifier
