@@ -64,6 +64,8 @@ public:
 
 	llvm::Value* visitIf(const NIfStatement* n);
 
+	llvm::Value* visitWhile(const NWhileStatement* n);
+
 	llvm::Type* resolveType(const NType* n);
 	llvm::Type* resolveType(const Type* n);
 

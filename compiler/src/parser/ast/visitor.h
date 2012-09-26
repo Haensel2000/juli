@@ -27,7 +27,7 @@ ReturnValue visitAST(Handler& handler, const Node* n) {
 	case VARIABLE_REF:
 		return handler.visitVariableRef((NIdentifier*) n);
 	case CAST:
-		return handler.visitCast((NCast*)n);
+		return handler.visitCast((NCast*) n);
 	case FUNCTION_CALL:
 		return handler.visitFunctionCall((NFunctionCall*) n);
 	case ARRAY_ACCESS:
@@ -44,6 +44,8 @@ ReturnValue visitAST(Handler& handler, const Node* n) {
 		return handler.visitBlock((NBlock*) n);
 	case IF:
 		return handler.visitIf((NIfStatement*) n);
+	case WHILE:
+		return handler.visitWhile((NWhileStatement*) n);
 	case RETURN:
 		return handler.visitReturn((NReturnStatement*) n);
 	case FUNCTION_DEF:

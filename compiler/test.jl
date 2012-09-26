@@ -1,7 +1,13 @@
 int printf(char[] s, ...);
 
-double add(double x, int y) {
-	return x + y;
+int parse(char[] str) {
+	int i;
+	int v;
+	i = 0;
+	v = 0;
+	while (str[i] != 0) {
+		v = v + str[i];
+	}
 }
 
 void main(int argc, char[][] argv) {

@@ -60,3 +60,6 @@ void juli::Declarator::visitReturn(const NReturnStatement* n) {
 
 void juli::Declarator::visitIf(const NIfStatement* n) {
 }
+
+void juli::Declarator::visitWhile(const NWhileStatement* n) {
+}

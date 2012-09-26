@@ -91,6 +91,8 @@ public:
 
 	const Type* visitIf(NIfStatement* n);
 
+	const Type* visitWhile(NWhileStatement* n);
+
 };
 
 }

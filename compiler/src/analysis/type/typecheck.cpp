@@ -61,7 +61,7 @@ NExpression* juli::TypeChecker::checkAssignment(const Type* left,
 		if (!right->expressionType->isAssignableTo(left)) {
 			CompilerError err;
 			err.getStream() << message << "Invalid Types: Cannot assign "
-					<< right << " to " << left;
+					<< right->expressionType << " to " << left;
 			throw err;
 		}
 		NCast* c = new NCast(right, 0);
@@ -119,18 +119,39 @@ const Type* juli::TypeChecker::visitCast(NCast* n) {
 }
 
 const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
+	n->expressionType = 0;
+
 	const Type* lhs = visit(n->lhs);
 	const Type* rhs = visit(n->rhs);
 
-	n->expressionType = lhs->getCommonType(rhs);
-	if (n->expressionType == 0) {
+	const Type* commonType = lhs->supportsBinaryOperator(n->op, rhs);
+	if (commonType == 0) {
 		CompilerError err;
 		err.getStream() << "Incompatible types '" << lhs << "' and '" << rhs
 				<< "'";
 		throw err;
 	} else {
-		n->lhs = coerce(n->lhs, n->expressionType);
-		n->rhs = coerce(n->rhs, n->expressionType);
+		n->lhs = coerce(n->lhs, commonType);
+		n->rhs = coerce(n->rhs, commonType);
+	}
+
+	switch (n->op) {
+	case PLUS:
+	case MINUS:
+	case MUL:
+	case DIV:
+		n->expressionType = commonType;
+		break;
+	case EQ:
+	case NEQ:
+	case LT:
+	case GT:
+	case LEQ:
+	case GEQ:
+	case LOR:
+	case LAND:
+		n->expressionType = &PrimitiveType::BOOLEAN_TYPE;
+		break;
 	}
 
 	return n->expressionType;
@@ -264,5 +285,12 @@ const Type* juli::TypeChecker::visitIf(NIfStatement* n) {
 
 		visit((*i)->body);
 	}
+	return 0;
+}
+
+const Type* juli::TypeChecker::visitWhile(NWhileStatement* n) {
+	visit(n->condition);
+	n->condition = checkAssignment(&PrimitiveType::BOOLEAN_TYPE, n->condition);
+	visit(n->body);
 	return 0;
 }

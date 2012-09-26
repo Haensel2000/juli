@@ -92,6 +92,46 @@ bool juli::PrimitiveType::canCastTo(const Type* t) const {
 	}
 }
 
+const Type* juli::PrimitiveType::supportsBinaryOperator(Operator op,
+		const Type* t) const {
+	if (*this == *t)
+		return this;
+
+	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(t);
+	if (pt) {
+		switch (op) {
+		case PLUS:
+		case MINUS:
+		case MUL:
+		case DIV:
+		case EQ:
+		case NEQ:
+		case LT:
+		case GT:
+		case LEQ:
+		case GEQ:
+			if (primitive < INT8 || pt->primitive < INT8)
+				return 0;
+
+			if (primitive < pt->primitive)
+				return pt;
+			else
+				return this;
+
+			break;
+		case LOR:
+		case LAND:
+			if (primitive == BOOLEAN && pt->primitive == BOOLEAN)
+				return this;
+			break;
+		}
+	} else {
+		return 0;
+	}
+
+	return 0;
+}
+
 juli::ArrayType::ArrayType(const Type* elementType) :
 		Type(ARRAY), elementType(elementType) {
 }
@@ -127,4 +167,9 @@ bool juli::ArrayType::isAssignableTo(const Type* t) const {
 
 bool juli::ArrayType::canCastTo(const Type* t) const {
 	return isAssignableTo(t);
+}
+
+const Type* juli::ArrayType::supportsBinaryOperator(Operator op,
+		const Type* t) const {
+	return 0;
 }

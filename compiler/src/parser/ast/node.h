@@ -12,7 +12,19 @@
 namespace juli {
 
 enum Operator {
-	PLUS, EQ, UNKNOWN
+	PLUS,
+	MINUS,
+	MUL,
+	DIV,
+	EQ,
+	NEQ,
+	LT,
+	GT,
+	LEQ,
+	GEQ,
+	LOR,
+	LAND,
+	UNKNOWN
 };
 
 class CodeGenContext;
@@ -40,6 +52,7 @@ enum NodeType {
 	ASSIGNMENT,
 	BLOCK,
 	IF,
+	WHILE,
 	RETURN,
 	FUNCTION_DEF
 };

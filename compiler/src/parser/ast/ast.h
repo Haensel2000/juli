@@ -253,6 +253,16 @@ public:
 
 };
 
+class NWhileStatement : public NStatement {
+public:
+	NExpression* condition;
+	NBlock* body;
+
+	NWhileStatement(NExpression* condition, NBlock* body);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+};
+
 }
 
 #endif /* AST_H_ */

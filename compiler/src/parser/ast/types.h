@@ -9,6 +9,7 @@
 #define TYPES_H_
 
 #include <debug/print.h>
+#include <parser/ast/node.h>
 
 namespace juli {
 
@@ -37,6 +38,8 @@ public:
 	virtual bool canCastTo(const Type* t) const = 0;
 
 	virtual bool operator==(const Type& t) const = 0;
+
+	virtual const Type* supportsBinaryOperator(Operator op, const Type* t) const = 0;
 
 	TypeCategory getCategory() const;
 };
@@ -67,6 +70,8 @@ public:
 	virtual bool isAssignableTo(const Type* t) const;
 
 	virtual bool canCastTo(const Type* t) const;
+
+	virtual const Type* supportsBinaryOperator(Operator op, const Type* t) const;
 };
 
 class ArrayType: public Type {
@@ -88,6 +93,8 @@ public:
 	virtual bool isAssignableTo(const Type* t) const;
 
 	virtual bool canCastTo(const Type* t) const;
+
+	virtual const Type* supportsBinaryOperator(Operator op, const Type* t) const;
 };
 
 }

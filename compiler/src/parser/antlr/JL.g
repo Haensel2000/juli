@@ -32,7 +32,8 @@ stmt2=expression_statement { result = stmt2; } |
 stmt3=return_statement { result = stmt3; } |
 stmt4=function_definition { result = stmt4; } |
 stmt5=variable_declaration ';' { result = stmt5; } |
-stmt7=if_statement { result = stmt7; }
+stmt7=if_statement { result = stmt7; } |
+stmt8=while_statement { result = stmt8; }
 ;
 
 
@@ -54,6 +55,13 @@ block returns [juli::NBlock* result = 0]:
 '{'
 (stmt=statement { result->addStatement(stmt); })*
 '}' 
+;
+
+while_statement returns [juli::NStatement* result = 0]:
+'while' '(' cond=expression ')' b=block
+{
+  result = new juli::NWhileStatement(cond, b);
+}
 ;
 
 if_statement returns [juli::NStatement* result = 0]
@@ -138,7 +146,9 @@ expression returns [juli::NExpression* result = 0]
 :
   op1=add { result = op1; }
   (
-    OP_EQ      { type = juli::EQ; } 
+    ( OP_EQ      { type = juli::EQ; }
+    | OP_NEQ     { type = juli::NEQ; }
+    )
     op2=add  { result = new juli::NBinaryOperator(result, type, op2); }
   )*
 ;
@@ -293,6 +303,7 @@ UnicodeEscape
     
 OP_PLUS : '+' ;
 OP_EQ : '==' ;
+OP_NEQ : '!=' ;
     
 Identifier 
     :   Letter (Letter|JavaIDDigit)*

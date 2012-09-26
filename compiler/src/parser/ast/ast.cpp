@@ -124,12 +124,13 @@ void juli::NIdentifier::print(std::ostream& os, int indent,
 	}
 }
 
-juli::NCast::NCast(NExpression* expression, NType* target) : NExpression(CAST),
-		expression(expression), target(target) {
+juli::NCast::NCast(NExpression* expression, NType* target) :
+		NExpression(CAST), expression(expression), target(target) {
 
 }
 
-void juli::NCast::print(std::ostream& os, int indent, unsigned int flags) const {
+void juli::NCast::print(std::ostream& os, int indent,
+		unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -137,9 +138,9 @@ void juli::NCast::print(std::ostream& os, int indent, unsigned int flags) const 
 			os << "Implicit ";
 		os << "Cast: ";
 		printType(os);
-		expression->print(os, indent+2, flags);
+		expression->print(os, indent + 2, flags);
 		if (target)
-			target->print(os, indent+2, flags);
+			target->print(os, indent + 2, flags);
 	} else {
 		if (target)
 			os << "(" << target << ")";
@@ -346,6 +347,24 @@ void juli::NIfStatement::print(std::ostream& os, int indent,
 				os << "else" << std::endl;
 			os << (*i)->body;
 		}
+	}
+}
+
+juli::NWhileStatement::NWhileStatement(NExpression* condition, NBlock* body) :
+		NStatement(WHILE), condition(condition), body(body) {
+}
+
+void juli::NWhileStatement::print(std::ostream& os, int indent,
+		unsigned int flags) const {
+	beginLine(os, indent);
+
+	if (flags & FLAG_TREE) {
+		os << "While: " << std::endl;
+		condition->print(os, indent+2, flags);
+		body->print(os, indent+2, flags);
+	} else {
+		os << "while (" << condition << ")" << std::endl;
+		body->print(os, indent+2, flags);
 	}
 }
 

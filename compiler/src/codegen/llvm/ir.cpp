@@ -289,6 +289,27 @@ llvm::Value* juli::IRGenerator::visitIf(const NIfStatement* n) {
 	return 0;
 }
 
+llvm::Value* juli::IRGenerator::visitWhile(const NWhileStatement* n) {
+	llvm::Function* f = builder.GetInsertBlock()->getParent();
+
+	llvm::BasicBlock* condBlock = llvm::BasicBlock::Create(context, "condition",
+			f);
+	llvm::BasicBlock* bodyBlock = llvm::BasicBlock::Create(context, "body", f);
+	llvm::BasicBlock* contBlock = llvm::BasicBlock::Create(context, "continue",
+			f);
+
+	builder.CreateBr(condBlock);
+	builder.SetInsertPoint(condBlock);
+	builder.CreateCondBr(visit(n->condition), bodyBlock, contBlock);
+	builder.SetInsertPoint(bodyBlock);
+	visit(n->body);
+	builder.CreateBr(condBlock);
+	builder.SetInsertPoint(contBlock);
+
+	return 0;
+
+}
+
 llvm::Value* juli::IRGenerator::visit(const Node* n) {
 	return visitAST<IRGenerator, llvm::Value*>(*this, n);
 }

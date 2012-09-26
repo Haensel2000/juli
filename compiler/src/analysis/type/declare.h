@@ -61,6 +61,8 @@ public:
 
 	void visitIf(const NIfStatement* n);
 
+	void visitWhile(const NWhileStatement* n);
+
 };
 
 }
