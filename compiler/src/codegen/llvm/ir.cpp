@@ -43,7 +43,7 @@ llvm::Value* juli::IRGenerator::visitStringLiteral(const NStringLiteral* n) {
 	return llvm::ConstantExpr::getGetElementPtr(globalStr, indices);
 }
 
-llvm::Value* juli::IRGenerator::visitVariableRef(const NIdentifier* n) {
+llvm::Value* juli::IRGenerator::visitVariableRef(const NVariableRef* n) {
 	llvm::Value* v = translationUnit.getLLVMSymbolTable()[n->name];
 	if (!v)
 		std::cerr << "Unknown variable name " << n->name << std::endl;
@@ -226,7 +226,7 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 }
 
 llvm::Value* juli::IRGenerator::visitFunctionCall(const NFunctionCall* n) {
-	llvm::Function* function = module.getFunction(n->id);
+	llvm::Function* function = module.getFunction(n->name->name);
 
 	std::vector<llvm::Value*> argValues;
 	for (unsigned i = 0, e = n->arguments.size(); i != e; ++i) {
@@ -244,7 +244,7 @@ llvm::Value* juli::IRGenerator::visitArrayAccess(const NArrayAccess* n) {
 }
 
 llvm::Value* juli::IRGenerator::visitAssignment(const NAssignment* n) {
-	llvm::Value* addr = translationUnit.getLLVMSymbolTable()[n->lhs];
+	llvm::Value* addr = translationUnit.getLLVMSymbolTable()[n->lhs->name];
 	llvm::Value* value = visit(n->rhs);
 	builder.CreateStore(value, addr);
 	return 0;
@@ -269,7 +269,7 @@ llvm::Value* juli::IRGenerator::visitVariableDecl(
 	llvm::Value* param = builder.CreateAlloca(resolveType(n->type));
 	if (n->assignmentExpr)
 		builder.CreateStore(visit(n->assignmentExpr), param);
-	translationUnit.getLLVMSymbolTable()[n->name] = param;
+	translationUnit.getLLVMSymbolTable()[n->name->name] = param;
 	return 0;
 }
 
@@ -315,7 +315,7 @@ llvm::Value* juli::IRGenerator::visitFunctionDef(const NFunctionDefinition* n) {
 
 			llvm::Value* param = builder.CreateAlloca(i->getType());
 			builder.CreateStore(i, param);
-			translationUnit.getLLVMSymbolTable()[(*vi)->name] = param;
+			translationUnit.getLLVMSymbolTable()[(*vi)->name->name] = param;
 		}
 
 		visit(n->body);
@@ -327,7 +327,7 @@ llvm::Value* juli::IRGenerator::visitFunctionDef(const NFunctionDefinition* n) {
 		for (std::vector<NVariableDeclaration*>::const_iterator i =
 				n->signature->arguments.begin();
 				i != n->signature->arguments.end(); ++i) {
-			translationUnit.getLLVMSymbolTable().erase((*i)->name);
+			translationUnit.getLLVMSymbolTable().erase((*i)->name->name);
 		}
 
 		if (llvm::verifyFunction(*f, llvm::PrintMessageAction)) {

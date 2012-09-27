@@ -4,24 +4,42 @@
 
 using namespace juli;
 
-juli::Indentable::Indentable(const std::string& filename,
-		const unsigned int line, const unsigned int start,
-		const unsigned int end) :
-		filename(filename), line(line), start(start), end(end) {
+juli::Marker::Marker(unsigned int line, unsigned int column) :
+		line(line), column(column) {
+}
 
+juli::Marker::~Marker() {
+}
+
+void juli::Marker::print(std::ostream& os) const {
+	os << line << ":" << column;
+}
+
+juli::Indentable::Indentable() :
+		filename("<unknown>"), start(0, 0), end(0, 0) {
 }
 
 juli::Indentable::~Indentable() {
+}
+
+void juli::Indentable::setSourceLocation(const std::string& filename,
+		const Marker& start, const Marker& end) {
+	this->filename = filename;
+	this->start = start;
+	this->end = end;
 }
 
 void juli::Indentable::beginLine(std::ostream& os, int indent) const {
 	os << std::string(indent * 2, ' ');
 }
 
-juli::Node::Node(const NodeType nodeType, const std::string& filename,
-		const unsigned int line, const unsigned int start,
-		const unsigned int end) :
-		nodeType(nodeType), Indentable(filename, line, start, end) {
+void juli::Indentable::printLocation(std::ostream& os) const {
+	os << "  (" << filename << "  " << start << " - " << end << ")"
+			<< std::endl;
+}
+
+juli::Node::Node(NodeType nodeType) :
+		nodeType(nodeType) {
 }
 
 juli::Node::~Node() {

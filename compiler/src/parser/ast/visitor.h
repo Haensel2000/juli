@@ -25,7 +25,7 @@ ReturnValue visitAST(Handler& handler, const Node* n) {
 	case STRING_LITERAL:
 		return handler.visitStringLiteral((NStringLiteral*) n);
 	case VARIABLE_REF:
-		return handler.visitVariableRef((NIdentifier*) n);
+		return handler.visitVariableRef((NVariableRef*) n);
 	case CAST:
 		return handler.visitCast((NCast*) n);
 	case FUNCTION_CALL:

@@ -34,7 +34,7 @@ public:
 
 	llvm::Value* visitStringLiteral(const NStringLiteral* n);
 
-	llvm::Value* visitVariableRef(const NIdentifier* n);
+	llvm::Value* visitVariableRef(const NVariableRef* n);
 
 	llvm::Value* visitCast(const NCast* n);
 

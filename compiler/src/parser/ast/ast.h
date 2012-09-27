@@ -18,6 +18,19 @@
 
 namespace juli {
 
+class NIdentifier : public Indentable {
+public:
+	std::string name;
+
+	NIdentifier(const std::string& name);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+
+	operator std::string();
+
+	operator const std::string() const;
+};
+
 class NType: public Indentable {
 public:
 	virtual ~NType() {
@@ -34,7 +47,7 @@ public:
 	virtual ~NBasicType() {
 	}
 
-	NBasicType(const std::string& name);
+	NBasicType(NIdentifier* id);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 
@@ -104,11 +117,11 @@ public:
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
-class NIdentifier: public NExpression {
+class NVariableRef: public NExpression {
 public:
 	std::string name;
 
-	NIdentifier(const std::string& name);
+	NVariableRef(NIdentifier* id);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
@@ -125,12 +138,12 @@ public:
 
 class NFunctionCall: public NExpression {
 public:
-	const std::string id;
+	NIdentifier* name;
 	ExpressionList arguments;
 
-	NFunctionCall(const std::string& id, ExpressionList& arguments);
+	NFunctionCall(NIdentifier* name, ExpressionList& arguments);
 
-	NFunctionCall(const std::string& id);
+	NFunctionCall(NIdentifier* name);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
@@ -170,10 +183,10 @@ public:
 
 class NAssignment: public NStatement {
 public:
-	const std::string lhs;
+	NIdentifier* lhs;
 	NExpression* rhs;
 
-	NAssignment(const std::string& lhs, NExpression* rhs);
+	NAssignment(NIdentifier* lhs, NExpression* rhs);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
@@ -200,11 +213,11 @@ public:
 
 class NVariableDeclaration: public NStatement {
 public:
-	const std::string name;
+	NIdentifier* name;
 	NType* type;
 	NExpression* assignmentExpr;
 
-	NVariableDeclaration(NType* type, const std::string& name,
+	NVariableDeclaration(NType* type, NIdentifier* name,
 			NExpression *assignmentExpr = 0);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
@@ -243,13 +256,16 @@ public:
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
-class NIfClause {
+class NIfClause : public Indentable {
 public:
+	bool first;
 
 	NExpression* condition;
 	NBlock* body;
 
-	NIfClause(NExpression* condition, NBlock* body);
+	NIfClause(NExpression* condition, NBlock* body, bool first = false);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 
 };
 

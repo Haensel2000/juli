@@ -63,20 +63,34 @@ enum NodeType {
 	FUNCTION_DEF
 };
 
+class Marker : public cpputils::debug::Printable {
+public:
+	unsigned int line;
+	unsigned int column;
+
+	Marker(unsigned int line, unsigned int column);
+
+	virtual ~Marker();
+
+	virtual void print(std::ostream& os) const;
+};
+
 class Indentable {
 public:
-	const std::string filename;
-	const unsigned int line;
-	const unsigned int start;
-	const unsigned int end;
+	std::string filename;
+	Marker start;
+	Marker end;
 
-	Indentable(const std::string& filename = "<unknown>",
-				const unsigned int line = 0, const unsigned int start = 0,
-				const unsigned int end = 0);
+	Indentable();
 
 	virtual ~Indentable();
 
 	void beginLine(std::ostream& os, int indent) const;
+
+	void printLocation(std::ostream& os) const;
+
+	void setSourceLocation(const std::string& filename,
+			const Marker& start, const Marker& end);
 
 	virtual void print(std::ostream& os, int indent,
 			unsigned int flags) const = 0;
@@ -90,9 +104,7 @@ protected:
 	const NodeType nodeType;
 public:
 
-	Node(const NodeType nodeType, const std::string& filename = "<unknown>",
-			const unsigned int line = 0, const unsigned int start = 0,
-			const unsigned int end = 0);
+	Node(NodeType nodeType);
 
 	virtual ~Node();
 

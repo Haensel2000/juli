@@ -32,11 +32,9 @@ public:
 
 	const std::string& getFile() const;
 
-	unsigned int getLine() const;
+	const Marker getStart() const;
 
-	unsigned int getStart() const;
-
-	unsigned int getEnd() const;
+	const Marker getEnd() const;
 
 };
 

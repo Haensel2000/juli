@@ -20,7 +20,7 @@ void juli::Declarator::visitIntegerLiteral(const NLiteral<uint64_t>* n) {
 void juli::Declarator::visitStringLiteral(const NStringLiteral* n) {
 }
 
-void juli::Declarator::visitVariableRef(const NIdentifier* n) {
+void juli::Declarator::visitVariableRef(const NVariableRef* n) {
 }
 
 void juli::Declarator::visitCast(const NCast* n) {

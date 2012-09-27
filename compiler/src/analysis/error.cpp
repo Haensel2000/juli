@@ -1,5 +1,7 @@
 #include "error.h"
 
+using namespace juli;
+
 juli::CompilerError::CompilerError(const CompilerError& ce) :
 		msgstream(ce.getMessage()), node(ce.node) {
 }
@@ -25,20 +27,16 @@ const std::string& juli::CompilerError::getFile() const {
 	return node->filename;
 }
 
-unsigned int juli::CompilerError::getLine() const {
-	return node->line;
-}
-
-unsigned int juli::CompilerError::getStart() const {
+const Marker juli::CompilerError::getStart() const {
 	return node->start;
 }
 
-unsigned int juli::CompilerError::getEnd() const {
+const Marker juli::CompilerError::getEnd() const {
 	return node->end;
 }
 
 std::ostream& operator<<(std::ostream& os, const juli::CompilerError& ce) {
-	os << ce.getFile() << ":" << ce.getLine() << "," << ce.getStart() << ","
+	os << ce.getFile() << "  " << ce.getStart() << ","
 			<< ce.getEnd() << " - " << ce.getMessage() << std::endl;
 	return os;
 }

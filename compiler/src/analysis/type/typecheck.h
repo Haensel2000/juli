@@ -65,7 +65,7 @@ public:
 
 	const Type* visitStringLiteral(NStringLiteral* n);
 
-	const Type* visitVariableRef(NIdentifier* n);
+	const Type* visitVariableRef(NVariableRef* n);
 
 	const Type* visitCast(NCast* n);
 

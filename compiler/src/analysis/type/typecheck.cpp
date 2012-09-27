@@ -43,7 +43,7 @@ void juli::SymbolTable::addSymbol(const std::string& name, const Type* type) {
 }
 
 void juli::SymbolTable::addSymbol(NVariableDeclaration* node) {
-	addSymbol(node->name, node->type->resolve(typeInfo));
+	addSymbol(node->name->name, node->type->resolve(typeInfo));
 }
 
 juli::TypeChecker::TypeChecker(const TypeInfo& typeInfo) :
@@ -96,7 +96,7 @@ const Type* juli::TypeChecker::visitStringLiteral(NStringLiteral* n) {
 	return n->expressionType;
 }
 
-const Type* juli::TypeChecker::visitVariableRef(NIdentifier* n) {
+const Type* juli::TypeChecker::visitVariableRef(NVariableRef* n) {
 	n->expressionType = symbolTable.getSymbol(n->name);
 	if (!n->expressionType) {
 		CompilerError err(n);
@@ -175,10 +175,10 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 }
 
 const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
-	NFunctionSignature* signature = typeInfo.getFunction(n->id)->signature;
+	NFunctionSignature* signature = typeInfo.getFunction(n->name->name)->signature;
 	if (!signature) {
 		CompilerError err(n);
-		err.getStream() << "Undeclared function '" << n->id << "'";
+		err.getStream() << "Undeclared function '" << n->name << "'";
 		throw err;
 	}
 
@@ -236,7 +236,7 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 
 const Type* juli::TypeChecker::visitAssignment(NAssignment* n) {
 	visit(n->rhs);
-	const Type* varType = symbolTable.getSymbol(n->lhs);
+	const Type* varType = symbolTable.getSymbol(n->lhs->name);
 	if (!varType) {
 		CompilerError err(n);
 		err.getStream() << "Unknown symbol " << n->lhs;

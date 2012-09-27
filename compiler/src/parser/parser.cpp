@@ -54,7 +54,7 @@ NBlock* juli::Parser::parse(const string& filename) {
 		return 0;
 	}
 
-	NBlock* ast = parser->translation_unit(parser);
+	NBlock* ast = parser->translation_unit(parser, filename);
 
 	//std::cout << translationUnit->getAST() << std::endl;
 

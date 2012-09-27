@@ -35,7 +35,7 @@ public:
 
 	void visitStringLiteral(const NStringLiteral* n);
 
-	void visitVariableRef(const NIdentifier* n);
+	void visitVariableRef(const NVariableRef* n);
 
 	void visitCast(const NCast* n);
 

@@ -17,13 +17,19 @@ options {
 }
 
 @postinclude {
+  std::string filename;
 }
 
-translation_unit returns [juli::NBlock* result = 0]:
-{ 
+translation_unit[const std::string& fn] returns [juli::NBlock* result = 0]:
+{
+  filename = fn;
   result = new juli::NBlock();
 }
 (stmt=statement { result->addStatement(stmt); })+ 
+
+{
+  setSourceLoc(result, *result->statements.begin(), *(--result->statements.end()));
+}
 ;
 
 statement returns [juli::NStatement* result = 0]: 
@@ -42,9 +48,14 @@ function_definition returns [juli::NFunctionDefinition* result = 0]
 {
   juli::NBlock* bl = 0;
 }:
-decl=function_declaration (b=block { bl = b; } | ';')
+decl=function_declaration (b=block { bl = b; } | SCOL)
 {
   result = new juli::NFunctionDefinition(decl, bl);
+  if (bl) {
+    setSourceLoc(result, decl, bl);
+  } else {
+    setSourceLoc(result, decl, $SCOL);
+  }
 }
 ;
 
@@ -52,15 +63,19 @@ block returns [juli::NBlock* result = 0]:
 {
   result = new juli::NBlock();
 }
-'{'
+OCBR
 (stmt=statement { result->addStatement(stmt); })*
-'}' 
+CCBR
+{
+  setSourceLoc(result, filename, $OCBR, $CCBR);
+}
 ;
 
 while_statement returns [juli::NStatement* result = 0]:
-'while' '(' cond=expression ')' b=block
+WHILE OPAR cond=expression CPAR b=block
 {
   result = new juli::NWhileStatement(cond, b);
+  setSourceLoc(result, $WHILE, b);
 }
 ;
 
@@ -69,25 +84,28 @@ if_statement returns [juli::NStatement* result = 0]
 {
   std::vector<juli::NIfClause*> clauses;
 }:
-cl=if_clause { clauses.push_back(cl); }
+cl=if_clause { clauses.push_back(cl); cl->first = true; }
 ('else' cl=if_clause { clauses.push_back(cl); })*
 (cl=else_clause { clauses.push_back(cl); })?
 {
   result = new juli::NIfStatement(clauses);
+  setSourceLoc(result, *clauses.begin(), *(--clauses.end()));
 }
 ;
 
 if_clause returns [juli::NIfClause* result = 0]:
-'if' '(' cond=expression ')' bl=block
+IF OPAR cond=expression CPAR bl=block
 {
   result = new juli::NIfClause(cond, bl);
+  setSourceLoc(result, $IF, bl);
 }
 ;
 
 else_clause returns [juli::NIfClause* result = 0]:
-'else' bl=block
+ELSE bl=block
 {
   result = new juli::NIfClause(0, bl);
+  setSourceLoc(result, $ELSE, bl);
 }
 ;
 
@@ -99,16 +117,17 @@ function_declaration returns [juli::NFunctionSignature* result = 0]
    std::string name;
    bool varArgs = false;
 }:
-sign=variable_declaration { name = sign->name; type = sign->type; }
-'(' 
+sign=variable_declaration { name = sign->name->name; type = sign->type; }
+OPAR
 (first_arg=variable_declaration { arguments.push_back(first_arg); }
 (',' arg=variable_declaration { arguments.push_back(arg); } )
 *)
 ?
 (',' VarArgs { varArgs = true; } )?
-')'
+CPAR
 {
   result = new juli::NFunctionSignature(type, name, arguments, varArgs);
+  setSourceLoc(result, sign, $CPAR);
 }
 ;
 
@@ -117,9 +136,10 @@ variable_definition returns [juli::NVariableDeclaration* result = 0]
 {
   juli::NExpression* exp = 0;
 }:
-vtype=type id=identifier ('=' e=expression { exp = e; })? ';'
+vtype=type id=identifier ('=' e=expression { exp = e; })? SCOL
 {
   result = new juli::NVariableDeclaration(vtype, id, exp);
+  setSourceLoc(result, vtype, $SCOL);
 }
 ;
 
@@ -127,25 +147,37 @@ variable_declaration returns [juli::NVariableDeclaration* result = 0]:
 vtype=type id=identifier
 {
   result = new juli::NVariableDeclaration(vtype, id);
+  setSourceLoc(result, vtype, id);
 }
 ;
 
-return_statement returns [juli::NReturnStatement* result = 0]:
+return_statement returns [juli::NReturnStatement* result = 0]
+@declarations {
+  juli::NExpression* exp = 0;
+}:
+RETURN
+(e=expression { exp = e; })? 
+SCOL
 {
-  result = new juli::NReturnStatement(0);
+  result = new juli::NReturnStatement(exp);
+  setSourceLoc(result, filename, $RETURN, $SCOL);
 }
-'return' 
-(exp=expression {result = new juli::NReturnStatement(exp);})? 
-';'
 ;
 
 expression_statement returns [juli::NExpressionStatement* result = 0]:
-exp=expression ';' { result = new juli::NExpressionStatement(exp); }
+exp=expression SCOL 
+{ 
+  result = new juli::NExpressionStatement(exp);
+  setSourceLoc(result, exp, $SCOL); 
+}
 ;
 
 assignment returns [juli::NAssignment* result = 0]: 
-id=identifier '=' exp=expression ';' 
-{ result = new juli::NAssignment(id, exp); }
+id=identifier '=' exp=expression SCOL 
+{
+  result = new juli::NAssignment(id, exp);
+  setSourceLoc(result, id, $SCOL);
+}
 ;
 
 expression returns [juli::NExpression* result = 0]
@@ -159,7 +191,11 @@ expression returns [juli::NExpression* result = 0]
     ( OP_LAND      { type = juli::LAND; }
     | OP_LOR     { type = juli::LOR; }
     )
-    op2=comparison  { result = new juli::NBinaryOperator(result, type, op2); }
+    op2=comparison
+    { 
+      result = new juli::NBinaryOperator(result, type, op2);
+      setSourceLoc(result, op1, op2);
+    }
   )*
 ;
 
@@ -178,7 +214,11 @@ comparison returns [juli::NExpression* result = 0]
     | OP_LEQ     { type = juli::LEQ; }
     | OP_GEQ     { type = juli::GEQ; }
     )
-    op2=add  { result = new juli::NBinaryOperator(result, type, op2); }
+    op2=add  
+    { 
+      result = new juli::NBinaryOperator(result, type, op2);
+      setSourceLoc(result, op1, op2);
+    }
   )*
 ;
 
@@ -193,7 +233,11 @@ add returns [juli::NExpression* result = 0]
     ( OP_PLUS      { type = juli::PLUS; }
     | OP_MINUS   { type = juli::MINUS; }
     )
-    op2=mul  { result = new juli::NBinaryOperator(result, type, op2); }
+    op2=mul
+    { 
+      result = new juli::NBinaryOperator(result, type, op2);
+      setSourceLoc(result, op1, op2);
+    }
   )*
 ;
 
@@ -209,7 +253,11 @@ mul returns [juli::NExpression* result = 0]
     | OP_DIV    { type = juli::DIV; }
     | OP_MOD    { type = juli::MOD; }
     )
-    op2=unary  { result = new juli::NBinaryOperator(result, type, op2); }
+    op2=unary  
+    { 
+      result = new juli::NBinaryOperator(result, type, op2);
+      setSourceLoc(result, op1, op2);
+    }
   )*
 ;
 
@@ -218,42 +266,59 @@ unary returns [juli::NExpression* result = 0]
 {
   juli::Operator type = juli::UNKNOWN;
   juli::NUnaryOperator* current = 0;
+  pANTLR3_COMMON_TOKEN operatorToken = 0;
 }:
   (
-    ( OP_NOT    { type = juli::NOT; }
-    | OP_TILDE  { type = juli::TILDE; }
-    | OP_HASH   { type = juli::HASH; }
+    ( OP_NOT    { type = juli::NOT; operatorToken = $OP_NOT; }
+    | OP_TILDE  { type = juli::TILDE; operatorToken = $OP_TILDE; }
+    | OP_HASH   { type = juli::HASH; operatorToken = $OP_HASH; }
     )
     {
       if (current) {
         juli::NUnaryOperator* uop = new juli::NUnaryOperator(0, type);
         current->expression = uop;
+        setSourceLoc(uop, filename, operatorToken);
+        setSourceLoc(current, current, uop);
         current = uop;
+        
       } else {
         current = new juli::NUnaryOperator(0, type);
+        setSourceLoc(current, filename, operatorToken);
       }
     }
   )*
   
   op=array_access  
   { 
-    if (current)
+    if (current) {
       current->expression = op;
-    else
+      setSourceLoc(current, current, op);
+      result = current;
+    } else {
       result = op;
+    }
   }
 ;
 
 array_access returns [juli::NExpression* result = 0]:
 vref=term { result = vref; }
-('[' vindex=expression ']' { result = new juli::NArrayAccess(result, vindex); })*
+(OSBR vindex=expression CSBR 
+{ 
+  result = new juli::NArrayAccess(result, vindex);
+  setSourceLoc(result, vref, $CSBR);
+}
+)*
 ;
 
 term returns [juli::NExpression* result = 0]:
 val=literal { result = val; } |
-s=identifier { result = new juli::NIdentifier(s); } |
+s=identifier { result = new juli::NVariableRef(s); } |
 val=function_call { result = val; } | 
-'(' val=expression ')' { result = val; }
+OPAR val=expression CPAR 
+{ 
+  result = val;
+  setSourceLoc(result, filename, $OPAR, $CPAR); 
+}
 ;
 
 literal returns [juli::NExpression* result = 0]: 
@@ -268,12 +333,13 @@ function_call returns [juli::NFunctionCall* result = 0]
   juli::ExpressionList arguments;
 }:
 id=identifier 
-  '(' 
+  OPAR
     (arg=expression { arguments.push_back(arg); })? 
     (',' arg=expression { arguments.push_back(arg); })* 
-  ')'
+  CPAR
 {
   result = new juli::NFunctionCall(id, arguments);
+  setSourceLoc(result, id, $CPAR);
 }
 ;
 
@@ -283,15 +349,23 @@ t=array_type  { result = t; }
 
 array_type returns [juli::NType* result = 0]:
 t=basic_type { result = t; }
-('[]' { result = new juli::NArrayType(result); })* 
+(ARRAY_SUFFIX
+{ 
+  result = new juli::NArrayType(result);
+  setSourceLoc(result, t, $ARRAY_SUFFIX);
+})* 
 ;
 
 basic_type returns [juli::NType* result = 0]:
 s=identifier          { result = new juli::NBasicType(s); } 
 ;
 
-identifier returns [std::string result]:
-Identifier { result = getTokenString($Identifier); } 
+identifier returns [juli::NIdentifier* result = 0]:
+Identifier 
+{ 
+  result = new juli::NIdentifier(getTokenString($Identifier)); 
+  setSourceLoc(result, filename, $Identifier);
+} 
 ;
 
 double_literal returns [juli::NExpression* result = 0]:
@@ -301,6 +375,7 @@ FloatingPointLiteral
   double value = 0.0;
   valueStr >> value;
   result = new juli::NLiteral<double>(juli::DOUBLE_LITERAL, value, &juli::PrimitiveType::FLOAT64_TYPE); 
+  setSourceLoc(result, filename, $FloatingPointLiteral);
 } 
 ;
 
@@ -310,6 +385,7 @@ StringLiteral
   std::string tokenText = getTokenString($StringLiteral);
   tokenText = tokenText.substr(1, tokenText.size() - 2);
   result = new juli::NStringLiteral(tokenText);
+  setSourceLoc(result, filename, $StringLiteral);
 }
 ;
 
@@ -319,7 +395,8 @@ DecimalLiteral
   std::stringstream valueStr(getTokenString($DecimalLiteral));
   uint64_t value = 0;
   valueStr >> value;
-  result = new juli::NLiteral<uint64_t>(juli::INTEGER_LITERAL, value, &juli::PrimitiveType::INT32_TYPE); 
+  result = new juli::NLiteral<uint64_t>(juli::INTEGER_LITERAL, value, &juli::PrimitiveType::INT32_TYPE);
+  setSourceLoc(result, filename, $DecimalLiteral);
 }
 ;
 
@@ -395,6 +472,18 @@ OP_LAND : 'and' ;
 OP_NOT : 'not' ;
 OP_TILDE : '~' ;
 OP_HASH : '#' ;
+RETURN : 'return' ;
+IF : 'if' ;
+ELSE : 'else' ;
+WHILE : 'while' ;
+ARRAY_SUFFIX : '[]' ;
+OPAR : '(' ;
+CPAR : ')' ;
+OSBR : '[' ;
+CSBR : ']' ;
+OCBR : '{' ;
+CCBR : '}' ;
+SCOL : ';' ;
     
 Identifier 
     :   Letter (Letter|JavaIDDigit)*
