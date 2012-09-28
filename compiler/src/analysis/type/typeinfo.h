@@ -13,14 +13,15 @@
 
 #include <parser/ast/types.h>
 #include <analysis/error.h>
+#include <analysis/type/functions.h>
 
 namespace juli {
 
-class NFunctionDefinition;
+class Functions;
 
 class TypeInfo {
 private:
-	std::map<std::string, const NFunctionDefinition*> functions;
+	Functions functions;
 	std::map<std::string, Type*> typeTable;
 public:
 
@@ -28,8 +29,10 @@ public:
 
 	void declareFunction(const NFunctionDefinition* f);
 
-	const NFunctionDefinition* getFunction(const std::string& name) const
+	std::vector<Function*> resolveFunction(const std::string& name, std::vector<const Type*>& argTypes) const
 			throw (CompilerError);
+
+	const Functions& getFunctions() const;
 
 	const Type* getType(const std::string& name, const Indentable* astNode) const throw (CompilerError);
 

@@ -53,7 +53,8 @@ juli::TypeChecker::TypeChecker(const TypeInfo& typeInfo) :
 }
 
 NExpression* juli::TypeChecker::checkAssignment(const Type* left,
-		NExpression* right, const Indentable* n, const std::string& message) const {
+		NExpression* right, const Indentable* n,
+		const std::string& message) const {
 	if (!(*left == *right->expressionType)) {
 
 		if (!right->expressionType->isAssignableTo(left)) {
@@ -175,44 +176,37 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 }
 
 const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
-	NFunctionSignature* signature = typeInfo.getFunction(n->name->name)->signature;
-	if (!signature) {
-		CompilerError err(n);
-		err.getStream() << "Undeclared function '" << n->name << "'";
-		throw err;
+
+	ExpressionList& args = n->arguments;
+	std::vector<const Type*> argTypes;
+	for (ExpressionList::iterator i = args.begin(); i != args.end(); ++i) {
+		argTypes.push_back(visit(*i));
 	}
 
 	n->expressionType = 0;
 
-	ExpressionList& args = n->arguments;
-	VariableList& formalArgs = signature->arguments;
-
-	if (args.size() < formalArgs.size()
-			|| (args.size() > formalArgs.size() && !signature->varArgs)) {
+	std::vector<Function*> matches = typeInfo.resolveFunction(n->name->name,
+			argTypes);
+	if (matches.empty()) {
 		CompilerError err(n);
-		err.getStream() << "Invalid number of arguments for function '"
-				<< signature->name << "'. Expected " << formalArgs.size()
-				<< " got " << args.size();
+		err.getStream() << "Undeclared function: " << n->name->name << " "
+				<< argTypes;
+		throw err;
+	} else if (matches.size() > 1) {
+		CompilerError err(n);
+		err.getStream() << "Ambiguous Function Call: " << n->name->name << "("
+				<< argTypes << ")" << std::endl << "Candidates are: "
+				<< std::endl;
+		for (std::vector<Function*>::iterator i = matches.begin();
+				i != matches.end(); ++i) {
+			err.getStream() << *i << std::endl;
+		}
+
 		throw err;
 	}
 
-	ExpressionList::iterator i = args.begin();
-	VariableList::iterator fi = formalArgs.begin();
-
-	int c = 1;
-	while (i != args.end()) {
-		visit(*i);
-		if (fi != formalArgs.end()) {
-			const Type* formalType = (*fi)->type->resolve(typeInfo);
-			*i = checkAssignment(formalType, *i, *i);
-			++fi;
-		}
-
-		++c;
-		++i;
-	}
-
-	n->expressionType = signature->type->resolve(typeInfo);
+	n->function = *matches.begin();
+	n->expressionType = n->function->resultType;
 	return n->expressionType;
 }
 
@@ -290,12 +284,18 @@ const Type* juli::TypeChecker::visitFunctionDef(NFunctionDefinition* n) {
 }
 
 const Type* juli::TypeChecker::visitReturn(NReturnStatement* n) {
+	const Type* functionReturnType = _currentFunction->signature->type->resolve(
+			typeInfo);
 	if (n->expression) {
 		visit(n->expression);
 
-		n->expression = checkAssignment(
-				_currentFunction->signature->type->resolve(typeInfo),
-				n->expression, n);
+		n->expression = checkAssignment(functionReturnType, n->expression, n);
+	} else {
+		if (!(*functionReturnType == PrimitiveType::VOID_TYPE)) {
+			CompilerError err(n);
+			err.getStream() << "Function need to return a value of type " << functionReturnType;
+			throw err;
+		}
 	}
 
 	return 0;
@@ -317,7 +317,8 @@ const Type* juli::TypeChecker::visitIf(NIfStatement* n) {
 
 const Type* juli::TypeChecker::visitWhile(NWhileStatement* n) {
 	visit(n->condition);
-	n->condition = checkAssignment(&PrimitiveType::BOOLEAN_TYPE, n->condition, n->condition);
+	n->condition = checkAssignment(&PrimitiveType::BOOLEAN_TYPE, n->condition,
+			n->condition);
 	visit(n->body);
 	return 0;
 }

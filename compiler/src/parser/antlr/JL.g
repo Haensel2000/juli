@@ -116,8 +116,9 @@ function_declaration returns [juli::NFunctionSignature* result = 0]
    juli::NType* type;
    std::string name;
    bool varArgs = false;
+   bool cmod = false;
 }:
-sign=variable_declaration { name = sign->name->name; type = sign->type; }
+(C_MOD { cmod = true; })? sign=variable_declaration { name = sign->name->name; type = sign->type; }
 OPAR
 (first_arg=variable_declaration { arguments.push_back(first_arg); }
 (',' arg=variable_declaration { arguments.push_back(arg); } )
@@ -126,8 +127,12 @@ OPAR
 (',' VarArgs { varArgs = true; } )?
 CPAR
 {
-  result = new juli::NFunctionSignature(type, name, arguments, varArgs);
-  setSourceLoc(result, sign, $CPAR);
+  result = new juli::NFunctionSignature(type, name, arguments, varArgs, (cmod) ? juli::MODIFIER_C : 0);
+  if (cmod) {
+    setSourceLoc(result, filename, $C_MOD, $CPAR);
+  } else {
+    setSourceLoc(result, sign, $CPAR);
+  }
 }
 ;
 
@@ -484,6 +489,8 @@ CSBR : ']' ;
 OCBR : '{' ;
 CCBR : '}' ;
 SCOL : ';' ;
+
+C_MOD : 'C' ;
     
 Identifier 
     :   Letter (Letter|JavaIDDigit)*

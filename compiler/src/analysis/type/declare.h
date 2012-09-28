@@ -9,6 +9,7 @@
 #define DECLARE_H_
 
 #include <parser/ast/visitor.h>
+#include <analysis/type/typeinfo.h>
 
 #include <map>
 

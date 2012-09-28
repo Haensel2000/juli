@@ -19,12 +19,20 @@ namespace juli {
 
 class IRGenerator {
 private:
+	const TypeInfo& typeInfo;
 	TranslationUnit translationUnit;
 	llvm::IRBuilder<> builder;
 	llvm::Module& module;
 	llvm::LLVMContext& context;
 
+	std::map<std::string, llvm::Function*> llvmFunctionTable;
+
+
 public:
+
+
+
+	llvm::Function* getFunction(const Function* f);
 
 	llvm::Value* visit(const Node* n);
 
@@ -54,11 +62,9 @@ public:
 
 	llvm::Value* visitVariableDecl(const NVariableDeclaration* n);
 
-	llvm::FunctionType* createFunctionType(const NFunctionSignature * n);
+	llvm::FunctionType* createFunctionType(const Function * n);
 
-	llvm::Function* createFunction(const NFunctionSignature * n);
-
-	llvm::Value* visitFunctionDecl(const NFunctionSignature * n);
+	llvm::Function* createFunction(const Function * n);
 
 	llvm::Value* visitFunctionDef(const NFunctionDefinition* n);
 
@@ -71,7 +77,7 @@ public:
 	llvm::Type* resolveType(const NType* n);
 	llvm::Type* resolveType(const Type* n);
 
-	IRGenerator(const std::string& moduleName, const TypeInfo& typeInfo) :
+	IRGenerator(const std::string& moduleName, const TypeInfo& typeInfo) : typeInfo(typeInfo),
 			translationUnit(moduleName, typeInfo), builder(translationUnit.getContext()), module(
 					*translationUnit.module), context(
 					translationUnit.getContext()) {

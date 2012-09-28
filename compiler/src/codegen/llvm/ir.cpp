@@ -1,6 +1,7 @@
 #include "ir.h"
 
 #include <parser/ast/visitor.h>
+#include <analysis/type/functions.h>
 
 #include <llvm/Analysis/Verifier.h>
 #include <llvm/DerivedTypes.h>
@@ -10,6 +11,51 @@
 #include <llvm/Value.h>
 
 using namespace juli;
+
+llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
+	const std::string llvmName = function->mangle();
+	std::map<std::string, llvm::Function*>::iterator i = llvmFunctionTable.find(llvmName);
+	if (i == llvmFunctionTable.end()) {
+		llvm::Function* f = createFunction(function);
+
+		if (function->body) {
+
+			llvm::BasicBlock* llvmBlock = llvm::BasicBlock::Create(context,
+					"entry", f);
+			builder.SetInsertPoint(llvmBlock);
+
+			llvm::Function::arg_iterator i = f->getArgumentList().begin();
+			for (std::vector<FormalParameter>::const_iterator vi =
+					function->formalArguments.begin();
+					vi != function->formalArguments.end(); ++i, ++vi) {
+				//(*vi)->generateCode(builder);
+
+				llvm::Value* param = builder.CreateAlloca(i->getType());
+				builder.CreateStore(i, param);
+				translationUnit.getLLVMSymbolTable()[vi->name] = param;
+			}
+
+			visit(function->body);
+
+			//	if (f->getReturnType() == llvm::Type::getVoidTy(translationUnit->getContext())) {
+			//		builder.CreateRet(0);
+			//	}
+
+			for (std::vector<FormalParameter>::const_iterator i =
+					function->formalArguments.begin();
+					i != function->formalArguments.end(); ++i) {
+				translationUnit.getLLVMSymbolTable().erase(i->name);
+			}
+
+			if (llvm::verifyFunction(*f, llvm::PrintMessageAction)) {
+				f->dump();
+			}
+
+		}
+		llvmFunctionTable[llvmName] = f;
+	}
+	return llvmFunctionTable[llvmName];
+}
 
 llvm::Type* juli::IRGenerator::resolveType(const Type* n) {
 	return translationUnit.resolveLLVMType(n);
@@ -116,7 +162,8 @@ llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
 llvm::Value* juli::IRGenerator::visitUnaryOperator(const NUnaryOperator* n) {
 	llvm::Value* expressionValue = visit(n->expression);
 
-	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(n->expressionType);
+	const PrimitiveType* pt =
+			dynamic_cast<const PrimitiveType*>(n->expressionType);
 
 	switch (n->op) {
 	case NOT:
@@ -226,7 +273,7 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 }
 
 llvm::Value* juli::IRGenerator::visitFunctionCall(const NFunctionCall* n) {
-	llvm::Function* function = module.getFunction(n->name->name);
+	llvm::Function* function = getFunction(n->function);
 
 	std::vector<llvm::Value*> argValues;
 	for (unsigned i = 0, e = n->arguments.size(); i != e; ++i) {
@@ -235,7 +282,7 @@ llvm::Value* juli::IRGenerator::visitFunctionCall(const NFunctionCall* n) {
 			return 0;
 	}
 
-	return builder.CreateCall(function, argValues, "calltmp");
+	return builder.CreateCall(function, argValues);
 }
 
 llvm::Value* juli::IRGenerator::visitArrayAccess(const NArrayAccess* n) {
@@ -274,67 +321,66 @@ llvm::Value* juli::IRGenerator::visitVariableDecl(
 }
 
 llvm::FunctionType* juli::IRGenerator::createFunctionType(
-		const NFunctionSignature * n) {
-	llvm::Type* returnType = resolveType(n->type);
+		const Function * n) {
+	llvm::Type* returnType = resolveType(n->resultType);
 	std::vector<llvm::Type*> argumentTypes;
 
-	for (std::vector<NVariableDeclaration*>::const_iterator i =
-			n->arguments.begin(); i != n->arguments.end(); ++i) {
-		argumentTypes.push_back(resolveType((*i)->type));
+	for (std::vector<FormalParameter>::const_iterator i =
+			n->formalArguments.begin(); i != n->formalArguments.end(); ++i) {
+		argumentTypes.push_back(resolveType(i->type));
 	}
 
 	return llvm::FunctionType::get(returnType, argumentTypes, n->varArgs);
 }
 
 llvm::Function* juli::IRGenerator::createFunction(
-		const NFunctionSignature * n) {
+		const Function * n) {
 	llvm::Function* f = llvm::Function::Create(createFunctionType(n),
-			llvm::Function::ExternalLinkage, n->name, &module);
+			llvm::Function::ExternalLinkage, n->mangle(), &module);
 	return f;
 }
 
-llvm::Value* juli::IRGenerator::visitFunctionDecl(
-		const NFunctionSignature * n) {
-	createFunction(n);
-	return 0;
-}
-
 llvm::Value* juli::IRGenerator::visitFunctionDef(const NFunctionDefinition* n) {
-	llvm::Function* f = createFunction(n->signature);
 
-	if (n->body) {
+	getFunction(new Function(n, typeInfo));
 
-		llvm::BasicBlock* llvmBlock = llvm::BasicBlock::Create(context, "entry",
-				f);
-		builder.SetInsertPoint(llvmBlock);
+	return 0;
 
-		llvm::Function::arg_iterator i = f->getArgumentList().begin();
-		for (VariableList::const_iterator vi = n->signature->arguments.begin();
-				vi != n->signature->arguments.end(); ++i, ++vi) {
-			//(*vi)->generateCode(builder);
-
-			llvm::Value* param = builder.CreateAlloca(i->getType());
-			builder.CreateStore(i, param);
-			translationUnit.getLLVMSymbolTable()[(*vi)->name->name] = param;
-		}
-
-		visit(n->body);
-
-//	if (f->getReturnType() == llvm::Type::getVoidTy(translationUnit->getContext())) {
-//		builder.CreateRet(0);
+//	llvm::Function* f = createFunction(n->signature);
+//
+//	if (n->body) {
+//
+//		llvm::BasicBlock* llvmBlock = llvm::BasicBlock::Create(context, "entry",
+//				f);
+//		builder.SetInsertPoint(llvmBlock);
+//
+//		llvm::Function::arg_iterator i = f->getArgumentList().begin();
+//		for (VariableList::const_iterator vi = n->signature->arguments.begin();
+//				vi != n->signature->arguments.end(); ++i, ++vi) {
+//			//(*vi)->generateCode(builder);
+//
+//			llvm::Value* param = builder.CreateAlloca(i->getType());
+//			builder.CreateStore(i, param);
+//			translationUnit.getLLVMSymbolTable()[(*vi)->name->name] = param;
+//		}
+//
+//		visit(n->body);
+//
+////	if (f->getReturnType() == llvm::Type::getVoidTy(translationUnit->getContext())) {
+////		builder.CreateRet(0);
+////	}
+//
+//		for (std::vector<NVariableDeclaration*>::const_iterator i =
+//				n->signature->arguments.begin();
+//				i != n->signature->arguments.end(); ++i) {
+//			translationUnit.getLLVMSymbolTable().erase((*i)->name->name);
+//		}
+//
+//		if (llvm::verifyFunction(*f, llvm::PrintMessageAction)) {
+//			f->dump();
+//		}
+//
 //	}
-
-		for (std::vector<NVariableDeclaration*>::const_iterator i =
-				n->signature->arguments.begin();
-				i != n->signature->arguments.end(); ++i) {
-			translationUnit.getLLVMSymbolTable().erase((*i)->name->name);
-		}
-
-		if (llvm::verifyFunction(*f, llvm::PrintMessageAction)) {
-			f->dump();
-		}
-
-	}
 	return 0;
 }
 

@@ -14,18 +14,22 @@ juli::TypeInfo::TypeInfo() {
 	typeTable["char"] = new PrimitiveType(INT8);
 }
 
-void juli::TypeInfo::declareFunction(const NFunctionDefinition* f) {
-	functions[f->signature->name] = f;
+void juli::TypeInfo::declareFunction(const NFunctionDefinition* def) {
+	Function* f = new Function(def, *this);
+	functions.addFunction(f);
 }
 
-const NFunctionDefinition* juli::TypeInfo::getFunction(
-		const std::string& name) const throw (CompilerError) {
+std::vector<Function*> juli::TypeInfo::resolveFunction(const std::string& name, std::vector<const Type*>& argTypes) const throw (CompilerError) {
 	try {
-		return functions.at(name);
+		return functions.resolve(name, argTypes);
 	} catch (std::out_of_range& e) {
-		return 0;
+		return std::vector<Function*>();
 	}
-	return 0;
+	return std::vector<Function*>();
+}
+
+const Functions& juli::TypeInfo::getFunctions() const {
+	return functions;
 }
 
 const Type* juli::TypeInfo::getType(const std::string& name, const Indentable* astNode) const

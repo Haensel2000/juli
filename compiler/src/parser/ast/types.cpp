@@ -196,6 +196,22 @@ const Type* juli::PrimitiveType::supportsBinaryOperator(Operator op,
 	return 0;
 }
 
+//http://theory.uwinnipeg.ca/localfiles/infofiles/gcc/gxxint_15.html
+const std::string juli::PrimitiveType::mangle() const {
+	switch (primitive) {
+	case VOID:
+		return "v";
+	case BOOLEAN:
+		return "b";
+	case INT8:
+		return "c";
+	case INT32:
+		return "i";
+	case FLOAT64:
+		return "d";
+	}
+}
+
 juli::ArrayType::ArrayType(const Type* elementType) :
 		Type(ARRAY), elementType(elementType) {
 }
@@ -248,4 +264,9 @@ const Type* juli::ArrayType::getUnaryOperatorType(Operator op) const {
 const Type* juli::ArrayType::supportsBinaryOperator(Operator op,
 		const Type* t) const {
 	return 0;
+}
+
+//http://theory.uwinnipeg.ca/localfiles/infofiles/gcc/gxxint_15.html
+const std::string juli::ArrayType::mangle() const {
+	return "P" + elementType->mangle();
 }

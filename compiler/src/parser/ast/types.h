@@ -17,9 +17,10 @@ enum Primitive {
 	INT8 = 0, INT32 = 1, FLOAT64 = 2, BOOLEAN = -1, VOID = -2
 };
 
+const std::string mangle(Primitive p);
+
 enum TypeCategory {
-	PRIMITIVE,
-	ARRAY
+	PRIMITIVE, ARRAY
 };
 
 class Type: public cpputils::debug::Printable {
@@ -41,7 +42,10 @@ public:
 
 	virtual const Type* getUnaryOperatorType(Operator op) const = 0;
 
-	virtual const Type* supportsBinaryOperator(Operator op, const Type* t) const = 0;
+	virtual const Type* supportsBinaryOperator(Operator op,
+			const Type* t) const = 0;
+
+	virtual const std::string mangle() const = 0;
 
 	TypeCategory getCategory() const;
 };
@@ -83,7 +87,10 @@ public:
 
 	virtual const Type* getUnaryOperatorType(Operator op) const;
 
-	virtual const Type* supportsBinaryOperator(Operator op, const Type* t) const;
+	virtual const Type* supportsBinaryOperator(Operator op,
+			const Type* t) const;
+
+	virtual const std::string mangle() const;
 };
 
 class ArrayType: public Type {
@@ -108,7 +115,10 @@ public:
 
 	virtual const Type* getUnaryOperatorType(Operator op) const;
 
-	virtual const Type* supportsBinaryOperator(Operator op, const Type* t) const;
+	virtual const Type* supportsBinaryOperator(Operator op,
+			const Type* t) const;
+
+	virtual const std::string mangle() const;
 };
 
 }

@@ -14,9 +14,10 @@
 #include <parser/ast/types.h>
 #include <analysis/error.h>
 
-#include <analysis/type/typeinfo.h>
-
 namespace juli {
+
+class TypeInfo;
+class Function;
 
 class NIdentifier : public Indentable {
 public:
@@ -141,6 +142,8 @@ public:
 	NIdentifier* name;
 	ExpressionList arguments;
 
+	Function* function;
+
 	NFunctionCall(NIdentifier* name, ExpressionList& arguments);
 
 	NFunctionCall(NIdentifier* name);
@@ -223,15 +226,18 @@ public:
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
+extern const unsigned int MODIFIER_C;
+
 class NFunctionSignature: public Indentable {
 public:
 	const std::string name;
 	const NType* type;
 	VariableList arguments;
 	bool varArgs;
+	unsigned int modifiers;
 
 	NFunctionSignature(const NType* type, const std::string& name,
-			const VariableList arguments, bool varArgs = false);
+			const VariableList arguments, bool varArgs = false, unsigned int modifiers = 0);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 

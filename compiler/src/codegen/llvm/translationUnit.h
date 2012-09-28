@@ -28,8 +28,12 @@ namespace juli {
 		StatementList statements;
 
 		std::map<std::string, llvm::Value*> llvmSymbolTable;
-		std::map<std::string, const Type*> symbolTable;
+		//std::map<std::string, const Type*> symbolTable;
+
 		const TypeInfo& types;
+
+
+
 		mutable std::vector<CompilerError> compilerErrors;
 
 

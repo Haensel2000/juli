@@ -1,5 +1,6 @@
 #include "ast.h"
 #include <codegen/llvm/translationUnit.h>
+#include <analysis/type/typeinfo.h>
 #include <iostream>
 
 #include <llvm/Analysis/Verifier.h>
@@ -180,11 +181,12 @@ void juli::NCast::print(std::ostream& os, int indent,
 }
 
 juli::NFunctionCall::NFunctionCall(NIdentifier* name, ExpressionList& arguments) :
-		NExpression(FUNCTION_CALL), name(name), arguments(arguments) {
+		NExpression(FUNCTION_CALL), name(name), arguments(arguments), function(
+				0) {
 }
 
 juli::NFunctionCall::NFunctionCall(NIdentifier* name) :
-		NExpression(FUNCTION_CALL), name(name) {
+		NExpression(FUNCTION_CALL), name(name), function(0) {
 }
 
 void juli::NFunctionCall::print(std::ostream& os, int indent,
@@ -437,8 +439,8 @@ void juli::NWhileStatement::print(std::ostream& os, int indent,
 }
 
 juli::NFunctionSignature::NFunctionSignature(const NType* type,
-		const std::string& name, const VariableList arguments, bool varArgs) :
-		name(name), type(type), arguments(arguments), varArgs(varArgs) {
+		const std::string& name, const VariableList arguments, bool varArgs, unsigned int modifiers) :
+		name(name), type(type), arguments(arguments), varArgs(varArgs), modifiers(modifiers) {
 }
 
 void juli::NFunctionSignature::print(std::ostream& os, int indent,
@@ -455,6 +457,8 @@ void juli::NFunctionSignature::print(std::ostream& os, int indent,
 		}
 		beginLine(os, indent + 2);
 		os << "VarArgs: " << varArgs << std::endl;
+		beginLine(os, indent + 2);
+		os << "C: " << bool(modifiers & MODIFIER_C) << std::endl;
 	} else {
 		os << type << " " << name << "(" << arguments;
 		if (varArgs)
@@ -462,6 +466,8 @@ void juli::NFunctionSignature::print(std::ostream& os, int indent,
 		os << ")";
 	}
 }
+
+const unsigned int juli::MODIFIER_C = 1;
 
 juli::NFunctionDefinition::NFunctionDefinition(NFunctionSignature * signature,
 		NBlock* body) :

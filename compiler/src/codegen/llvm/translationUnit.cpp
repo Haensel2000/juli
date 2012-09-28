@@ -23,6 +23,8 @@ llvm::LLVMContext& juli::TranslationUnit::getContext() const {
 	return module->getContext();
 }
 
+
+
 //const Type* juli::TranslationUnit::getVariableType(
 //		const std::string& name) const throw (CompilerError) {
 //	try {
