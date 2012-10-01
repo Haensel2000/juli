@@ -224,6 +224,12 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 		else if (pt->isSignedInteger())
 			return builder.CreateSDiv(left, right, "div_res");
 		break;
+	case MOD:
+		if (pt->isUnsignedInteger())
+			return builder.CreateURem(left, right, "mod_res");
+		else if (pt->isSignedInteger())
+			return builder.CreateSRem(left, right, "mod_res");
+		break;
 	case EQ:
 		if (pt->isFloatingPoint())
 			return builder.CreateFCmpOEQ(left, right, "eq_res");

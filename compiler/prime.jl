@@ -48,11 +48,10 @@ int factor(int v)
   while (i <= sqrt(v))
   {
     //printf("v = %d, i = %d\n", v, i);
-    r = v / i;
-    if (r*i == v)
+    if (v % i == 0)
     {
       printf("%d, ", i);
-      v = r;
+      v = v / i;
       i = 1;
     }
     i = i + 1;
