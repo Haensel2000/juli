@@ -16,7 +16,7 @@ include_path = [
 ]
 
 lib_path = [
-  os.path.join(CPPUTILS_PATH, 'Debug'), 
+  os.path.join(CPPUTILS_PATH, 'build'), 
   os.path.join(LLVM_PATH, 'Debug+Asserts/lib')
 ]
 

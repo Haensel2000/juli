@@ -26,6 +26,14 @@ private:
 	llvm::LLVMContext& context;
 
 	std::map<std::string, llvm::Function*> llvmFunctionTable;
+	llvm::ConstantInt* zero_ui8;
+	llvm::ConstantInt* zero_ui16;
+	llvm::ConstantInt* zero_ui32;
+	llvm::ConstantInt* zero_i8;
+	llvm::ConstantInt* zero_i16;
+	llvm::ConstantInt* zero_i32;
+	llvm::ConstantFP* zero_float;
+
 
 
 public:
@@ -81,6 +89,14 @@ public:
 			translationUnit(moduleName, typeInfo), builder(translationUnit.getContext()), module(
 					*translationUnit.module), context(
 					translationUnit.getContext()) {
+		zero_ui8 = llvm::ConstantInt::get(context, llvm::APInt(8, 0, bool(false)));
+		zero_ui16 = llvm::ConstantInt::get(context, llvm::APInt(16, 0, bool(false)));
+		zero_ui32 = llvm::ConstantInt::get(context, llvm::APInt(32, 0, bool(false)));
+		zero_i8 = llvm::ConstantInt::get(context, llvm::APInt(8, 0, true));
+		zero_i16 = llvm::ConstantInt::get(context, llvm::APInt(16, 0, true));
+		zero_i32 = llvm::ConstantInt::get(context, llvm::APInt(32, 0, true));
+
+		zero_float = llvm::ConstantFP::get(context, llvm::APFloat(0.0));
 	}
 
 	void process(const Node* n);

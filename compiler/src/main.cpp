@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 			Declarator declarator;
 			declarator.visit(ast);
 
-			declarator.getTypeInfo().dump();
+			//declarator.getTypeInfo().dump();
 
 			TypeChecker typeChecker(declarator.getTypeInfo());
 			typeChecker.visit(ast);

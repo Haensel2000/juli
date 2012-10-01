@@ -13,6 +13,11 @@
 
 Debug/
 Release/
+build/
+
+.sconsign.dblite
+.*.swp
+*~
 
 JLParser*
 JLLexer*

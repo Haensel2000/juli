@@ -14,9 +14,7 @@ void x(int s) {
 void main(int argc, char[][] argv) 
 {
   int i = 323;
-  if (not (i > 3)) {
-    printf("haha");
-  }
+  printf("haha %d\n", -argc);
   x(i);
   x("test");
   

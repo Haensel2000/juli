@@ -49,10 +49,24 @@ juli::Declarator::Declarator() {
 	logical.push_back("and");
 	logical.push_back("or");
 	declareImplicitOperator(logical, &PrimitiveType::BOOLEAN_TYPE,
-				&PrimitiveType::BOOLEAN_TYPE, 2);
+			&PrimitiveType::BOOLEAN_TYPE, 2);
 
 	declareImplicitOperator("not", &PrimitiveType::BOOLEAN_TYPE,
-					&PrimitiveType::BOOLEAN_TYPE, 1);
+			&PrimitiveType::BOOLEAN_TYPE, 1);
+
+	declareImplicitOperator("-", &PrimitiveType::INT8_TYPE,
+			&PrimitiveType::INT8_TYPE, 1);
+	declareImplicitOperator("-", &PrimitiveType::INT32_TYPE,
+			&PrimitiveType::INT32_TYPE, 1);
+	declareImplicitOperator("-", &PrimitiveType::FLOAT64_TYPE,
+			&PrimitiveType::FLOAT64_TYPE, 1);
+
+	declareImplicitOperator("~", &PrimitiveType::INT8_TYPE,
+			&PrimitiveType::INT8_TYPE, 1);
+	declareImplicitOperator("~", &PrimitiveType::INT32_TYPE,
+			&PrimitiveType::INT32_TYPE, 1);
+	declareImplicitOperator("~", &PrimitiveType::FLOAT64_TYPE,
+			&PrimitiveType::FLOAT64_TYPE, 1);
 
 }
 

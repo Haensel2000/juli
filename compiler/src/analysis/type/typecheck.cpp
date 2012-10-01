@@ -135,16 +135,20 @@ const Type* juli::TypeChecker::visitCast(NCast* n) {
 }
 
 const Type* juli::TypeChecker::visitUnaryOperator(NUnaryOperator* n) {
+	n->expressionType = 0;
+
 	const Type* etype = visit(n->expression);
 
-	n->expressionType = etype->getUnaryOperatorType(n->op);
-	if (n->expressionType == 0) {
-		CompilerError err(n);
-		err.getStream() << "Cannot apply " << n->op
-				<< " to expression of type '" << etype << "'";
-		throw err;
-	}
+	std::stringstream sstr;
+	sstr << n->op;
 
+	std::vector<const Type*> argTypes;
+	argTypes.push_back(etype);
+
+	Function* f = typeInfo.resolveFunction(sstr.str(), argTypes, n);
+	n->expression = coerce(n->expression, f->formalArguments[0].type);
+
+	n->expressionType = f->resultType;
 	return n->expressionType;
 }
 
@@ -166,38 +170,6 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 	n->rhs = coerce(n->rhs, f->formalArguments[1].type);
 
 	n->expressionType = f->resultType;
-
-//	n->commonType = lhs->supportsBinaryOperator(n->op, rhs);
-//	if (n->commonType == 0) {
-//		CompilerError err(n);
-//		err.getStream() << "Incompatible types '" << lhs << "' and '" << rhs
-//				<< "'";
-//		throw err;
-//	} else {
-//		n->lhs = coerce(n->lhs, n->commonType);
-//		n->rhs = coerce(n->rhs, n->commonType);
-//	}
-//
-//	switch (n->op) {
-//	case PLUS:
-//	case SUB:
-//	case MUL:
-//	case DIV:
-//	case MOD:
-//		n->expressionType = n->commonType;
-//		break;
-//	case EQ:
-//	case NEQ:
-//	case LT:
-//	case GT:
-//	case LEQ:
-//	case GEQ:
-//	case LOR:
-//	case LAND:
-//		n->expressionType = &PrimitiveType::BOOLEAN_TYPE;
-//		break;
-//	}
-
 	return n->expressionType;
 }
 

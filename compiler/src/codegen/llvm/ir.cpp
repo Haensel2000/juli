@@ -14,7 +14,8 @@ using namespace juli;
 
 llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
 	const std::string llvmName = function->mangle();
-	std::map<std::string, llvm::Function*>::iterator i = llvmFunctionTable.find(llvmName);
+	std::map<std::string, llvm::Function*>::iterator i = llvmFunctionTable.find(
+			llvmName);
 	if (i == llvmFunctionTable.end()) {
 		llvm::Function* f = createFunction(function);
 
@@ -166,6 +167,14 @@ llvm::Value* juli::IRGenerator::visitUnaryOperator(const NUnaryOperator* n) {
 			dynamic_cast<const PrimitiveType*>(n->expressionType);
 
 	switch (n->op) {
+	case MINUS:
+		if (pt->isFloatingPoint())
+			return builder.CreateFSub(zero_float, expressionValue, "neg_res");
+		else if (pt->isSignedInteger())
+			return builder.CreateSub(zero_i32, expressionValue, "neg_res");
+		else if (pt->isUnsignedInteger())
+			return builder.CreateSub(zero_ui32, expressionValue, "neg_res");
+		break;
 	case NOT:
 	case TILDE:
 		return builder.CreateNot(expressionValue, "not_res");
@@ -185,7 +194,8 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 	if (left == 0 || right == 0) // error handling
 		return 0;
 
-	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(n->lhs->expressionType);
+	const PrimitiveType* pt =
+			dynamic_cast<const PrimitiveType*>(n->lhs->expressionType);
 
 	switch (n->op) {
 	case PLUS:
@@ -320,8 +330,7 @@ llvm::Value* juli::IRGenerator::visitVariableDecl(
 	return 0;
 }
 
-llvm::FunctionType* juli::IRGenerator::createFunctionType(
-		const Function * n) {
+llvm::FunctionType* juli::IRGenerator::createFunctionType(const Function * n) {
 	llvm::Type* returnType = resolveType(n->resultType);
 	std::vector<llvm::Type*> argumentTypes;
 
@@ -333,8 +342,7 @@ llvm::FunctionType* juli::IRGenerator::createFunctionType(
 	return llvm::FunctionType::get(returnType, argumentTypes, n->varArgs);
 }
 
-llvm::Function* juli::IRGenerator::createFunction(
-		const Function * n) {
+llvm::Function* juli::IRGenerator::createFunction(const Function * n) {
 	llvm::Function* f = llvm::Function::Create(createFunctionType(n),
 			llvm::Function::ExternalLinkage, n->mangle(), &module);
 	return f;
