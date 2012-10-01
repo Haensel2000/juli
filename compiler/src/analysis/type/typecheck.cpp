@@ -71,13 +71,26 @@ NExpression* juli::TypeChecker::checkAssignment(const Type* left,
 	}
 }
 
-NExpression* juli::TypeChecker::coerce(NExpression* e, const Type* type) {
+NExpression* juli::TypeChecker::coerce(NExpression* e, const Type* type) const {
 	if (!(*e->expressionType == *type)) {
 		NCast* c = new NCast(e, 0);
 		c->expressionType = type;
 		return c;
 	} else {
 		return e;
+	}
+}
+
+void juli::TypeChecker::coerce(ExpressionList& expressions,
+		std::vector<FormalParameter> params) const {
+	ExpressionList::iterator i = expressions.begin();
+	std::vector<FormalParameter>::iterator fi = params.begin();
+
+	while (fi != params.end()) {
+		*i = coerce(*i, fi->type);
+
+		++i;
+		++fi;
 	}
 }
 
@@ -141,36 +154,49 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 	const Type* lhs = visit(n->lhs);
 	const Type* rhs = visit(n->rhs);
 
-	n->commonType = lhs->supportsBinaryOperator(n->op, rhs);
-	if (n->commonType == 0) {
-		CompilerError err(n);
-		err.getStream() << "Incompatible types '" << lhs << "' and '" << rhs
-				<< "'";
-		throw err;
-	} else {
-		n->lhs = coerce(n->lhs, n->commonType);
-		n->rhs = coerce(n->rhs, n->commonType);
-	}
+	std::stringstream sstr;
+	sstr << n->op;
 
-	switch (n->op) {
-	case PLUS:
-	case SUB:
-	case MUL:
-	case DIV:
-	case MOD:
-		n->expressionType = n->commonType;
-		break;
-	case EQ:
-	case NEQ:
-	case LT:
-	case GT:
-	case LEQ:
-	case GEQ:
-	case LOR:
-	case LAND:
-		n->expressionType = &PrimitiveType::BOOLEAN_TYPE;
-		break;
-	}
+	std::vector<const Type*> argTypes;
+	argTypes.push_back(lhs);
+	argTypes.push_back(rhs);
+
+	Function* f = typeInfo.resolveFunction(sstr.str(), argTypes, n);
+	n->lhs = coerce(n->lhs, f->formalArguments[0].type);
+	n->rhs = coerce(n->rhs, f->formalArguments[1].type);
+
+	n->expressionType = f->resultType;
+
+//	n->commonType = lhs->supportsBinaryOperator(n->op, rhs);
+//	if (n->commonType == 0) {
+//		CompilerError err(n);
+//		err.getStream() << "Incompatible types '" << lhs << "' and '" << rhs
+//				<< "'";
+//		throw err;
+//	} else {
+//		n->lhs = coerce(n->lhs, n->commonType);
+//		n->rhs = coerce(n->rhs, n->commonType);
+//	}
+//
+//	switch (n->op) {
+//	case PLUS:
+//	case SUB:
+//	case MUL:
+//	case DIV:
+//	case MOD:
+//		n->expressionType = n->commonType;
+//		break;
+//	case EQ:
+//	case NEQ:
+//	case LT:
+//	case GT:
+//	case LEQ:
+//	case GEQ:
+//	case LOR:
+//	case LAND:
+//		n->expressionType = &PrimitiveType::BOOLEAN_TYPE;
+//		break;
+//	}
 
 	return n->expressionType;
 }
@@ -185,28 +211,11 @@ const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
 
 	n->expressionType = 0;
 
-	std::vector<Function*> matches = typeInfo.resolveFunction(n->name->name,
-			argTypes);
-	if (matches.empty()) {
-		CompilerError err(n);
-		err.getStream() << "Undeclared function: " << n->name->name << " "
-				<< argTypes;
-		throw err;
-	} else if (matches.size() > 1) {
-		CompilerError err(n);
-		err.getStream() << "Ambiguous Function Call: " << n->name->name << "("
-				<< argTypes << ")" << std::endl << "Candidates are: "
-				<< std::endl;
-		for (std::vector<Function*>::iterator i = matches.begin();
-				i != matches.end(); ++i) {
-			err.getStream() << *i << std::endl;
-		}
-
-		throw err;
-	}
-
-	n->function = *matches.begin();
+	n->function = typeInfo.resolveFunction(n->name->name, argTypes, n);
 	n->expressionType = n->function->resultType;
+
+	coerce(n->arguments, n->function->formalArguments);
+
 	return n->expressionType;
 }
 
@@ -293,7 +302,8 @@ const Type* juli::TypeChecker::visitReturn(NReturnStatement* n) {
 	} else {
 		if (!(*functionReturnType == PrimitiveType::VOID_TYPE)) {
 			CompilerError err(n);
-			err.getStream() << "Function need to return a value of type " << functionReturnType;
+			err.getStream() << "Function need to return a value of type "
+					<< functionReturnType;
 			throw err;
 		}
 	}

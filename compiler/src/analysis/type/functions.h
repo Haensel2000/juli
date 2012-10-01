@@ -72,6 +72,8 @@ public:
 	std::vector<Function*> resolve(const std::string& name,
 			std::vector<const Type*>& argTypes) const;
 
+	void dump() const;
+
 };
 
 }

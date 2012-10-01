@@ -10,8 +10,10 @@
 
 #include <parser/ast/visitor.h>
 #include <analysis/type/declare.h>
+#include <analysis/type/functions.h>
 
 #include <map>
+#include <vector>
 #include <stack>
 
 namespace juli {
@@ -55,7 +57,9 @@ public:
 
 	NExpression* checkAssignment(const Type* left, NExpression* right, const Indentable* n, const std::string& message = "") const;
 
-	NExpression* coerce(NExpression* e, const Type* type);
+	NExpression* coerce(NExpression* e, const Type* type) const;
+
+	void coerce(ExpressionList& expressions, std::vector<FormalParameter> params) const;
 
 	const Type* visit(Node* n);
 

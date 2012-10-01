@@ -236,7 +236,7 @@ add returns [juli::NExpression* result = 0]
   op1=mul { result=op1; }
   (
     ( OP_PLUS      { type = juli::PLUS; }
-    | OP_MINUS   { type = juli::MINUS; }
+    | OP_MINUS   { type = juli::SUB; }
     )
     op2=mul
     { 
@@ -277,6 +277,7 @@ unary returns [juli::NExpression* result = 0]
     ( OP_NOT    { type = juli::NOT; operatorToken = $OP_NOT; }
     | OP_TILDE  { type = juli::TILDE; operatorToken = $OP_TILDE; }
     | OP_HASH   { type = juli::HASH; operatorToken = $OP_HASH; }
+    | OP_MINUS  { type = juli::MINUS; operatorToken = $OP_MINUS; }
     )
     {
       if (current) {

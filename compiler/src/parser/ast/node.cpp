@@ -101,6 +101,9 @@ std::ostream& operator<<(std::ostream& os, const juli::Operator& op) {
 	case juli::LAND:
 		os << "and";
 		break;
+	case juli::MINUS:
+		os << "-";
+		break;
 	case juli::NOT:
 		os << "not";
 		break;

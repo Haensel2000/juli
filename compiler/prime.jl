@@ -1,6 +1,6 @@
-int printf(char[] s, ...);
+C int printf(char[] s, ...);
 
-double sqrt(double x);
+C double sqrt(double x);
 
 int strlen(char[] str) 
 {

@@ -185,7 +185,7 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 	if (left == 0 || right == 0) // error handling
 		return 0;
 
-	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(n->commonType);
+	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(n->lhs->expressionType);
 
 	switch (n->op) {
 	case PLUS:

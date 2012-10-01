@@ -49,7 +49,7 @@ unsigned int juli::Function::matches(std::vector<const Type*>& argTypes) const {
 			|| (argTypes.size() > formalArguments.size() && !varArgs))
 		return 0;
 
-	int s = -1;
+	int s = 0;
 
 	std::vector<const Type*>::iterator i = argTypes.begin();
 	std::vector<FormalParameter>::const_iterator fi = formalArguments.begin();
@@ -57,10 +57,10 @@ unsigned int juli::Function::matches(std::vector<const Type*>& argTypes) const {
 	int c = 1;
 	while (i != argTypes.end()) {
 		if (fi != formalArguments.end()) {
-			if (**i == *fi->type && (s < 0)) {
-				s = 2;
-			} else if ((*i)->isAssignableTo(fi->type) && (s < 0)) {
-				s = 1;
+			if (**i == *fi->type) {
+				s += 2;
+			} else if ((*i)->isAssignableTo(fi->type)) {
+				s += 1;
 			} else {
 				s = 0;
 				return s;
@@ -122,4 +122,14 @@ std::vector<Function*> juli::Functions::resolve(const std::string& name,
 	}
 
 	return matches;
+}
+
+void juli::Functions::dump() const {
+	for (std::map<std::string, std::vector<Function*> >::const_iterator i =
+			data.begin(); i != data.end(); ++i) {
+		for (std::vector<Function*>::const_iterator j = i->second.begin();
+				j != i->second.end(); ++j) {
+			std::cout << *j << std::endl;
+		}
+	}
 }

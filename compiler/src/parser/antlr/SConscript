@@ -1,4 +1,0 @@
-Import('env')  
-env.Command(['JLLexer.h', 'JLLexer.c', 'JLParser.h', 'JLParser.c'], 'JL.g', "java -cp libs/antlr-3.4.jar org.antlr.Tool $SOURCE")
-objs = env.Object(target='#build/JLParser', source='JLParser.c') + env.Object(target='#build/JLLexer', source='JLLexer.c')
-Return('objs')

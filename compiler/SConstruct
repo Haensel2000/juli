@@ -63,9 +63,13 @@ env = Environment(CC = 'g++',
                   LIBS=libs, 
                   CCFLAGS=ccflags,
                   source_files=source_files)   
-VariantDir('build', 'src', duplicate=0)                
-objs = SConscript(['src/parser/antlr/SConscript'], exports='env')
-#SConscript(['build/SConscript'], exports='env')
+VariantDir('build', 'src', duplicate=0)
+
+app = os.path.join('src', 'parser', 'antlr');
+
+env.Command([os.path.join(app, f) for f in ['JLLexer.h', 'JLLexer.c', 'JLParser.h', 'JLParser.c']], 
+os.path.join(app, 'JL.g'), "java -cp libs/antlr-3.4.jar org.antlr.Tool $SOURCE")
+objs = env.Object(target='#build/JLParser', source=os.path.join(app, 'JLParser.c')) + env.Object(target='#build/JLLexer', source=os.path.join(app, 'JLLexer.c'))
 
 env.Program(target='build/jlc', source=source_files + objs)
 

@@ -15,11 +15,18 @@
 
 namespace juli {
 
-
-
 class Declarator {
 private:
 	TypeInfo typeInfo;
+
+	void declareImplicitOperator(const std::vector<std::string> names,
+			const Type* returnType, const Type* type, unsigned int arity);
+
+	void declareImplicitOperator(const std::string& name,
+			const Type* returnType, const Type* type, unsigned int arity);
+
+	void declareImplicitOperator(const std::string& name, const Type* type,
+			unsigned int arity);
 public:
 
 	Declarator();

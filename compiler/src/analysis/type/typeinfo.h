@@ -29,13 +29,16 @@ public:
 
 	void declareFunction(const NFunctionDefinition* f);
 
-	std::vector<Function*> resolveFunction(const std::string& name, std::vector<const Type*>& argTypes) const
+	void declareFunction(Function* f);
+
+	Function* resolveFunction(const std::string& name, std::vector<const Type*>& argTypes, const Indentable* astNode) const
 			throw (CompilerError);
 
 	const Functions& getFunctions() const;
 
 	const Type* getType(const std::string& name, const Indentable* astNode) const throw (CompilerError);
 
+	void dump() const;
 };
 
 }
