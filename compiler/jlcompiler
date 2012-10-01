@@ -1,5 +1,5 @@
 #!/bin/bash
 
-./Debug/jlc $@
+./build/jlc $@
 g++ *.o -o a.out
 rm *.o
