@@ -175,6 +175,12 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 
 const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
 
+	if (n->name->name == "main") {
+		CompilerError err(n);
+		err.getStream() << "Calling main is not allowed";
+		throw err;
+	}
+
 	ExpressionList& args = n->arguments;
 	std::vector<const Type*> argTypes;
 	for (ExpressionList::iterator i = args.begin(); i != args.end(); ++i) {
