@@ -1,24 +1,7 @@
 C int printf(char[] s, ...);
 
-void x(char[] s) {
-  printf(s);
-  printf("\n");
-  return;
-}
-
-void x(int s) {
-  printf("i = %d\n", s);
-  return;
-}
-
-void main(int argc, char[][] argv) 
+void main(char[][] args) 
 {
-  int i = 323;
-  printf("haha %d\n", -argc);
-  x(i);
-  x("test");
-  
-  x(argv[1]);
-
+  printf("%s, %c\n", args[0], args[0][2]);
   return;
 }

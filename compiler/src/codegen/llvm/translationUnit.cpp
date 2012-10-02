@@ -58,7 +58,22 @@ llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 
 	const ArrayType* at = dynamic_cast<const ArrayType*>(t);
 	if (at) {
-		return llvm::PointerType::get(resolveLLVMType(at->getElementType()), 0);
+		if (*at->getElementType() == PrimitiveType::INT8_TYPE) { // char array
+			return llvm::PointerType::get(resolveLLVMType(at->getElementType()), 0);
+		} else {
+			std::stringstream s;
+			s << "type__" << at->mangle();
+			llvm::Type* t = module->getTypeByName(s.str());
+			if (!t) {
+				// create type:
+				std::vector<llvm::Type*> fields;
+				fields.push_back(llvm::PointerType::get(resolveLLVMType(at->getElementType()), 0));
+				fields.push_back(llvm::Type::getInt32Ty(c));
+				t = llvm::StructType::create(fields, s.str());
+			}
+			return llvm::PointerType::get(t, 0);
+		}
+
 	}
 }
 

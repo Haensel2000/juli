@@ -34,7 +34,7 @@ private:
 	llvm::ConstantInt* zero_i32;
 	llvm::ConstantFP* zero_float;
 
-
+	llvm::ConstantInt* one_i32;
 
 public:
 
@@ -95,6 +95,8 @@ public:
 		zero_i8 = llvm::ConstantInt::get(context, llvm::APInt(8, 0, true));
 		zero_i16 = llvm::ConstantInt::get(context, llvm::APInt(16, 0, true));
 		zero_i32 = llvm::ConstantInt::get(context, llvm::APInt(32, 0, true));
+
+		one_i32 = llvm::ConstantInt::get(context, llvm::APInt(32, 1, true));
 
 		zero_float = llvm::ConstantFP::get(context, llvm::APFloat(0.0));
 	}

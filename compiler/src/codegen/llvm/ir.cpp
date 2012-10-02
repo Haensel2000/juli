@@ -25,15 +25,35 @@ llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
 					"entry", f);
 			builder.SetInsertPoint(llvmBlock);
 
-			llvm::Function::arg_iterator i = f->getArgumentList().begin();
-			for (std::vector<FormalParameter>::const_iterator vi =
-					function->formalArguments.begin();
-					vi != function->formalArguments.end(); ++i, ++vi) {
-				//(*vi)->generateCode(builder);
+			if (function->name == "main") {
+				llvm::Function::arg_iterator i = f->getArgumentList().begin();
 
-				llvm::Value* param = builder.CreateAlloca(i->getType());
-				builder.CreateStore(i, param);
-				translationUnit.getLLVMSymbolTable()[vi->name] = param;
+				llvm::Type* arrTypePtr = translationUnit.resolveLLVMType(function->formalArguments[0].type);
+				llvm::Value* args = builder.CreateAlloca(arrTypePtr);
+				llvm::Value* argsValue = builder.CreateAlloca(arrTypePtr->getPointerElementType());
+				std::vector<llvm::Value*> indices;
+				indices.push_back(zero_i32);
+				indices.push_back(zero_i32);
+				llvm::Value* pPtr = builder.CreateGEP(argsValue, indices); // ptr
+				indices.pop_back();
+				indices.push_back(one_i32);
+				llvm::Value* pLength = builder.CreateGEP(argsValue, indices); // length
+				builder.CreateStore(i, pLength);
+				builder.CreateStore(++i, pPtr);
+				builder.CreateStore(argsValue, args);
+
+				translationUnit.getLLVMSymbolTable()["args"] = args;
+			} else {
+				llvm::Function::arg_iterator i = f->getArgumentList().begin();
+				for (std::vector<FormalParameter>::const_iterator vi =
+						function->formalArguments.begin();
+						vi != function->formalArguments.end(); ++i, ++vi) {
+					//(*vi)->generateCode(builder);
+
+					llvm::Value* param = builder.CreateAlloca(i->getType());
+					builder.CreateStore(i, param);
+					translationUnit.getLLVMSymbolTable()[vi->name] = param;
+				}
 			}
 
 			visit(function->body);
@@ -302,7 +322,19 @@ llvm::Value* juli::IRGenerator::visitFunctionCall(const NFunctionCall* n) {
 }
 
 llvm::Value* juli::IRGenerator::visitArrayAccess(const NArrayAccess* n) {
-	llvm::Value* ptr = builder.CreateGEP(visit(n->ref), visit(n->index));
+	llvm::Value* vref = visit(n->ref);
+	llvm::Value* vindex = visit(n->index);
+	llvm::Value* ptr;
+	if (*n->expressionType == PrimitiveType::INT8_TYPE) {
+		ptr = builder.CreateGEP(vref, vindex);
+	} else {
+		std::vector<llvm::Value*> indices;
+		indices.push_back(zero_i32);
+		indices.push_back(zero_i32);
+		ptr = builder.CreateGEP(vref, indices);
+		llvm::Value* arr = builder.CreateLoad(ptr);
+		ptr = builder.CreateGEP(arr, vindex);
+	}
 	return builder.CreateLoad(ptr);
 }
 
@@ -337,12 +369,23 @@ llvm::Value* juli::IRGenerator::visitVariableDecl(
 }
 
 llvm::FunctionType* juli::IRGenerator::createFunctionType(const Function * n) {
-	llvm::Type* returnType = resolveType(n->resultType);
+	llvm::Type* returnType;
 	std::vector<llvm::Type*> argumentTypes;
+	if (n->name == "main") {
+		returnType = llvm::Type::getInt32Ty(context);
+		argumentTypes.push_back(returnType);
+		argumentTypes.push_back(
+				llvm::PointerType::get(llvm::Type::getInt8PtrTy(context, 0),
+						0));
+	} else {
 
-	for (std::vector<FormalParameter>::const_iterator i =
-			n->formalArguments.begin(); i != n->formalArguments.end(); ++i) {
-		argumentTypes.push_back(resolveType(i->type));
+		returnType = resolveType(n->resultType);
+
+		for (std::vector<FormalParameter>::const_iterator i =
+				n->formalArguments.begin(); i != n->formalArguments.end();
+				++i) {
+			argumentTypes.push_back(resolveType(i->type));
+		}
 	}
 
 	return llvm::FunctionType::get(returnType, argumentTypes, n->varArgs);
