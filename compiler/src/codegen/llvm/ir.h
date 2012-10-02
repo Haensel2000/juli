@@ -52,6 +52,8 @@ public:
 
 	llvm::Value* visitVariableRef(const NVariableRef* n);
 
+	llvm::Value* visitQualifiedAccess(NQualifiedAccess* n);
+
 	llvm::Value* visitCast(const NCast* n);
 
 	llvm::Value* visitUnaryOperator(const NUnaryOperator* n);
@@ -85,21 +87,7 @@ public:
 	llvm::Type* resolveType(const NType* n);
 	llvm::Type* resolveType(const Type* n);
 
-	IRGenerator(const std::string& moduleName, const TypeInfo& typeInfo) : typeInfo(typeInfo),
-			translationUnit(moduleName, typeInfo), builder(translationUnit.getContext()), module(
-					*translationUnit.module), context(
-					translationUnit.getContext()) {
-		zero_ui8 = llvm::ConstantInt::get(context, llvm::APInt(8, 0, bool(false)));
-		zero_ui16 = llvm::ConstantInt::get(context, llvm::APInt(16, 0, bool(false)));
-		zero_ui32 = llvm::ConstantInt::get(context, llvm::APInt(32, 0, bool(false)));
-		zero_i8 = llvm::ConstantInt::get(context, llvm::APInt(8, 0, true));
-		zero_i16 = llvm::ConstantInt::get(context, llvm::APInt(16, 0, true));
-		zero_i32 = llvm::ConstantInt::get(context, llvm::APInt(32, 0, true));
-
-		one_i32 = llvm::ConstantInt::get(context, llvm::APInt(32, 1, true));
-
-		zero_float = llvm::ConstantFP::get(context, llvm::APFloat(0.0));
-	}
+	IRGenerator(const std::string& moduleName, const TypeInfo& typeInfo);
 
 	void process(const Node* n);
 

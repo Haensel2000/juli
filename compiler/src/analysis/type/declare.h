@@ -45,6 +45,8 @@ public:
 
 	void visitVariableRef(const NVariableRef* n);
 
+	void visitQualifiedAccess(const NQualifiedAccess* n);
+
 	void visitCast(const NCast* n);
 
 	void visitUnaryOperator(const NUnaryOperator* n);

@@ -43,8 +43,9 @@ int main(int argc, char **argv) {
 
 	for (int i = 1; i < argc; ++i) {
 		std::cout << "Building file: " << argv[i] << std::endl;
-		NBlock* ast = parser.parse(argv[i]);
 		try {
+			NBlock* ast = parser.parse(argv[i]);
+
 			Declarator declarator;
 			declarator.visit(ast);
 

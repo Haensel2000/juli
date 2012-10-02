@@ -1,8 +1,8 @@
 #include "antlr_utils.h"
 #include <parser/parser.h>
 
-const char* getTokenText(pANTLR3_COMMON_TOKEN token) {
-	return (const char*) (token->getText(token)->chars);
+char* getTokenText(pANTLR3_COMMON_TOKEN token) {
+	return (char*) (token->getText(token)->chars);
 }
 
 std::string getTokenString(pANTLR3_COMMON_TOKEN token) {

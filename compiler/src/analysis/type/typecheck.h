@@ -50,6 +50,7 @@ private:
 	const TypeInfo& typeInfo;
 
 	bool _newScope;
+	bool _addressing;
 	NFunctionDefinition* _currentFunction;
 public:
 
@@ -70,6 +71,8 @@ public:
 	const Type* visitStringLiteral(NStringLiteral* n);
 
 	const Type* visitVariableRef(NVariableRef* n);
+
+	const Type* visitQualifiedAccess(NQualifiedAccess* n);
 
 	const Type* visitCast(NCast* n);
 

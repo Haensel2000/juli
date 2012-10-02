@@ -49,6 +49,7 @@ void juli::SymbolTable::addSymbol(NVariableDeclaration* node) {
 juli::TypeChecker::TypeChecker(const TypeInfo& typeInfo) :
 		symbolTable(typeInfo), typeInfo(typeInfo) {
 	_newScope = false;
+	_addressing = false;
 	_currentFunction = 0;
 }
 
@@ -112,11 +113,30 @@ const Type* juli::TypeChecker::visitStringLiteral(NStringLiteral* n) {
 
 const Type* juli::TypeChecker::visitVariableRef(NVariableRef* n) {
 	n->expressionType = symbolTable.getSymbol(n->name);
+
 	if (!n->expressionType) {
 		CompilerError err(n);
 		err.getStream() << "Unknown symbol " << n->name;
 		throw err;
 	}
+
+	return n->expressionType;
+}
+
+const Type* juli::TypeChecker::visitQualifiedAccess(NQualifiedAccess* n) {
+
+	const Type* refType = visit(n->ref);
+
+	const Field* f = refType->getField(n->name->name);
+	if (!f) {
+		CompilerError err(n);
+		err.getStream() << "Unknown field " << n->name->name;
+		throw err;
+	}
+
+	n->index = f->index;
+	n->expressionType = f->type;
+
 	return n->expressionType;
 }
 
@@ -217,12 +237,19 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 
 const Type* juli::TypeChecker::visitAssignment(NAssignment* n) {
 	visit(n->rhs);
-	const Type* varType = symbolTable.getSymbol(n->lhs->name);
-	if (!varType) {
+	visit(n->lhs);
+
+	NAddressable* addressable = dynamic_cast<NAddressable*>(n->lhs);
+
+	if (!addressable) {
 		CompilerError err(n);
-		err.getStream() << "Unknown symbol " << n->lhs;
+		err.getStream() << "Left hand side of assignment is not addressable";
 		throw err;
 	}
+
+	addressable->address = true;
+
+	const Type* varType = n->lhs->expressionType;
 	n->rhs = checkAssignment(varType, n->rhs, n);
 	return 0;
 }

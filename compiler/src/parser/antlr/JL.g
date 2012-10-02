@@ -10,6 +10,7 @@ options {
   #include <string>
   #include <sstream>
   #include <cstdio>
+  #include <cstring>
   
   #include <parser/ast/ast.h>
   #include <parser/ast/types.h>
@@ -33,8 +34,7 @@ translation_unit[const std::string& fn] returns [juli::NBlock* result = 0]:
 ;
 
 statement returns [juli::NStatement* result = 0]: 
-stmt1=assignment { result = stmt1; } | 
-stmt2=expression_statement { result = stmt2; } |
+stmt1=assignment { result = stmt1; } |
 stmt3=return_statement { result = stmt3; } |
 stmt4=function_definition { result = stmt4; } |
 stmt5=variable_definition { result = stmt5; } |
@@ -177,11 +177,26 @@ exp=expression SCOL
 }
 ;
 
-assignment returns [juli::NAssignment* result = 0]: 
-id=identifier '=' exp=expression SCOL 
+assignment returns [juli::NStatement* result = 0]
+@declarations
 {
-  result = new juli::NAssignment(id, exp);
-  setSourceLoc(result, id, $SCOL);
+  juli::NExpression* rhs = 0;
+}: 
+lhs=expression 
+(
+  '=' e=expression
+  {
+    rhs = e;
+  }
+)? 
+SCOL
+{
+  if (rhs) {
+    result = new juli::NAssignment(lhs, rhs);
+  } else {
+    result = new juli::NExpressionStatement(lhs);
+  }
+  setSourceLoc(result, lhs, $SCOL);
 }
 ;
 
@@ -294,7 +309,7 @@ unary returns [juli::NExpression* result = 0]
     }
   )*
   
-  op=array_access  
+  op=qualified_access  
   { 
     if (current) {
       current->expression = op;
@@ -306,8 +321,36 @@ unary returns [juli::NExpression* result = 0]
   }
 ;
 
+qualified_access returns [juli::NExpression* result = 0]:
+  op1=array_access  { result=op1; }
+  (
+    '.'
+    op2=qarray_access
+    { 
+      juli::NArrayAccess* aa = dynamic_cast<juli::NArrayAccess*>(op2);
+      if (aa) {
+        aa->ref = new juli::NQualifiedAccess(result, dynamic_cast<juli::NVariableRef*>(aa->ref));
+        result = aa;
+      } else {
+        result = new juli::NQualifiedAccess(result, dynamic_cast<juli::NVariableRef*>(op2));
+      }
+      setSourceLoc(result, op1, op2);
+    }
+  )*
+;
+
 array_access returns [juli::NExpression* result = 0]:
 vref=term { result = vref; }
+(OSBR vindex=expression CSBR 
+{ 
+  result = new juli::NArrayAccess(result, vindex);
+  setSourceLoc(result, vref, $CSBR);
+}
+)*
+;
+
+qarray_access returns [juli::NExpression* result = 0]:
+vref=identifier { result = new juli::NVariableRef(vref); }
 (OSBR vindex=expression CSBR 
 { 
   result = new juli::NArrayAccess(result, vindex);
@@ -368,7 +411,7 @@ s=identifier          { result = new juli::NBasicType(s); }
 
 identifier returns [juli::NIdentifier* result = 0]:
 Identifier 
-{ 
+{
   result = new juli::NIdentifier(getTokenString($Identifier)); 
   setSourceLoc(result, filename, $Identifier);
 } 
@@ -496,6 +539,8 @@ C_MOD : 'C' ;
 Identifier 
     :   Letter (Letter|JavaIDDigit)*
     ;
+    
+
 
 /**I found this char range in JavaCC's grammar, but Letter and Digit overlap.
    Still works, but...

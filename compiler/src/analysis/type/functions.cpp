@@ -37,9 +37,10 @@ juli::Function::Function(const NFunctionDefinition* functionDefinition,
 }
 
 juli::Function::Function(const std::string& name, const Type* resultType,
-		std::vector<FormalParameter>& argTypes, bool varArgs, NBlock* body) :
+		std::vector<FormalParameter>& argTypes, bool varArgs,
+		unsigned int modifiers, NBlock* body) :
 		name(name), resultType(resultType), formalArguments(argTypes), varArgs(
-				varArgs), body(body) {
+				varArgs), modifiers(modifiers), body(body) {
 
 }
 

@@ -12,7 +12,7 @@
 #include <antlr3.h>
 #include <parser/ast/node.h>
 
-const char* getTokenText(pANTLR3_COMMON_TOKEN token);
+char* getTokenText(pANTLR3_COMMON_TOKEN token);
 
 std::string getTokenString(pANTLR3_COMMON_TOKEN token);
 

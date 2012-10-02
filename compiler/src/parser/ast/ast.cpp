@@ -68,6 +68,10 @@ void juli::NExpression::printType(std::ostream& os) const {
 	}
 }
 
+NAddressable::NAddressable(NodeType nodeType) :
+		NExpression(nodeType), address(false) {
+}
+
 juli::NStringLiteral::NStringLiteral(std::string value) :
 		NLiteral<std::string>(STRING_LITERAL, value,
 				new ArrayType(&PrimitiveType::INT8_TYPE)) {
@@ -113,6 +117,45 @@ void juli::NStringLiteral::print(std::ostream& os, int indent,
 	}
 }
 
+//juli::NQualifiedName::NQualifiedName(std::vector<std::string>& path) :
+//		path(path) {
+//}
+//
+//void juli::NQualifiedName::print(std::ostream& os, int indent,
+//		unsigned int flags) const {
+//	beginLine(os, indent);
+//
+//	if (flags & FLAG_TREE) {
+//		os << "Identifier: ";
+//		cpputils::debug::print(os, path, ".");
+//		printLocation(os);
+//	} else {
+//		cpputils::debug::print(os, path, ".");
+//	}
+//}
+
+juli::NQualifiedAccess::NQualifiedAccess(NExpression* ref, NIdentifier* name) :
+		NAddressable(QUALIFIED_ACCESS), ref(ref), name(name), index(-1) {
+}
+
+juli::NQualifiedAccess::NQualifiedAccess(NExpression* ref, NVariableRef* name) :
+		NAddressable(QUALIFIED_ACCESS), ref(ref), name(new NIdentifier(name->name)), index(-1) {
+}
+
+void juli::NQualifiedAccess::print(std::ostream& os, int indent,
+		unsigned int flags) const {
+	beginLine(os, indent);
+
+	if (flags & FLAG_TREE) {
+		os << "QualifiedAccess: ";
+		printType(os);
+		name->print(os, indent + 2, flags);
+		ref->print(os, indent + 2, flags);
+	} else {
+		os << ref << "." << name;
+	}
+}
+
 juli::NIdentifier::NIdentifier(const std::string& name) :
 		name(name) {
 }
@@ -138,7 +181,7 @@ juli::NIdentifier::operator const std::string() const {
 }
 
 juli::NVariableRef::NVariableRef(NIdentifier* id) :
-		NExpression(VARIABLE_REF), name(id->name) {
+		NAddressable(VARIABLE_REF), name(id->name) {
 	setSourceLocation(id->filename, id->start, id->end);
 }
 
@@ -207,7 +250,7 @@ void juli::NFunctionCall::print(std::ostream& os, int indent,
 }
 
 juli::NArrayAccess::NArrayAccess(NExpression* ref, NExpression* index) :
-		NExpression(ARRAY_ACCESS), ref(ref), index(index) {
+		NAddressable(ARRAY_ACCESS), ref(ref), index(index) {
 }
 
 void juli::NArrayAccess::print(std::ostream& os, int indent,
@@ -283,7 +326,7 @@ void juli::NExpressionStatement::print(std::ostream& os, int indent,
 	}
 }
 
-juli::NAssignment::NAssignment(NIdentifier* lhs, NExpression* rhs) :
+juli::NAssignment::NAssignment(NExpression* lhs, NExpression* rhs) :
 		NStatement(ASSIGNMENT), lhs(lhs), rhs(rhs) {
 }
 
@@ -439,8 +482,10 @@ void juli::NWhileStatement::print(std::ostream& os, int indent,
 }
 
 juli::NFunctionSignature::NFunctionSignature(const NType* type,
-		const std::string& name, const VariableList arguments, bool varArgs, unsigned int modifiers) :
-		name(name), type(type), arguments(arguments), varArgs(varArgs), modifiers(modifiers) {
+		const std::string& name, const VariableList arguments, bool varArgs,
+		unsigned int modifiers) :
+		name(name), type(type), arguments(arguments), varArgs(varArgs), modifiers(
+				modifiers) {
 }
 
 void juli::NFunctionSignature::print(std::ostream& os, int indent,

@@ -1,8 +1,8 @@
 C int printf(char[] s, ...);
 
-void main(char[][] args) 
+int main(char[][] args) 
 {
-  main(args);
-  printf("%s, %c\n", args[0], args[0][2]);
-  return;
+  int i = args.length;
+  printf("%s, %c, %d, %d\n", args[0], args[0][2], i, args[1].length);
+  return 0;
 }

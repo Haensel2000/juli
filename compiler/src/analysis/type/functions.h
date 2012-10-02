@@ -51,7 +51,7 @@ public:
 			const TypeInfo& typeInfo);
 
 	Function(const std::string& name, const Type* resultType,
-			std::vector<FormalParameter>& argTypes, bool varArgs, NBlock* body = 0);
+			std::vector<FormalParameter>& argTypes, bool varArgs, unsigned int modifiers, NBlock* body = 0);
 
 	unsigned int matches(std::vector<const Type*>& argTypes) const;
 

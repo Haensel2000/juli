@@ -26,6 +26,8 @@ ReturnValue visitAST(Handler& handler, const Node* n) {
 		return handler.visitStringLiteral((NStringLiteral*) n);
 	case VARIABLE_REF:
 		return handler.visitVariableRef((NVariableRef*) n);
+	case QUALIFIED_ACCESS:
+		return handler.visitQualifiedAccess((NQualifiedAccess*) n);
 	case CAST:
 		return handler.visitCast((NCast*) n);
 	case FUNCTION_CALL:

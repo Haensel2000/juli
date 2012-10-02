@@ -8,6 +8,20 @@ const PrimitiveType juli::PrimitiveType::INT8_TYPE(INT8);
 const PrimitiveType juli::PrimitiveType::INT32_TYPE(INT32);
 const PrimitiveType juli::PrimitiveType::FLOAT64_TYPE(FLOAT64);
 
+const Field juli::ArrayType::LENGTH("length", 1, &PrimitiveType::INT32_TYPE);
+
+juli::Field::Field(const std::string& name, unsigned int index,
+		const Type* type) :
+		name(name), index(index), type(type) {
+}
+
+juli::Field::~Field() {
+}
+
+void juli::Field::print(std::ostream& os) const {
+	os << name << "@" << index << ": " << type;
+}
+
 juli::Type::Type(TypeCategory category) :
 		category(category) {
 }
@@ -91,24 +105,6 @@ void juli::PrimitiveType::print(std::ostream& os) const {
 	}
 }
 
-const Type* juli::PrimitiveType::getCommonType(const Type* t) const {
-	if (*this == *t)
-		return this;
-
-	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(t);
-	if (pt) {
-		if (primitive < INT8 || pt->primitive < INT8)
-			return 0;
-
-		if (primitive < pt->primitive)
-			return pt;
-		else
-			return this;
-	} else {
-		return 0;
-	}
-}
-
 bool juli::PrimitiveType::isAssignableTo(const Type* t) const {
 	if (*this == *t)
 		return true;
@@ -131,68 +127,7 @@ bool juli::PrimitiveType::canCastTo(const Type* t) const {
 	}
 }
 
-const Type* juli::PrimitiveType::getUnaryOperatorType(Operator op) const {
-
-	switch (op) {
-	case NOT:
-		if (primitive == BOOLEAN)
-			return &PrimitiveType::BOOLEAN_TYPE;
-		else
-			return 0;
-	case TILDE:
-		// bitwise inverse:
-		if (isInteger() || primitive == BOOLEAN)
-			return this;
-		else
-			return 0;
-	case HASH:
-		return 0;
-	}
-
-}
-
-const Type* juli::PrimitiveType::supportsBinaryOperator(Operator op,
-		const Type* t) const {
-	if (*this == *t)
-		return this;
-
-	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(t);
-	if (pt) {
-		switch (op) {
-		case MOD:
-			if (isInteger() && pt->isInteger())
-				return this;
-			else
-				return 0;
-		case PLUS:
-		case SUB:
-		case MUL:
-		case DIV:
-		case EQ:
-		case NEQ:
-		case LT:
-		case GT:
-		case LEQ:
-		case GEQ:
-			if (primitive < INT8 || pt->primitive < INT8)
-				return 0;
-
-			if (primitive < pt->primitive)
-				return pt;
-			else
-				return this;
-
-			break;
-		case LOR:
-		case LAND:
-			if (primitive == BOOLEAN && pt->primitive == BOOLEAN)
-				return this;
-			break;
-		}
-	} else {
-		return 0;
-	}
-
+const Field* juli::PrimitiveType::getField(const std::string& name) const {
 	return 0;
 }
 
@@ -234,13 +169,6 @@ void juli::ArrayType::print(std::ostream& os) const {
 	os << elementType << "[]";
 }
 
-const Type* juli::ArrayType::getCommonType(const Type* t) const {
-	if (*this == *t)
-		return this;
-	else
-		return 0;
-}
-
 bool juli::ArrayType::isAssignableTo(const Type* t) const {
 	return (*this == *t);
 }
@@ -249,21 +177,12 @@ bool juli::ArrayType::canCastTo(const Type* t) const {
 	return isAssignableTo(t);
 }
 
-const Type* juli::ArrayType::getUnaryOperatorType(Operator op) const {
-
-	switch (op) {
-	case NOT:
-	case TILDE:
+const Field* juli::ArrayType::getField(const std::string& name) const {
+	if (name == "length") {
+		return &LENGTH;
+	} else {
 		return 0;
-	case HASH:
-		return &PrimitiveType::INT32_TYPE;
 	}
-
-}
-
-const Type* juli::ArrayType::supportsBinaryOperator(Operator op,
-		const Type* t) const {
-	return 0;
 }
 
 //http://theory.uwinnipeg.ca/localfiles/infofiles/gcc/gxxint_15.html

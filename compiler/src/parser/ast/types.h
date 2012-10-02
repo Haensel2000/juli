@@ -23,6 +23,23 @@ enum TypeCategory {
 	PRIMITIVE, ARRAY
 };
 
+class Type;
+
+class Field: public cpputils::debug::Printable {
+public:
+
+	const std::string name;
+	const unsigned int index;
+	const Type* type;
+
+	Field(const std::string& name, unsigned int index, const Type* type);
+
+	virtual ~Field();
+
+	virtual void print(std::ostream& os) const;
+
+};
+
 class Type: public cpputils::debug::Printable {
 private:
 	TypeCategory category;
@@ -32,18 +49,13 @@ public:
 	virtual ~Type() {
 	}
 
-	virtual const Type* getCommonType(const Type* t) const = 0;
-
 	virtual bool isAssignableTo(const Type* t) const = 0;
 
 	virtual bool canCastTo(const Type* t) const = 0;
 
+	virtual const Field* getField(const std::string& name) const = 0;
+
 	virtual bool operator==(const Type& t) const = 0;
-
-	virtual const Type* getUnaryOperatorType(Operator op) const = 0;
-
-	virtual const Type* supportsBinaryOperator(Operator op,
-			const Type* t) const = 0;
 
 	virtual const std::string mangle() const = 0;
 
@@ -79,16 +91,11 @@ public:
 
 	virtual void print(std::ostream& os) const;
 
-	virtual const Type* getCommonType(const Type* t) const;
-
 	virtual bool isAssignableTo(const Type* t) const;
 
 	virtual bool canCastTo(const Type* t) const;
 
-	virtual const Type* getUnaryOperatorType(Operator op) const;
-
-	virtual const Type* supportsBinaryOperator(Operator op,
-			const Type* t) const;
+	virtual const Field* getField(const std::string& name) const;
 
 	virtual const std::string mangle() const;
 };
@@ -96,6 +103,8 @@ public:
 class ArrayType: public Type {
 private:
 	const Type* elementType;
+
+	static const Field LENGTH;
 public:
 	ArrayType(const Type* elementType);
 
@@ -107,16 +116,11 @@ public:
 
 	virtual void print(std::ostream& os) const;
 
-	virtual const Type* getCommonType(const Type* t) const;
-
 	virtual bool isAssignableTo(const Type* t) const;
 
 	virtual bool canCastTo(const Type* t) const;
 
-	virtual const Type* getUnaryOperatorType(Operator op) const;
-
-	virtual const Type* supportsBinaryOperator(Operator op,
-			const Type* t) const;
+	virtual const Field* getField(const std::string& name) const;
 
 	virtual const std::string mangle() const;
 };

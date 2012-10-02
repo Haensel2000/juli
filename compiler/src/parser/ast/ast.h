@@ -19,6 +19,20 @@ namespace juli {
 class TypeInfo;
 class Function;
 
+//class NQualifiedName : public Indentable {
+//public:
+//	std::vector<std::string> path;
+//	std::vector<unsigned int> access;
+//
+//	NQualifiedName(std::vector<std::string>& path);
+//
+//	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+//
+//	operator std::string();
+//
+//	operator const std::string() const;
+//};
+
 class NIdentifier : public Indentable {
 public:
 	std::string name;
@@ -83,6 +97,14 @@ public:
 	void printType(std::ostream& os) const;
 };
 
+class NAddressable : public NExpression {
+public:
+	bool address;
+
+	NAddressable(NodeType nodeType);
+
+};
+
 class NStatement: public Node {
 public:
 	NStatement(NodeType nodeType);
@@ -118,7 +140,7 @@ public:
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
-class NVariableRef: public NExpression {
+class NVariableRef: public NAddressable {
 public:
 	std::string name;
 
@@ -126,6 +148,20 @@ public:
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
+
+class NQualifiedAccess : public NAddressable {
+public:
+	NExpression* ref;
+	NIdentifier* name;
+	int index;
+
+	NQualifiedAccess(NExpression* ref, NIdentifier* name);
+
+	NQualifiedAccess(NExpression* ref, NVariableRef* name);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+};
+
 
 class NCast : public NExpression {
 public:
@@ -151,7 +187,7 @@ public:
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
-class NArrayAccess: public NExpression {
+class NArrayAccess: public NAddressable {
 public:
 	NExpression* ref;
 	NExpression* index;
@@ -184,10 +220,10 @@ public:
 
 class NAssignment: public NStatement {
 public:
-	NIdentifier* lhs;
+	NExpression* lhs;
 	NExpression* rhs;
 
-	NAssignment(NIdentifier* lhs, NExpression* rhs);
+	NAssignment(NExpression* lhs, NExpression* rhs);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
