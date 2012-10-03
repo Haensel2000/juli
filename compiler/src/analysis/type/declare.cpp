@@ -67,7 +67,6 @@ juli::Declarator::Declarator() {
 			&PrimitiveType::INT32_TYPE, 1);
 	declareImplicitOperator("~", &PrimitiveType::FLOAT64_TYPE,
 			&PrimitiveType::FLOAT64_TYPE, 1);
-
 }
 
 void juli::Declarator::declareImplicitOperator(

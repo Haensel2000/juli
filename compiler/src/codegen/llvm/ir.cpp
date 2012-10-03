@@ -30,10 +30,19 @@ juli::IRGenerator::IRGenerator(const std::string& moduleName,
 
 	zero_float = llvm::ConstantFP::get(context, llvm::APFloat(0.0));
 
+	const Type* t_int8 = &PrimitiveType::INT8_TYPE;
+	const Type* t_int32 = &PrimitiveType::INT32_TYPE;
+	const Type* t_arr_int8 = new ArrayType(t_int8);
+
 	std::vector<FormalParameter> params;
-	params.push_back(FormalParameter(new ArrayType(&PrimitiveType::INT8_TYPE), "x"));
-	Function f("strlen", &PrimitiveType::INT32_TYPE, params, false, MODIFIER_C, 0);
-	createFunction(&f);
+	params.push_back(FormalParameter(t_arr_int8, "str"));
+	createFunction(
+			new Function("strlen", t_int32, params, false, MODIFIER_C, 0));
+
+	params.clear();
+	params.push_back(FormalParameter(t_int32, "size"));
+	createFunction(
+				new Function("malloc", t_arr_int8, params, false, MODIFIER_C, 0));
 }
 
 llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
@@ -68,7 +77,8 @@ llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
 				builder.CreateStore(++i, pPtr);
 				builder.CreateStore(argsValue, args);
 
-				translationUnit.addSymbol(function->formalArguments[0].name, args);
+				translationUnit.addSymbol(function->formalArguments[0].name,
+						args);
 			} else {
 				llvm::Function::arg_iterator i = f->getArgumentList().begin();
 				for (std::vector<FormalParameter>::const_iterator vi =
@@ -143,7 +153,8 @@ llvm::Value* juli::IRGenerator::visitVariableRef(const NVariableRef* n) {
 	if (n->address)
 		result = p;
 	else
-		result = builder.CreateLoad(p);;
+		result = builder.CreateLoad(p);
+	;
 
 	return result;
 }
