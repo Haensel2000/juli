@@ -38,6 +38,10 @@ ReturnValue visitAST(Handler& handler, const Node* n) {
 		return handler.visitUnaryOperator((NUnaryOperator*) n);
 	case BINARY_OPERATOR:
 		return handler.visitBinaryOperator((NBinaryOperator*) n);
+	case NEW_ARRAY:
+		return handler.visitAllocateArray((NAllocateArray*) n);
+	case NEW_OBJECT:
+		return handler.visitAllocateObject((NAllocateObject*) n);
 	case EXPRESSION:
 		return handler.visitExpressionStatement((NExpressionStatement*) n);
 	case VARIABLE_DECL:

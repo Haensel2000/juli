@@ -139,7 +139,8 @@ juli::NQualifiedAccess::NQualifiedAccess(NExpression* ref, NIdentifier* name) :
 }
 
 juli::NQualifiedAccess::NQualifiedAccess(NExpression* ref, NVariableRef* name) :
-		NAddressable(QUALIFIED_ACCESS), ref(ref), name(new NIdentifier(name->name)), index(-1) {
+		NAddressable(QUALIFIED_ACCESS), ref(ref), name(
+				new NIdentifier(name->name)), index(-1) {
 }
 
 void juli::NQualifiedAccess::print(std::ostream& os, int indent,
@@ -153,6 +154,40 @@ void juli::NQualifiedAccess::print(std::ostream& os, int indent,
 		ref->print(os, indent + 2, flags);
 	} else {
 		os << ref << "." << name;
+	}
+}
+
+juli::NAllocateArray::NAllocateArray(NArrayAccess* data) : NExpression(NEW_ARRAY),
+		data(data) {
+}
+
+void juli::NAllocateArray::print(std::ostream& os, int indent,
+		unsigned int flags) const {
+	beginLine(os, indent);
+
+	if (flags & FLAG_TREE) {
+		os << "AllocateArray: ";
+		printType(os);
+		data->print(os, indent + 2, flags);
+	} else {
+		os << "new " << data;
+	}
+}
+
+juli::NAllocateObject::NAllocateObject(NBasicType* type) : NExpression(NEW_OBJECT),
+		type(type) {
+}
+
+void juli::NAllocateObject::print(std::ostream& os, int indent,
+		unsigned int flags) const {
+	beginLine(os, indent);
+
+	if (flags & FLAG_TREE) {
+		os << "AllocateObject: ";
+		printType(os);
+		type->print(os, indent + 2, flags);
+	} else {
+		os << "new " << type;
 	}
 }
 

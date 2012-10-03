@@ -389,6 +389,13 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 	return 0;
 }
 
+
+llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
+}
+
+llvm::Value* juli::IRGenerator::visitAllocateObject(const NAllocateObject* n) {
+}
+
 llvm::Value* juli::IRGenerator::visitFunctionCall(const NFunctionCall* n) {
 	llvm::Function* function = getFunction(n->function);
 

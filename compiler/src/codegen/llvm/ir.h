@@ -60,6 +60,10 @@ public:
 
 	llvm::Value* visitBinaryOperator(const NBinaryOperator* n);
 
+	llvm::Value* visitAllocateArray(const NAllocateArray* n);
+
+	llvm::Value* visitAllocateObject(const NAllocateObject* n);
+
 	llvm::Value* visitFunctionCall(const NFunctionCall* n);
 
 	llvm::Value* visitArrayAccess(const NArrayAccess* n);

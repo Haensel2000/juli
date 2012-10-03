@@ -53,6 +53,10 @@ public:
 
 	void visitBinaryOperator(const NBinaryOperator* n);
 
+	void visitAllocateArray(const NAllocateArray* n);
+
+	void visitAllocateObject(const NAllocateObject* n);
+
 	void visitFunctionCall(const NFunctionCall* n);
 
 	void visitArrayAccess(const NArrayAccess* n);

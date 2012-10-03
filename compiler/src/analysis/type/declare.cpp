@@ -125,6 +125,12 @@ void juli::Declarator::visitUnaryOperator(const NUnaryOperator* n) {
 void juli::Declarator::visitBinaryOperator(const NBinaryOperator* n) {
 }
 
+void juli::Declarator::visitAllocateArray(const NAllocateArray* n) {
+}
+
+void juli::Declarator::visitAllocateObject(const NAllocateObject* n) {
+}
+
 void juli::Declarator::visitFunctionCall(const NFunctionCall* n) {
 }
 

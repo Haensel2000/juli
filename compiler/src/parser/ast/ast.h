@@ -162,7 +162,6 @@ public:
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
-
 class NCast : public NExpression {
 public:
 	NExpression* expression;
@@ -216,6 +215,26 @@ public:
 	NBinaryOperator(NExpression* lhs, Operator op, NExpression* rhs);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+};
+
+class NAllocateArray : public NExpression {
+public:
+	NArrayAccess* data;
+
+	NAllocateArray(NArrayAccess* data);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+
+};
+
+class NAllocateObject : public NExpression {
+public:
+	NBasicType* type;
+
+	NAllocateObject(NBasicType* type);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+
 };
 
 class NAssignment: public NStatement {

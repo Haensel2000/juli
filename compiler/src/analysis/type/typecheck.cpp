@@ -193,6 +193,13 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 	return n->expressionType;
 }
 
+
+const Type* juli::TypeChecker::visitAllocateArray(NAllocateArray* n) {
+}
+
+const Type* juli::TypeChecker::visitAllocateObject(NAllocateObject* n) {
+}
+
 const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
 
 	if (n->name->name == "main") {

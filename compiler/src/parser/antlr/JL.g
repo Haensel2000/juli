@@ -200,7 +200,12 @@ SCOL
 }
 ;
 
-expression returns [juli::NExpression* result = 0]
+expression returns [juli::NExpression* result = 0]:
+  val=relation { result = val; } |
+  val=allocation { result = val; }
+;
+
+relation returns [juli::NExpression* result = 0]
 @declarations
 {
    juli::Operator type = juli::UNKNOWN;
@@ -362,12 +367,16 @@ vref=identifier { result = new juli::NVariableRef(vref); }
 term returns [juli::NExpression* result = 0]:
 val=literal { result = val; } |
 s=identifier { result = new juli::NVariableRef(s); } |
-val=function_call { result = val; } | 
+val=function_call { result = val; } |
 OPAR val=expression CPAR 
 { 
   result = val;
   setSourceLoc(result, filename, $OPAR, $CPAR); 
 }
+;
+
+allocation returns [juli::NExpression* result = 0]:
+NEW val=qarray_access { result = new juli::NAllocateArray((juli::NArrayAccess*)val); }
 ;
 
 literal returns [juli::NExpression* result = 0]: 
@@ -525,6 +534,7 @@ RETURN : 'return' ;
 IF : 'if' ;
 ELSE : 'else' ;
 WHILE : 'while' ;
+NEW : 'new' ;
 ARRAY_SUFFIX : '[]' ;
 OPAR : '(' ;
 CPAR : ')' ;

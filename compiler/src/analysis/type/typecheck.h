@@ -80,6 +80,10 @@ public:
 
 	const Type* visitBinaryOperator(NBinaryOperator* n);
 
+	const Type* visitAllocateArray(NAllocateArray* n);
+
+	const Type* visitAllocateObject(NAllocateObject* n);
+
 	const Type* visitFunctionCall(NFunctionCall* n);
 
 	const Type* visitArrayAccess(NArrayAccess* n);
