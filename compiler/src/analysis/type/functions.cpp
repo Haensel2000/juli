@@ -1,6 +1,7 @@
 #include "functions.h"
 
 #include <analysis/type/typeinfo.h>
+#include <analysis/error.h>
 
 #include <stdexcept>
 
@@ -32,6 +33,21 @@ juli::Function::Function(const NFunctionDefinition* functionDefinition,
 		formalArguments.push_back(
 				FormalParameter((*i)->type->resolve(typeInfo),
 						(*i)->name->name));
+	}
+
+	if (name == "main") {
+		if (!(*resultType == PrimitiveType::INT32_TYPE)) {
+			CompilerError err(functionDefinition);
+			err.getStream() << "main must return " << PrimitiveType::INT32_TYPE;
+			throw err;
+		}
+
+		ArrayType p(new ArrayType(&PrimitiveType::INT8_TYPE));
+		if (formalArguments.size() != 1 || !(*formalArguments[0].type == p)) {
+			CompilerError err(functionDefinition);
+			err.getStream() << "main may only have one parameter " << p;
+			throw err;
+		}
 	}
 
 }

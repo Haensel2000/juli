@@ -9,6 +9,7 @@
 #define CODGEN_H_
 
 #include <map>
+#include <stdexcept>
 
 #include <parser/ast/ast.h>
 #include <parser/ast/types.h>
@@ -50,8 +51,22 @@ namespace juli {
 		llvm::Type* resolveLLVMType(const Type* t) const throw (CompilerError);
 		llvm::Type* resolveLLVMType(const NType* t) const throw (CompilerError);
 
-		std::map<std::string, llvm::Value*>& getLLVMSymbolTable() {
-			return llvmSymbolTable;
+		llvm::Value* getSymbol(const std::string& name, const Node* n) {
+			try {
+				return llvmSymbolTable.at(name);
+			} catch (std::out_of_range& e) {
+				CompilerError err(n);
+				err.getStream() << "Unknown symbol " << name;
+				throw err;
+			}
+		}
+
+		void addSymbol(const std::string& name, llvm::Value* value) {
+			llvmSymbolTable[name] = value;
+		}
+
+		void removeSymbol(const std::string& name) {
+			llvmSymbolTable.erase(name);
 		}
 
 		const std::vector<CompilerError>& getErrors() const {

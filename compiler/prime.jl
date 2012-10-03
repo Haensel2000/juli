@@ -60,8 +60,8 @@ int factor(int v)
   return 0;
 }
 
-void main(int argc, char[][] argv) 
+int main(char[][] argv) 
 {
   factor(parse(argv[1]));
-  return;
+  return 0;
 }

@@ -68,7 +68,7 @@ llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
 				builder.CreateStore(++i, pPtr);
 				builder.CreateStore(argsValue, args);
 
-				translationUnit.getLLVMSymbolTable()["args"] = args;
+				translationUnit.addSymbol(function->formalArguments[0].name, args);
 			} else {
 				llvm::Function::arg_iterator i = f->getArgumentList().begin();
 				for (std::vector<FormalParameter>::const_iterator vi =
@@ -78,7 +78,7 @@ llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
 
 					llvm::Value* param = builder.CreateAlloca(i->getType());
 					builder.CreateStore(i, param);
-					translationUnit.getLLVMSymbolTable()[vi->name] = param;
+					translationUnit.addSymbol(vi->name, param);
 				}
 			}
 
@@ -91,7 +91,7 @@ llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
 			for (std::vector<FormalParameter>::const_iterator i =
 					function->formalArguments.begin();
 					i != function->formalArguments.end(); ++i) {
-				translationUnit.getLLVMSymbolTable().erase(i->name);
+				translationUnit.removeSymbol(i->name);
 			}
 
 			if (llvm::verifyFunction(*f, llvm::PrintMessageAction)) {
@@ -137,18 +137,13 @@ llvm::Value* juli::IRGenerator::visitStringLiteral(const NStringLiteral* n) {
 }
 
 llvm::Value* juli::IRGenerator::visitVariableRef(const NVariableRef* n) {
-	std::cerr << "Visiting " << n << std::endl;
-
-	llvm::Value* p = translationUnit.getLLVMSymbolTable()[n->name];
+	llvm::Value* p = translationUnit.getSymbol(n->name, n);
 	llvm::Value* result;
 
 	if (n->address)
 		result = p;
 	else
-		result = builder.CreateLoad(p);
-
-	std::cerr << "Result: ";
-	result->dump();
+		result = builder.CreateLoad(p);;
 
 	return result;
 }
@@ -210,22 +205,22 @@ llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
 			bool firstIsUnsigned = (firstIsInt);
 			bool secondIsUnsigned = (secondIsInt);
 
-//			std::cerr << "VISITING CAST:" << std::endl;
-//			std::cerr << "From = " << from << std::endl;
-//			std::cerr << "To = " << to << std::endl;
-//
-//			std::cerr << "fp = " << fp << std::endl;
-//			std::cerr << "tp = " << tp << std::endl;
-//			std::cerr << "firstIsInt = " << firstIsInt << std::endl;
-//			std::cerr << "secondIsInt = " << secondIsInt << std::endl;
-//			std::cerr << "firstIsUnsigned = " << firstIsUnsigned << std::endl;
-//			std::cerr << "secondIsUnsigned = " << secondIsUnsigned << std::endl;
-//
-//			std::cerr << "targetType = ";
-//			targetType->dump();
-//			std::cerr << "  valueType = ";
-//			v->getType()->dump();
-//			std::cerr << std::endl;
+			std::cerr << "VISITING CAST:" << std::endl;
+			std::cerr << "From = " << from << std::endl;
+			std::cerr << "To = " << to << std::endl;
+
+			std::cerr << "fp = " << fp << std::endl;
+			std::cerr << "tp = " << tp << std::endl;
+			std::cerr << "firstIsInt = " << firstIsInt << std::endl;
+			std::cerr << "secondIsInt = " << secondIsInt << std::endl;
+			std::cerr << "firstIsUnsigned = " << firstIsUnsigned << std::endl;
+			std::cerr << "secondIsUnsigned = " << secondIsUnsigned << std::endl;
+
+			std::cerr << "targetType = ";
+			targetType->dump();
+			std::cerr << "  valueType = ";
+			v->getType()->dump();
+			std::cerr << std::endl;
 
 			if (firstIsInt && secondIsInt) {
 				if (fp > tp) {
@@ -450,7 +445,7 @@ llvm::Value* juli::IRGenerator::visitVariableDecl(
 	llvm::Value* param = builder.CreateAlloca(resolveType(n->type));
 	if (n->assignmentExpr)
 		builder.CreateStore(visit(n->assignmentExpr), param);
-	translationUnit.getLLVMSymbolTable()[n->name->name] = param;
+	translationUnit.addSymbol(n->name->name, param);
 	return 0;
 }
 
