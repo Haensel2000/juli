@@ -171,11 +171,19 @@ bool juli::ArrayType::operator==(const Type& t) const {
 	const ArrayType* pt = dynamic_cast<const ArrayType*>(&t);
 	if (!pt)
 		return false;
-	return (*elementType == *pt->elementType);
+	return (*elementType == *pt->elementType && dimension == pt->dimension);
 }
 
 void juli::ArrayType::print(std::ostream& os) const {
-	os << elementType << "[]";
+	if (dimension == 1) {
+		os << elementType << "[]";
+	} else {
+		os << elementType << "[";
+		for (int i = 0; i < dimension-1; ++i) {
+			os << ",";
+		}
+		os << "]";
+	}
 }
 
 bool juli::ArrayType::isAssignableTo(const Type* t) const {

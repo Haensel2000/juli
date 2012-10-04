@@ -74,11 +74,12 @@ public:
 class NArrayType: public NType {
 public:
 	NType* elementType;
+	int dimension;
 
 	virtual ~NArrayType() {
 	}
 
-	NArrayType(NType* elementType);
+	NArrayType(NType* elementType, int dimension = 1);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 

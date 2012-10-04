@@ -462,10 +462,6 @@ llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
 	llvm::Value* memorySize = getConstantInt32(getSizeOf(etype));
 	std::cerr << "ElementSize: " << std::endl;
 	memorySize->dump();
-	memorySize = builder.CreateIntCast(memorySize,
-			llvm::Type::getInt32Ty(context), true);
-	std::cerr << "ElementSize: " << std::endl;
-	memorySize->dump();
 	int i = 0;
 	for (std::vector<NExpression*>::const_iterator s = n->sizes.begin();
 			s != n->sizes.end(); ++s) {
@@ -478,7 +474,7 @@ llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
 		std::vector<llvm::Value*> indices;
 		indices.push_back(zero_i32);
 		indices.push_back(one_i32);
-		indices.push_back(getConstantInt32(i));
+		indices.push_back(getConstantInt32(i++));
 		llvm::Value* sizePtr = builder.CreateGEP(result, indices);
 		sizePtr->dump();
 		builder.CreateStore(arraySize, sizePtr)->dump();

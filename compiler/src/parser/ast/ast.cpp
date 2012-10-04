@@ -28,8 +28,8 @@ const Type* NBasicType::resolve(const TypeInfo& types) const
 	return types.getType(name, this);
 }
 
-juli::NArrayType::NArrayType(NType* elementType) :
-		elementType(elementType) {
+juli::NArrayType::NArrayType(NType* elementType, int dimension) :
+		elementType(elementType), dimension(dimension) {
 }
 
 void juli::NArrayType::print(std::ostream& os, int indent,
@@ -37,7 +37,7 @@ void juli::NArrayType::print(std::ostream& os, int indent,
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
-		os << "ArrayType: ";
+		os << "ArrayType: " << dimension;
 		printLocation(os);
 		elementType->print(os, indent + 2, flags);
 	} else {
@@ -47,7 +47,7 @@ void juli::NArrayType::print(std::ostream& os, int indent,
 
 const Type* NArrayType::resolve(const TypeInfo& types) const
 		throw (CompilerError) {
-	return new ArrayType(elementType->resolve(types));
+	return new ArrayType(elementType->resolve(types), dimension);
 }
 
 juli::NExpression::NExpression(NodeType nodeType, const Type* expressionType) :

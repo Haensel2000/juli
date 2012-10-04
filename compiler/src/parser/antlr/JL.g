@@ -406,12 +406,34 @@ t=array_type  { result = t; }
 ;
 
 array_type returns [juli::NType* result = 0]:
+t=nested_array_type { result = t; }|
+t=multi_array_type { result = t; }
+;
+
+nested_array_type returns [juli::NType* result = 0]:
 t=basic_type { result = t; }
 (ARRAY_SUFFIX
 { 
   result = new juli::NArrayType(result);
   setSourceLoc(result, t, $ARRAY_SUFFIX);
-})* 
+})*
+;
+
+multi_array_type returns [juli::NType* result = 0]
+@declarations 
+{
+  int dimension = 1;
+}:
+t=basic_type { result = t; }
+OSBR
+(
+COMMA { dimension++; }
+)*
+CSBR
+{
+  result = new juli::NArrayType(result, dimension);
+  setSourceLoc(result, t, $CSBR);
+}
 ;
 
 basic_type returns [juli::NType* result = 0]:
@@ -543,6 +565,7 @@ CSBR : ']' ;
 OCBR : '{' ;
 CCBR : '}' ;
 SCOL : ';' ;
+COMMA : ',' ;
 
 C_MOD : 'C' ;
     
