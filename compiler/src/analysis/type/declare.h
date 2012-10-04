@@ -43,6 +43,10 @@ public:
 
 	void visitStringLiteral(const NStringLiteral* n);
 
+	void visitCharLiteral(const NCharLiteral* n);
+
+	void visitBooleanLiteral(const NLiteral<bool>* n);
+
 	void visitVariableRef(const NVariableRef* n);
 
 	void visitQualifiedAccess(const NQualifiedAccess* n);

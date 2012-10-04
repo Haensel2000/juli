@@ -120,6 +120,14 @@ const Type* juli::TypeChecker::visitStringLiteral(NStringLiteral* n) {
 	return n->expressionType;
 }
 
+const Type* juli::TypeChecker::visitCharLiteral(const NCharLiteral* n) {
+	return n->expressionType;
+}
+
+const Type* juli::TypeChecker::visitBooleanLiteral(const NLiteral<bool>* n) {
+	return n->expressionType;
+}
+
 const Type* juli::TypeChecker::visitVariableRef(NVariableRef* n) {
 	n->expressionType = symbolTable.getSymbol(n->name);
 

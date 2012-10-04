@@ -82,14 +82,7 @@ juli::NStringLiteral::NStringLiteral(std::string value) :
 		if (*i == '\\') {
 			escCount++;
 		} else if (escCount == 1) {
-			switch (*i) {
-			case 'n':
-				sstream << "\n";
-				break;
-			default:
-				sstream << "\\" << *i;
-				break;
-			}
+			sstream << escape(*i);
 			escCount = 0;
 		} else if (escCount > 1) {
 			for (int j = 0; j < escCount; ++j)
@@ -114,6 +107,27 @@ void juli::NStringLiteral::print(std::ostream& os, int indent,
 		printType(os);
 	} else {
 		os << "\"" << origValue << "\"";
+	}
+}
+
+juli::NCharLiteral::NCharLiteral(std::string text) :
+		NLiteral<char>(CHAR_LITERAL, ' ', &PrimitiveType::INT8_TYPE) {
+	if (text[0] == '\\') {
+		value = escape(text[1]);
+	} else {
+		value = text[0];
+	}
+}
+
+void juli::NCharLiteral::print(std::ostream& os, int indent,
+		unsigned int flags) const {
+	beginLine(os, indent);
+
+	if (flags & FLAG_TREE) {
+		os << "Literal: " << origValue;
+		printType(os);
+	} else {
+		os << "\'" << origValue << "\'";
 	}
 }
 
@@ -171,7 +185,8 @@ juli::NAllocateArray::NAllocateArray(NArrayAccess* aacc) :
 	NVariableRef* vref = dynamic_cast<NVariableRef*>(aacc->ref);
 	if (!vref) {
 		CompilerError err(this);
-		err.getStream() << "Invalid nested array allocation. Use multi-dimensional arrays.";
+		err.getStream()
+				<< "Invalid nested array allocation. Use multi-dimensional arrays.";
 		throw err;
 	}
 
@@ -185,7 +200,8 @@ juli::NAllocateArray::NAllocateArray(NType* type,
 }
 
 const Type* juli::NAllocateArray::getType(const TypeInfo& typeInfo) const {
-	return ArrayType::getMultiDimensionalArray(type->resolve(typeInfo), sizes.size());
+	return ArrayType::getMultiDimensionalArray(type->resolve(typeInfo),
+			sizes.size());
 }
 
 void juli::NAllocateArray::print(std::ostream& os, int indent,
@@ -331,7 +347,8 @@ void juli::NArrayAccess::print(std::ostream& os, int indent,
 		os << "ArrayAccess: ";
 		printType(os);
 		ref->print(os, indent + 2, flags);
-		for (ExpressionList::const_iterator i = indices.begin(); i != indices.end(); ++i) {
+		for (ExpressionList::const_iterator i = indices.begin();
+				i != indices.end(); ++i) {
 			(*i)->print(os, indent + 2, flags);
 		}
 	} else {

@@ -73,6 +73,10 @@ public:
 
 	const Type* visitStringLiteral(NStringLiteral* n);
 
+	const Type* visitCharLiteral(const NCharLiteral* n);
+
+	const Type* visitBooleanLiteral(const NLiteral<bool>* n);
+
 	const Type* visitVariableRef(NVariableRef* n);
 
 	const Type* visitQualifiedAccess(NQualifiedAccess* n);

@@ -110,6 +110,12 @@ void juli::Declarator::visitIntegerLiteral(const NLiteral<uint64_t>* n) {
 void juli::Declarator::visitStringLiteral(const NStringLiteral* n) {
 }
 
+void juli::Declarator::visitCharLiteral(const NCharLiteral* n) {
+}
+
+void juli::Declarator::visitBooleanLiteral(const NLiteral<bool>* n) {
+}
+
 void juli::Declarator::visitVariableRef(const NVariableRef* n) {
 }
 

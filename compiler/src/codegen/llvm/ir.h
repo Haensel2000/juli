@@ -67,6 +67,10 @@ public:
 
 	llvm::Value* visitStringLiteral(const NStringLiteral* n);
 
+	llvm::Value* visitCharLiteral(const NCharLiteral* n);
+
+	llvm::Value* visitBooleanLiteral(const NLiteral<bool>* n);
+
 	llvm::Value* visitVariableRef(const NVariableRef* n);
 
 	llvm::Value* visitQualifiedAccess(NQualifiedAccess* n);

@@ -24,6 +24,10 @@ ReturnValue visitAST(Handler& handler, const Node* n) {
 		return handler.visitIntegerLiteral((NLiteral<uint64_t>*) n);
 	case STRING_LITERAL:
 		return handler.visitStringLiteral((NStringLiteral*) n);
+	case CHAR_LITERAL:
+			return handler.visitCharLiteral((NCharLiteral*) n);
+	case BOOLEAN_LITERAL:
+			return handler.visitBooleanLiteral((NLiteral<bool>*) n);
 	case VARIABLE_REF:
 		return handler.visitVariableRef((NVariableRef*) n);
 	case QUALIFIED_ACCESS:

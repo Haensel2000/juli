@@ -223,6 +223,14 @@ llvm::Value* juli::IRGenerator::visitStringLiteral(const NStringLiteral* n) {
 	return llvm::ConstantExpr::getGetElementPtr(globalStr, indices);
 }
 
+llvm::Value* juli::IRGenerator::visitCharLiteral(const NCharLiteral* n) {
+	return llvm::ConstantInt::get(context, llvm::APInt(8, n->value, true));
+}
+
+llvm::Value* juli::IRGenerator::visitBooleanLiteral(const NLiteral<bool>* n) {
+	return llvm::ConstantInt::get(context, llvm::APInt(1, n->value, true));
+}
+
 llvm::Value* juli::IRGenerator::visitVariableRef(const NVariableRef* n) {
 	llvm::Value* p = translationUnit.getSymbol(n->name, n);
 	llvm::Value* result;
@@ -463,10 +471,10 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 			return builder.CreateICmpSGE(left, right, "lt_res");
 		break;
 	case LOR:
-		return builder.CreateAnd(left, right, "and_res");
+		return builder.CreateOr(left, right, "or_res");
 		break;
 	case LAND:
-		return builder.CreateOr(left, right, "and_res");
+		return builder.CreateAnd(left, right, "and_res");
 		break;
 	case UNKNOWN:
 	default:

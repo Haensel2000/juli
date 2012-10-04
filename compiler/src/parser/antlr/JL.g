@@ -407,7 +407,9 @@ NEW val=alloc_array { result = val; }
 literal returns [juli::NExpression* result = 0]: 
 val=double_literal { result = val; } | 
 val=string_literal { result = val; } |
-val=integer_literal { result = val; }
+val=char_literal { result = val; } |
+val=boolean_literal { result = val; } |
+val=integer_literal { result = val; } 
 ;
 
 function_call returns [juli::NFunctionCall* result = 0]
@@ -493,6 +495,22 @@ StringLiteral
   setSourceLoc(result, filename, $StringLiteral);
 }
 ;
+
+char_literal returns [juli::NExpression* result = 0]:
+CharacterLiteral
+{
+  std::string tokenText = getTokenString($CharacterLiteral);
+  tokenText = tokenText.substr(1, tokenText.size() - 2);
+  result = new juli::NCharLiteral(tokenText);
+  setSourceLoc(result, filename, $CharacterLiteral);
+}
+;
+
+boolean_literal returns [juli::NExpression* result = 0]:
+  TRUE    { return new juli::NLiteral<bool>(juli::BOOLEAN_LITERAL, true, &juli::PrimitiveType::BOOLEAN_TYPE); } 
+| FALSE   { return new juli::NLiteral<bool>(juli::BOOLEAN_LITERAL, false, &juli::PrimitiveType::BOOLEAN_TYPE); } 
+;
+
 
 integer_literal returns [juli::NExpression* result = 0]:
 DecimalLiteral
@@ -582,6 +600,8 @@ IF : 'if' ;
 ELSE : 'else' ;
 WHILE : 'while' ;
 NEW : 'new' ;
+TRUE : 'true' ;
+FALSE : 'false' ;
 ARRAY_SUFFIX : '[]' ;
 OPAR : '(' ;
 CPAR : ')' ;

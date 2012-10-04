@@ -47,6 +47,8 @@ enum NodeType {
 	DOUBLE_LITERAL,
 	INTEGER_LITERAL,
 	STRING_LITERAL,
+	CHAR_LITERAL,
+	BOOLEAN_LITERAL,
 	VARIABLE_REF,
 	QUALIFIED_ACCESS,
 	CAST,
@@ -114,6 +116,8 @@ public:
 	const NodeType& getType() const;
 
 };
+
+char escape(const char c);
 
 }
 

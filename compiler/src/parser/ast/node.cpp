@@ -49,6 +49,15 @@ const NodeType& juli::Node::getType() const {
 	return nodeType;
 }
 
+char juli::escape(const char c) {
+	switch (c) {
+	case 'n':
+		return '\n';
+	default:
+		return c;
+	}
+}
+
 std::ostream& operator<<(std::ostream& os, const juli::Indentable* object) {
 	assert(object != 0);
 	object->print(os, 0, 0);

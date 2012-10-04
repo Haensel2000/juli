@@ -44,6 +44,26 @@ void dump(int[] iv)
 
 int main(char[][] args) 
 {
+  
+  boolean a = true;
+  boolean b = false;
+  
+  if (a and b)
+  {
+    printf("a and b\n");
+  } 
+  else if (a or b) 
+  {
+    printf("a and b\n");
+  } 
+  else 
+  {
+    printf("else\n");
+  }
+  
+  
+  
+  
   double[,] x = new double[2,2];
   x[0,0] = 1.0;
   x[0,1] = 0.0;
@@ -85,7 +105,11 @@ int main(char[][] args)
   dump(ni[1]);
   
   
-  // TODO: char[] r = new char[3];
+  char[] r = new char[3];
+  r[0] = 'A';
+  r[1] = 'B';
+  r[2] = 'C';
+  printf("r == %s, r.length == %d \n", r, r.length);
   
   printf("%s, %s, %s\n", words[0], words[1], words[2]);
   

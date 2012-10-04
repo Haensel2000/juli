@@ -141,6 +141,15 @@ public:
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
+class NCharLiteral : public NLiteral<char> {
+protected:
+	std::string origValue;
+public:
+	NCharLiteral(std::string text);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+};
+
 class NVariableRef: public NAddressable {
 public:
 	std::string name;
