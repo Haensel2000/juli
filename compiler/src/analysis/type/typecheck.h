@@ -41,7 +41,7 @@ public:
 
 	const Type* getSymbol(const std::string& name) const;
 
-	void addSymbol(const std::string& name, const Type* type);
+	void addSymbol(const std::string& name, const Type* type, const Node* n);
 
 	void addSymbol(NVariableDeclaration* node);
 

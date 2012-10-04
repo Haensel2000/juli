@@ -220,12 +220,12 @@ public:
 
 class NAllocateArray : public NExpression {
 public:
-	NBasicType* type;
+	NType* type;
 	std::vector<NExpression*> sizes;
 
 	NAllocateArray(NArrayAccess* aacc);
 
-	NAllocateArray(NBasicType* type, std::vector<NExpression*>& sizes);
+	NAllocateArray(NType* type, std::vector<NExpression*>& sizes);
 
 	const Type* getType(const TypeInfo& typeInfo) const;
 

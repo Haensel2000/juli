@@ -12,6 +12,7 @@ juli::TypeInfo::TypeInfo() {
 	typeTable["void"] = new PrimitiveType(VOID);
 	typeTable["int"] = new PrimitiveType(INT32);
 	typeTable["char"] = new PrimitiveType(INT8);
+	typeTable["boolean"] = new PrimitiveType(BOOLEAN);
 }
 
 void juli::TypeInfo::declareFunction(const NFunctionDefinition* def) {

@@ -30,6 +30,18 @@ void dump(double[] v)
   return;
 }
 
+void dump(int[] iv)
+{
+  int i = 0;
+  while (i < iv.length)
+  {
+    printf("%d ", iv[i]);
+    i = i + 1;
+  }
+  printf("\n");
+  return;
+}
+
 int main(char[][] args) 
 {
   double[,] x = new double[2,2];
@@ -56,9 +68,30 @@ int main(char[][] args)
   
   dump(mul(z, v));
   
+  char[][] words = new char[][3];
+  words[0] = "test";
+  words[1] = "w2";
+  words[2] = "w3";
+  
+  int[][] ni = new int[][2];
+  ni[0] = new int[3];
+  ni[1] = new int[5];
+  
+  ni[0][0] = 1;
+  ni[0][1] = 0;
+  ni[0][2] = -1;
+  
+  dump(ni[0]);
+  dump(ni[1]);
+  
+  
+  // TODO: char[] r = new char[3];
+  
+  printf("%s, %s, %s\n", words[0], words[1], words[2]);
+  
   printf("Dimensions of z: %d\n", z.length.length);
   
-  printf("%d, %d, %f", x.length[0], x.length[1], x[1,2]);
+  printf("%d, %d, %f\n", x.length[0], x.length[1], x[1,2]);
   //int i = args.length;
   //printf("%s, %c, %d, %d\n", args[0], args[0][2], i, args[1].length);
   return 0;

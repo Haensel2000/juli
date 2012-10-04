@@ -43,6 +43,8 @@ llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(t);
 	if (pt) {
 		switch (pt->getPrimitive()) {
+		case BOOLEAN:
+			return llvm::Type::getInt1Ty(c);
 		case INT8:
 			return llvm::Type::getInt8Ty(c);
 		case INT32:
@@ -56,7 +58,7 @@ llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 
 	const ArrayType* at = dynamic_cast<const ArrayType*>(t);
 	if (at) {
-		if (*at->getElementType() == PrimitiveType::INT8_TYPE) { // char array
+		if (*at->getElementType() == PrimitiveType::INT8_TYPE && at->getDimension() == 1) { // char array
 			return llvm::PointerType::get(resolveLLVMType(at->getElementType()),
 					0);
 		} else {
@@ -75,9 +77,13 @@ llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 					fields.push_back(
 							llvm::PointerType::get(
 									resolveLLVMType(at->getElementType()), 0));
-					fields.push_back(
-							llvm::ArrayType::get(llvm::Type::getInt32Ty(c),
-									at->getDimension()));
+					if (at->getDimension() > 1) {
+						fields.push_back(
+								llvm::ArrayType::get(llvm::Type::getInt32Ty(c),
+										at->getDimension()));
+					} else {
+						fields.push_back(llvm::Type::getInt32Ty(c));
+					}
 					t = llvm::StructType::create(fields, s.str());
 				}
 			}

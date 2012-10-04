@@ -160,8 +160,8 @@ void juli::NQualifiedAccess::print(std::ostream& os, int indent,
 juli::NAllocateArray::NAllocateArray(NArrayAccess* aacc) :
 		NExpression(NEW_ARRAY), type(0), sizes(aacc->indices) {
 
-	NExpression* ref;
-	NArrayAccess* cacc = aacc;
+//	NExpression* ref;
+//	NArrayAccess* cacc = aacc;
 //	while (cacc) {
 //		sizes.push_back(cacc->indices[0]);
 //		ref = cacc->ref;
@@ -179,7 +179,7 @@ juli::NAllocateArray::NAllocateArray(NArrayAccess* aacc) :
 
 }
 
-juli::NAllocateArray::NAllocateArray(NBasicType* type,
+juli::NAllocateArray::NAllocateArray(NType* type,
 		std::vector<NExpression*>& sizes) :
 		NExpression(NEW_ARRAY), type(type), sizes(sizes) {
 }

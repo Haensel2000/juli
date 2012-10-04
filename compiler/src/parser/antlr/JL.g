@@ -374,17 +374,17 @@ vref=identifier { result = new juli::NVariableRef(vref); }
 )*
 ;
 
-alloc_array_access returns [juli::NExpression* result = 0]
+alloc_array returns [juli::NExpression* result = 0]
 @declarations
 {
   std::vector<juli::NExpression*> indices;
 }:
-vref=identifier { result = new juli::NVariableRef(vref); }
+t=type
 (OSBR vindex=expression { indices.clear(); indices.push_back(vindex); } 
 (COMMA i=expression { indices.push_back(i); })* CSBR 
 { 
-  result = new juli::NArrayAccess(result, indices);
-  setSourceLoc(result, vref, $CSBR);
+  result = new juli::NAllocateArray(t, indices);
+  setSourceLoc(result, t, $CSBR);
 }
 )
 ;
@@ -401,7 +401,7 @@ OPAR val=expression CPAR
 ;
 
 allocation returns [juli::NExpression* result = 0]:
-NEW val=alloc_array_access { result = new juli::NAllocateArray((juli::NArrayAccess*)val); }
+NEW val=alloc_array { result = val; }
 ;
 
 literal returns [juli::NExpression* result = 0]: 

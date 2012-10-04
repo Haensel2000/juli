@@ -40,12 +40,19 @@ const Type* juli::SymbolTable::getSymbol(const std::string& name) const {
 	return 0;
 }
 
-void juli::SymbolTable::addSymbol(const std::string& name, const Type* type) {
-	scopes.back()[name] = type;
+void juli::SymbolTable::addSymbol(const std::string& name, const Type* type, const Node* n) {
+	Scope& currentScope = scopes.back();
+	if (currentScope.find(name) != currentScope.end()) {
+		CompilerError err(n);
+		err.getStream() << "Redefinition of symbol " << name;
+		throw err;
+	}
+
+	currentScope[name] = type;
 }
 
 void juli::SymbolTable::addSymbol(NVariableDeclaration* node) {
-	addSymbol(node->name->name, node->type->resolve(typeInfo));
+	addSymbol(node->name->name, node->type->resolve(typeInfo), node);
 }
 
 juli::TypeChecker::TypeChecker(const TypeInfo& typeInfo) :
