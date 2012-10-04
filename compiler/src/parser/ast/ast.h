@@ -363,6 +363,30 @@ public:
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
+class NFieldDeclaration : public Indentable {
+public:
+	NType* type;
+	NIdentifier* name;
+
+	NFieldDeclaration(NType* type, NIdentifier* name);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+
+};
+
+typedef std::vector<NFieldDeclaration*> FieldList;
+
+class NClassDefinition : public NStatement {
+public:
+	NIdentifier* name;
+	FieldList fields;
+
+	NClassDefinition(NIdentifier* name, FieldList& fields);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+
+};
+
 }
 
 #endif /* AST_H_ */

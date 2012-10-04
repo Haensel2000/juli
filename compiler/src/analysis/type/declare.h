@@ -19,6 +19,9 @@ class Declarator {
 private:
 	TypeInfo typeInfo;
 
+	std::vector<const NFunctionDefinition*> functionDefinitions;
+	std::vector<const NClassDefinition*> classDefinitions;
+
 	void declareImplicitOperator(const std::vector<std::string> names,
 			const Type* returnType, const Type* type, unsigned int arity);
 
@@ -35,6 +38,8 @@ public:
 		return typeInfo;
 	}
 
+	const TypeInfo&  define(const Node* n);
+
 	void visit(const Node* n);
 
 	void visitDoubleLiteral(const NLiteral<double>* n);
@@ -46,6 +51,8 @@ public:
 	void visitCharLiteral(const NCharLiteral* n);
 
 	void visitBooleanLiteral(const NLiteral<bool>* n);
+
+	void visitNullLiteral(const NLiteral<int>* n);
 
 	void visitVariableRef(const NVariableRef* n);
 
@@ -82,6 +89,8 @@ public:
 	void visitIf(const NIfStatement* n);
 
 	void visitWhile(const NWhileStatement* n);
+
+	void visitClassDef(const NClassDefinition* n);
 
 };
 

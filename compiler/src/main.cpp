@@ -49,16 +49,16 @@ int main(int argc, char **argv) {
 			//ast->print(std::cout, 0, Indentable::FLAG_TREE);
 
 			Declarator declarator;
-			declarator.visit(ast);
+			const TypeInfo& typeInfo = declarator.define(ast);
 
 			//declarator.getTypeInfo().dump();
 
-			TypeChecker typeChecker(declarator.getTypeInfo());
+			TypeChecker typeChecker(typeInfo);
 			typeChecker.visit(ast);
 
 			ast->print(std::cout, 0, Indentable::FLAG_TREE);
 
-			IRGenerator irgen("test", declarator.getTypeInfo());
+			IRGenerator irgen("test", typeInfo);
 			irgen.process(ast);
 
 			irgen.getTranslationUnit().module->dump();

@@ -49,6 +49,7 @@ enum NodeType {
 	STRING_LITERAL,
 	CHAR_LITERAL,
 	BOOLEAN_LITERAL,
+	NULL_LITERAL,
 	VARIABLE_REF,
 	QUALIFIED_ACCESS,
 	CAST,
@@ -65,7 +66,8 @@ enum NodeType {
 	IF,
 	WHILE,
 	RETURN,
-	FUNCTION_DEF
+	FUNCTION_DEF,
+	CLASS_DEF
 };
 
 class Marker : public cpputils::debug::Printable {

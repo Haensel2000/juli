@@ -28,6 +28,8 @@ ReturnValue visitAST(Handler& handler, const Node* n) {
 			return handler.visitCharLiteral((NCharLiteral*) n);
 	case BOOLEAN_LITERAL:
 			return handler.visitBooleanLiteral((NLiteral<bool>*) n);
+	case NULL_LITERAL:
+			return handler.visitNullLiteral((NLiteral<int>*) n);
 	case VARIABLE_REF:
 		return handler.visitVariableRef((NVariableRef*) n);
 	case QUALIFIED_ACCESS:
@@ -62,6 +64,8 @@ ReturnValue visitAST(Handler& handler, const Node* n) {
 		return handler.visitReturn((NReturnStatement*) n);
 	case FUNCTION_DEF:
 		return handler.visitFunctionDef((NFunctionDefinition*) n);
+	case CLASS_DEF:
+		return handler.visitClassDef((NClassDefinition*) n);
 	}
 }
 

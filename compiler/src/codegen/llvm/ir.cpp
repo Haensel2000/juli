@@ -59,7 +59,7 @@ llvm::ConstantFP* juli::IRGenerator::getConstantDouble(double v) {
 
 unsigned int juli::IRGenerator::getSizeOf(const Type* type) {
 	switch (type->getCategory()) {
-	case PRIMITIVE:
+	case PRIMITIVE: {
 		switch (static_cast<const PrimitiveType*>(type)->getPrimitive()) {
 		case VOID:
 			return 0;
@@ -72,15 +72,29 @@ unsigned int juli::IRGenerator::getSizeOf(const Type* type) {
 		case FLOAT64:
 			return 8;
 		}
-	case ARRAY:
+		return 0;
+	}
+	case ARRAY: {
 		unsigned int pointerSize =
 				(module.getPointerSize() == llvm::Module::Pointer64) ? 8 : 4;
 		const ArrayType* at = static_cast<const ArrayType*>(type);
-		if (*at->getElementType() == PrimitiveType::INT8_TYPE && at->getDimension() == 1) {
+		if (*at->getElementType() == PrimitiveType::INT8_TYPE
+				&& at->getDimension() == 1) {
 			return pointerSize;
 		}
 		return pointerSize
 				+ getSizeOf(&PrimitiveType::INT32_TYPE) * at->getDimension();
+	}
+	case CLASS: {
+		unsigned int sum = 0;
+		std::vector<Field> fields =
+				static_cast<const ClassType*>(type)->getFields();
+		for (std::vector<Field>::const_iterator i = fields.begin();
+				i != fields.end(); ++i) {
+			sum += getSizeOf(i->type);
+		}
+		return sum;
+	}
 	}
 
 }
@@ -119,7 +133,19 @@ juli::IRGenerator::IRGenerator(const std::string& moduleName,
 	params.push_back(FormalParameter(t_int32, "size"));
 	createFunction(
 			new Function("malloc", t_arr_int8, params, false, MODIFIER_C, 0));
+
+	//emitClassDefinitions();
 }
+
+//void juli::IRGenerator::emitClassDefinitions() {
+//	std::vector<Type*> types = typeInfo.getTypes();
+//	for (std::vector<Type*>::const_iterator i = types.begin(); i != types.end(); ++i) {
+//		ClassType* ct = dynamic_cast<ClassType*>(*i);
+//		if (ct) {
+//			resolveType(ct);
+//		}
+//	}
+//}
 
 llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
 	const std::string llvmName = function->mangle();
@@ -231,6 +257,10 @@ llvm::Value* juli::IRGenerator::visitBooleanLiteral(const NLiteral<bool>* n) {
 	return llvm::ConstantInt::get(context, llvm::APInt(1, n->value, true));
 }
 
+llvm::Value* juli::IRGenerator::visitNullLiteral(const NLiteral<int>* n) {
+	return zero_i32;
+}
+
 llvm::Value* juli::IRGenerator::visitVariableRef(const NVariableRef* n) {
 	llvm::Value* p = translationUnit.getSymbol(n->name, n);
 	llvm::Value* result;
@@ -294,10 +324,11 @@ llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
 	llvm::Type* targetType = resolveType(n->expressionType);
 	const Type* tfrom = n->expression->expressionType;
 	const Type* tto = n->expressionType;
+
 	if (tfrom->getCategory() == PRIMITIVE) {
+		const PrimitiveType* from = dynamic_cast<const PrimitiveType*>(tfrom);
 		if (tto->getCategory() == PRIMITIVE) {
-			const PrimitiveType* from =
-					dynamic_cast<const PrimitiveType*>(tfrom);
+
 			const PrimitiveType* to = dynamic_cast<const PrimitiveType*>(tto);
 
 			Primitive fp = from->getPrimitive();
@@ -348,7 +379,15 @@ llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
 				}
 			}
 
+		} else if (from->getPrimitive() == NIL) {
+			if (tto->getCategory() != REFERENCE)
+				return builder.CreateIntToPtr(v, targetType);
+			else
+				return v;
 		}
+	} else if ((tfrom->getCategory() == CLASS || tfrom->getCategory() == ARRAY)
+			&& tto->getCategory() == REFERENCE) {
+		return builder.CreatePtrToInt(v, targetType);
 	}
 }
 
@@ -386,100 +425,110 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 	if (left == 0 || right == 0) // error handling
 		return 0;
 
-	const PrimitiveType* pt =
-			dynamic_cast<const PrimitiveType*>(n->lhs->expressionType);
-
-	switch (n->op) {
-	case PLUS:
-		if (pt->isFloatingPoint())
-			return builder.CreateFAdd(left, right, "add_res");
-		else if (pt->isInteger())
-			return builder.CreateAdd(left, right, "add_res");
-		break;
-	case SUB:
-		if (pt->isFloatingPoint())
-			return builder.CreateFSub(left, right, "sub_res");
-		else if (pt->isInteger())
-			return builder.CreateSub(left, right, "sub_res");
-		break;
-	case MUL:
-		if (pt->isFloatingPoint())
-			return builder.CreateFMul(left, right, "mul_res");
-		else if (pt->isInteger())
-			return builder.CreateMul(left, right, "mul_res");
-		break;
-	case DIV:
-		if (pt->isFloatingPoint())
-			return builder.CreateFDiv(left, right, "div_res");
-		else if (pt->isUnsignedInteger())
-			return builder.CreateUDiv(left, right, "div_res");
-		else if (pt->isSignedInteger())
-			return builder.CreateSDiv(left, right, "div_res");
-		break;
-	case MOD:
-		if (pt->isUnsignedInteger())
-			return builder.CreateURem(left, right, "mod_res");
-		else if (pt->isSignedInteger())
-			return builder.CreateSRem(left, right, "mod_res");
-		break;
-	case EQ:
-		if (pt->isFloatingPoint())
-			return builder.CreateFCmpOEQ(left, right, "eq_res");
-		else if (pt->isInteger())
+	if (n->lhs->expressionType->getCategory() == PRIMITIVE
+			&& n->rhs->expressionType->getCategory() == PRIMITIVE) {
+		const PrimitiveType* pt =
+				static_cast<const PrimitiveType*>(n->lhs->expressionType);
+		switch (n->op) {
+		case PLUS:
+			if (pt->isFloatingPoint())
+				return builder.CreateFAdd(left, right, "add_res");
+			else if (pt->isInteger())
+				return builder.CreateAdd(left, right, "add_res");
+			break;
+		case SUB:
+			if (pt->isFloatingPoint())
+				return builder.CreateFSub(left, right, "sub_res");
+			else if (pt->isInteger())
+				return builder.CreateSub(left, right, "sub_res");
+			break;
+		case MUL:
+			if (pt->isFloatingPoint())
+				return builder.CreateFMul(left, right, "mul_res");
+			else if (pt->isInteger())
+				return builder.CreateMul(left, right, "mul_res");
+			break;
+		case DIV:
+			if (pt->isFloatingPoint())
+				return builder.CreateFDiv(left, right, "div_res");
+			else if (pt->isUnsignedInteger())
+				return builder.CreateUDiv(left, right, "div_res");
+			else if (pt->isSignedInteger())
+				return builder.CreateSDiv(left, right, "div_res");
+			break;
+		case MOD:
+			if (pt->isUnsignedInteger())
+				return builder.CreateURem(left, right, "mod_res");
+			else if (pt->isSignedInteger())
+				return builder.CreateSRem(left, right, "mod_res");
+			break;
+		case EQ:
+			if (pt->isFloatingPoint())
+				return builder.CreateFCmpOEQ(left, right, "eq_res");
+			else if (pt->isInteger())
+				return builder.CreateICmpEQ(left, right, "eq_res");
+			break;
+		case NEQ:
+			if (pt->isFloatingPoint())
+				return builder.CreateFCmpONE(left, right, "ne_res");
+			else if (pt->isInteger())
+				return builder.CreateICmpNE(left, right, "ne_res");
+			break;
+		case LT:
+			left->dump();
+			left->getType()->dump();
+			right->dump();
+			right->getType()->dump();
+			if (pt->isFloatingPoint())
+				return builder.CreateFCmpOLT(left, right, "lt_res");
+			else if (pt->isUnsignedInteger())
+				return builder.CreateICmpULT(left, right, "lt_res");
+			else if (pt->isSignedInteger())
+				return builder.CreateICmpSLT(left, right, "lt_res");
+			break;
+		case GT:
+			if (pt->isFloatingPoint())
+				return builder.CreateFCmpOGT(left, right, "gt_res");
+			else if (pt->isUnsignedInteger())
+				return builder.CreateICmpUGT(left, right, "gt_res");
+			else if (pt->isSignedInteger())
+				return builder.CreateICmpSGT(left, right, "lt_res");
+			break;
+		case LEQ:
+			if (pt->isFloatingPoint())
+				return builder.CreateFCmpOLE(left, right, "le_res");
+			else if (pt->isUnsignedInteger())
+				return builder.CreateICmpULE(left, right, "le_res");
+			else if (pt->isSignedInteger())
+				return builder.CreateICmpSLE(left, right, "lt_res");
+			break;
+		case GEQ:
+			if (pt->isFloatingPoint())
+				return builder.CreateFCmpOGE(left, right, "ge_res");
+			else if (pt->isUnsignedInteger())
+				return builder.CreateICmpUGE(left, right, "ge_res");
+			else if (pt->isSignedInteger())
+				return builder.CreateICmpSGE(left, right, "lt_res");
+			break;
+		case LOR:
+			return builder.CreateOr(left, right, "or_res");
+			break;
+		case LAND:
+			return builder.CreateAnd(left, right, "and_res");
+			break;
+		case UNKNOWN:
+		default:
+			std::cerr << "Unsupported binary operator " << n->op << std::endl;
+			return 0;
+		}
+	} else if (n->lhs->expressionType->getCategory() == REFERENCE
+			&& n->rhs->expressionType->getCategory() == REFERENCE) {
+		switch (n->op) {
+		case EQ:
 			return builder.CreateICmpEQ(left, right, "eq_res");
-		break;
-	case NEQ:
-		if (pt->isFloatingPoint())
-			return builder.CreateFCmpONE(left, right, "ne_res");
-		else if (pt->isInteger())
+		case NEQ:
 			return builder.CreateICmpNE(left, right, "ne_res");
-		break;
-	case LT:
-		left->dump();
-		left->getType()->dump();
-		right->dump();
-		right->getType()->dump();
-		if (pt->isFloatingPoint())
-			return builder.CreateFCmpOLT(left, right, "lt_res");
-		else if (pt->isUnsignedInteger())
-			return builder.CreateICmpULT(left, right, "lt_res");
-		else if (pt->isSignedInteger())
-			return builder.CreateICmpSLT(left, right, "lt_res");
-		break;
-	case GT:
-		if (pt->isFloatingPoint())
-			return builder.CreateFCmpOGT(left, right, "gt_res");
-		else if (pt->isUnsignedInteger())
-			return builder.CreateICmpUGT(left, right, "gt_res");
-		else if (pt->isSignedInteger())
-			return builder.CreateICmpSGT(left, right, "lt_res");
-		break;
-	case LEQ:
-		if (pt->isFloatingPoint())
-			return builder.CreateFCmpOLE(left, right, "le_res");
-		else if (pt->isUnsignedInteger())
-			return builder.CreateICmpULE(left, right, "le_res");
-		else if (pt->isSignedInteger())
-			return builder.CreateICmpSLE(left, right, "lt_res");
-		break;
-	case GEQ:
-		if (pt->isFloatingPoint())
-			return builder.CreateFCmpOGE(left, right, "ge_res");
-		else if (pt->isUnsignedInteger())
-			return builder.CreateICmpUGE(left, right, "ge_res");
-		else if (pt->isSignedInteger())
-			return builder.CreateICmpSGE(left, right, "lt_res");
-		break;
-	case LOR:
-		return builder.CreateOr(left, right, "or_res");
-		break;
-	case LAND:
-		return builder.CreateAnd(left, right, "and_res");
-		break;
-	case UNKNOWN:
-	default:
-		std::cerr << "Unsupported binary operator " << n->op << std::endl;
-		return 0;
+		}
 	}
 	return 0;
 }
@@ -490,7 +539,8 @@ llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
 	const ArrayType* at = dynamic_cast<const ArrayType*>(n->expressionType);
 
 	// Treat char[] differently:
-	if (*at->getElementType() == PrimitiveType::INT8_TYPE && n->sizes.size() == 1) {
+	if (*at->getElementType() == PrimitiveType::INT8_TYPE
+			&& n->sizes.size() == 1) {
 		llvm::Value* size = visit(n->sizes[0]);
 		llvm::Value* sizep1 = builder.CreateAdd(size, one_i32);
 		llvm::Value* pi8 = builder.CreateCall(malloc, sizep1);
@@ -543,6 +593,15 @@ llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
 }
 
 llvm::Value* juli::IRGenerator::visitAllocateObject(const NAllocateObject* n) {
+	llvm::Function* malloc = module.getFunction("malloc");
+	llvm::Value* size = getConstantInt32(getSizeOf(n->expressionType));
+	llvm::Value* pi8 = builder.CreateCall(malloc, size);
+	pi8->dump();
+	llvm::Value* result = builder.CreateBitCast(pi8,
+			resolveType(n->expressionType));
+	result->dump();
+
+	return result;
 }
 
 llvm::Value* juli::IRGenerator::visitFunctionCall(const NFunctionCall* n) {
@@ -597,7 +656,8 @@ llvm::Value* juli::IRGenerator::visitArrayAccess(const NArrayAccess* n) {
 	vindex->dump();
 	const ArrayType* at = dynamic_cast<const ArrayType*>(n->ref->expressionType);
 
-	if (*n->expressionType == PrimitiveType::INT8_TYPE && at->getDimension() == 1) {
+	if (*n->expressionType == PrimitiveType::INT8_TYPE
+			&& at->getDimension() == 1) {
 		ptr = builder.CreateGEP(vref, vindex);
 	} else {
 		vindex->dump();
@@ -802,6 +862,10 @@ llvm::Value* juli::IRGenerator::visitWhile(const NWhileStatement* n) {
 
 	return 0;
 
+}
+
+llvm::Value* juli::IRGenerator::visitClassDef(const NClassDefinition* n) {
+	return 0;
 }
 
 llvm::Value* juli::IRGenerator::visit(const Node* n) {

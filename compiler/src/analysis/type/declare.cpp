@@ -25,6 +25,8 @@ juli::Declarator::Declarator() {
 	equality.push_back("!=");
 	declareImplicitOperator(equality, &PrimitiveType::BOOLEAN_TYPE,
 			&PrimitiveType::BOOLEAN_TYPE, 2);
+	declareImplicitOperator(equality, &PrimitiveType::BOOLEAN_TYPE,
+			&ReferenceType::REFERENCE_TYPE, 2);
 
 	std::vector<std::string> arithmetic;
 	arithmetic.push_back("+");
@@ -101,6 +103,21 @@ void juli::Declarator::visit(const Node* n) {
 	visitAST<Declarator, void>(*this, n);
 }
 
+const TypeInfo& juli::Declarator::define(const Node* n) {
+	visit(n);
+	for (std::vector<const NClassDefinition*>::iterator i =
+			classDefinitions.begin(); i != classDefinitions.end(); ++i) {
+		typeInfo.declareClass(*i);
+	}
+	for (std::vector<const NFunctionDefinition*>::iterator i =
+			functionDefinitions.begin(); i != functionDefinitions.end(); ++i) {
+		typeInfo.defineFunction(*i);
+	}
+
+	typeInfo.resolveClasses();
+	return typeInfo;
+}
+
 void juli::Declarator::visitDoubleLiteral(const NLiteral<double>* n) {
 }
 
@@ -114,6 +131,9 @@ void juli::Declarator::visitCharLiteral(const NCharLiteral* n) {
 }
 
 void juli::Declarator::visitBooleanLiteral(const NLiteral<bool>* n) {
+}
+
+void juli::Declarator::visitNullLiteral(const NLiteral<int>* n) {
 }
 
 void juli::Declarator::visitVariableRef(const NVariableRef* n) {
@@ -160,7 +180,7 @@ void juli::Declarator::visitVariableDecl(const NVariableDeclaration* n) {
 }
 
 void juli::Declarator::visitFunctionDef(const NFunctionDefinition* n) {
-	typeInfo.declareFunction(n);
+	functionDefinitions.push_back(n);
 }
 
 void juli::Declarator::visitReturn(const NReturnStatement* n) {
@@ -170,4 +190,8 @@ void juli::Declarator::visitIf(const NIfStatement* n) {
 }
 
 void juli::Declarator::visitWhile(const NWhileStatement* n) {
+}
+
+void juli::Declarator::visitClassDef(const NClassDefinition* n) {
+	classDefinitions.push_back(n);
 }

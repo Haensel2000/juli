@@ -128,6 +128,10 @@ const Type* juli::TypeChecker::visitBooleanLiteral(const NLiteral<bool>* n) {
 	return n->expressionType;
 }
 
+const Type* juli::TypeChecker::visitNullLiteral(const NLiteral<int>* n) {
+	return n->expressionType;
+}
+
 const Type* juli::TypeChecker::visitVariableRef(NVariableRef* n) {
 	n->expressionType = symbolTable.getSymbol(n->name);
 
@@ -225,6 +229,9 @@ const Type* juli::TypeChecker::visitAllocateArray(NAllocateArray* n) {
 }
 
 const Type* juli::TypeChecker::visitAllocateObject(NAllocateObject* n) {
+	n->expressionType = n->type->resolve(typeInfo);
+	return n->expressionType;
+
 }
 
 const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
@@ -382,5 +389,9 @@ const Type* juli::TypeChecker::visitWhile(NWhileStatement* n) {
 	n->condition = checkAssignment(&PrimitiveType::BOOLEAN_TYPE, n->condition,
 			n->condition);
 	visit(n->body);
+	return 0;
+}
+
+const Type* juli::TypeChecker::visitClassDef(const NClassDefinition* n) {
 	return 0;
 }

@@ -36,9 +36,48 @@ llvm::LLVMContext& juli::TranslationUnit::getContext() const {
 //	return 0;
 //}
 
+std::string juli::TranslationUnit::getLLVMTypeName(const Type* t) const {
+	std::stringstream s;
+	s << "type__" << t->mangle();
+	return s.str();
+}
+
+llvm::Type* juli::TranslationUnit::getType(const Type* t) const {
+	return module->getTypeByName(getLLVMTypeName(t));
+}
+
+llvm::Type* juli::TranslationUnit::createClassType(const ClassType* t) const {
+	llvm::StructType* result = llvm::StructType::create(module->getContext(),
+			getLLVMTypeName(t));
+	std::vector<llvm::Type*> structFields;
+	std::vector<Field> fields = t->getFields();
+	for (std::vector<Field>::const_iterator i = fields.begin();
+			i != fields.end(); ++i) {
+		structFields.push_back(resolveLLVMType(i->type));
+	}
+	result->setBody(structFields);
+	return result;
+}
+
+llvm::Type* juli::TranslationUnit::getPointerIntType() const {
+	llvm::LLVMContext& c = getContext();
+	switch (module->getPointerSize()) {
+	case llvm::Module::Pointer64:
+		return llvm::Type::getInt64Ty(c);
+	case llvm::Module::Pointer32:
+		return llvm::Type::getInt32Ty(c);
+	default:
+		return llvm::Type::getInt32Ty(c);
+	}
+}
+
 llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 		throw (CompilerError) {
 	llvm::LLVMContext& c = getContext();
+
+	if (t->getCategory() == REFERENCE) {
+		return getPointerIntType();
+	}
 
 	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(t);
 	if (pt) {
@@ -53,18 +92,19 @@ llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 			return llvm::Type::getDoubleTy(c);
 		case VOID:
 			return llvm::Type::getVoidTy(c);
+		case NIL:
+			return getPointerIntType();
 		}
 	}
 
 	const ArrayType* at = dynamic_cast<const ArrayType*>(t);
 	if (at) {
-		if (*at->getElementType() == PrimitiveType::INT8_TYPE && at->getDimension() == 1) { // char array
+		if (*at->getElementType() == PrimitiveType::INT8_TYPE
+				&& at->getDimension() == 1) { // char array
 			return llvm::PointerType::get(resolveLLVMType(at->getElementType()),
 					0);
 		} else {
-			std::stringstream s;
-			s << "type__" << at->mangle();
-			llvm::Type* t = module->getTypeByName(s.str());
+			llvm::Type* t = getType(at);
 			if (!t) {
 				if (at->getStaticSize() >= 0 && at->getDimension() == 1) {
 					return llvm::PointerType::get(
@@ -84,13 +124,24 @@ llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 					} else {
 						fields.push_back(llvm::Type::getInt32Ty(c));
 					}
-					t = llvm::StructType::create(fields, s.str());
+					t = llvm::StructType::create(fields, getLLVMTypeName(at));
 				}
 			}
 			return llvm::PointerType::get(t, 0);
 		}
 
 	}
+
+	const ClassType* ct = dynamic_cast<const ClassType*>(t);
+	if (ct) {
+		llvm::Type* llvmType = getType(ct);
+		if (!llvmType) {
+			llvmType = createClassType(ct);
+		}
+		return llvm::PointerType::get(llvmType, 0);
+	}
+
+	return 0;
 }
 
 llvm::Type* juli::TranslationUnit::resolveLLVMType(const NType* nt) const

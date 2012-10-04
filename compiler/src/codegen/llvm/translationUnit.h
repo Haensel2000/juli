@@ -33,11 +33,14 @@ namespace juli {
 
 		const TypeInfo& types;
 
-
-
 		mutable std::vector<CompilerError> compilerErrors;
 
+		std::string getLLVMTypeName(const Type* t) const;
 
+		llvm::Type* getType(const Type* t) const;
+		llvm::Type* createClassType(const ClassType* t) const;
+
+		llvm::Type* getPointerIntType() const;
 	public:
 		llvm::Module* module;
 

@@ -285,7 +285,11 @@ void juli::NVariableRef::print(std::ostream& os, int indent,
 
 juli::NCast::NCast(NExpression* expression, NType* target) :
 		NExpression(CAST), expression(expression), target(target) {
-
+	if (!target) {
+		filename = expression->filename;
+		start = expression->start;
+		end = expression->end;
+	}
 }
 
 void juli::NCast::print(std::ostream& os, int indent,
@@ -623,5 +627,51 @@ void juli::NFunctionDefinition::print(std::ostream& os, int indent,
 		if (body) {
 			os << body;
 		}
+	}
+}
+
+juli::NFieldDeclaration::NFieldDeclaration(NType* type, NIdentifier* name) :
+		type(type), name(name) {
+
+}
+
+void juli::NFieldDeclaration::print(std::ostream& os, int indent,
+		unsigned int flags) const {
+	beginLine(os, indent);
+
+	if (flags & FLAG_TREE) {
+		os << "FieldDeclaration: " << type << " " << name;
+		printLocation(os);
+	} else {
+		os << type << " " << name << ";";
+	}
+}
+
+juli::NClassDefinition::NClassDefinition(NIdentifier* name, FieldList& fields) :
+		NStatement(CLASS_DEF), name(name), fields(fields) {
+
+}
+
+void juli::NClassDefinition::print(std::ostream& os, int indent,
+		unsigned int flags) const {
+	beginLine(os, indent);
+
+	if (flags & FLAG_TREE) {
+		os << "ClassDefinition: " << name;
+		printLocation(os);
+		for (FieldList::const_iterator i = fields.begin(); i != fields.end();
+				++i) {
+			(*i)->print(os, indent + 2, flags);
+		}
+	} else {
+		os << "struct" << std::endl;
+		beginLine(os, indent);
+		os << "{";
+		for (FieldList::const_iterator i = fields.begin(); i != fields.end();
+				++i) {
+			(*i)->print(os, indent + 2, flags);
+		}
+		beginLine(os, indent);
+		os << "}";
 	}
 }

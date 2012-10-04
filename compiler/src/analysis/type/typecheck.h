@@ -77,6 +77,8 @@ public:
 
 	const Type* visitBooleanLiteral(const NLiteral<bool>* n);
 
+	const Type* visitNullLiteral(const NLiteral<int>* n);
+
 	const Type* visitVariableRef(NVariableRef* n);
 
 	const Type* visitQualifiedAccess(NQualifiedAccess* n);
@@ -112,6 +114,8 @@ public:
 	const Type* visitIf(NIfStatement* n);
 
 	const Type* visitWhile(NWhileStatement* n);
+
+	const Type* visitClassDef(const NClassDefinition* n);
 
 };
 

@@ -37,13 +37,36 @@ statement returns [juli::NStatement* result = 0]:
 stmt1=assignment { result = stmt1; } |
 stmt3=return_statement { result = stmt3; } |
 stmt4=function_definition { result = stmt4; } |
+stmt4=class_definition { result = stmt4; } |
 stmt5=variable_definition { result = stmt5; } |
 stmt7=if_statement { result = stmt7; } |
 stmt8=while_statement { result = stmt8; }
 ;
 
+class_definition returns [juli::NStatement* result = 0]
+@declarations
+{
+  juli::FieldList fields;
+}:
+STRUCT id=identifier
+OCBR 
+(fd=field_declaration { fields.push_back(fd); })*
+CCBR
+{
+  result = new juli::NClassDefinition(id, fields);
+  setSourceLoc(result, filename, $STRUCT, $CCBR);
+}
+;
 
-function_definition returns [juli::NFunctionDefinition* result = 0]
+field_declaration returns [juli::NFieldDeclaration* result = 0]:
+t=type i=identifier SCOL
+{
+  result = new juli::NFieldDeclaration(t, i);
+  setSourceLoc(result, t, $SCOL);
+}
+;
+
+function_definition returns [juli::NStatement* result = 0]
 @declarations 
 {
   juli::NBlock* bl = 0;
@@ -379,14 +402,24 @@ alloc_array returns [juli::NExpression* result = 0]
 {
   std::vector<juli::NExpression*> indices;
 }:
+NEW
 t=type
 (OSBR vindex=expression { indices.clear(); indices.push_back(vindex); } 
 (COMMA i=expression { indices.push_back(i); })* CSBR 
 { 
   result = new juli::NAllocateArray(t, indices);
-  setSourceLoc(result, t, $CSBR);
+  setSourceLoc(result, filename, $NEW, $CSBR);
 }
 )
+;
+
+alloc_object returns [juli::NExpression* result = 0]:
+NEW
+t=basic_type
+{ 
+  result = new juli::NAllocateObject(static_cast<juli::NBasicType*>(t));
+  setSourceLoc(result, $NEW, t);
+}
 ;
 
 term returns [juli::NExpression* result = 0]:
@@ -401,7 +434,8 @@ OPAR val=expression CPAR
 ;
 
 allocation returns [juli::NExpression* result = 0]:
-NEW val=alloc_array { result = val; }
+val=alloc_array { result = val; } |
+val=alloc_object { result = val; }
 ;
 
 literal returns [juli::NExpression* result = 0]: 
@@ -409,7 +443,8 @@ val=double_literal { result = val; } |
 val=string_literal { result = val; } |
 val=char_literal { result = val; } |
 val=boolean_literal { result = val; } |
-val=integer_literal { result = val; } 
+val=integer_literal { result = val; } |
+val=null_literal { result = val; }
 ;
 
 function_call returns [juli::NFunctionCall* result = 0]
@@ -507,8 +542,24 @@ CharacterLiteral
 ;
 
 boolean_literal returns [juli::NExpression* result = 0]:
-  TRUE    { return new juli::NLiteral<bool>(juli::BOOLEAN_LITERAL, true, &juli::PrimitiveType::BOOLEAN_TYPE); } 
-| FALSE   { return new juli::NLiteral<bool>(juli::BOOLEAN_LITERAL, false, &juli::PrimitiveType::BOOLEAN_TYPE); } 
+  TRUE    
+  { 
+    result = new juli::NLiteral<bool>(juli::BOOLEAN_LITERAL, true, &juli::PrimitiveType::BOOLEAN_TYPE); 
+    setSourceLoc(result, filename, $TRUE);
+  } 
+| FALSE   
+{ 
+  result = new juli::NLiteral<bool>(juli::BOOLEAN_LITERAL, false, &juli::PrimitiveType::BOOLEAN_TYPE); 
+  setSourceLoc(result, filename, $FALSE);
+} 
+;
+
+null_literal returns [juli::NExpression* result = 0]:
+  NIL    
+  { 
+    result = new juli::NLiteral<int>(juli::NULL_LITERAL, 0, &juli::PrimitiveType::NULL_TYPE); 
+    setSourceLoc(result, filename, $NIL);
+  }
 ;
 
 
@@ -602,6 +653,8 @@ WHILE : 'while' ;
 NEW : 'new' ;
 TRUE : 'true' ;
 FALSE : 'false' ;
+NIL : 'null' ;
+STRUCT : 'struct' ;
 ARRAY_SUFFIX : '[]' ;
 OPAR : '(' ;
 CPAR : ')' ;

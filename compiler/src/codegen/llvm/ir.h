@@ -55,7 +55,7 @@ private:
 
 public:
 
-
+	//void emitClassDefinitions();
 
 	llvm::Function* getFunction(const Function* f);
 
@@ -70,6 +70,8 @@ public:
 	llvm::Value* visitCharLiteral(const NCharLiteral* n);
 
 	llvm::Value* visitBooleanLiteral(const NLiteral<bool>* n);
+
+	llvm::Value* visitNullLiteral(const NLiteral<int>* n);
 
 	llvm::Value* visitVariableRef(const NVariableRef* n);
 
@@ -108,6 +110,8 @@ public:
 	llvm::Value* visitIf(const NIfStatement* n);
 
 	llvm::Value* visitWhile(const NWhileStatement* n);
+
+	llvm::Value* visitClassDef(const NClassDefinition* n);
 
 	llvm::Type* resolveType(const NType* n);
 	llvm::Type* resolveType(const Type* n);

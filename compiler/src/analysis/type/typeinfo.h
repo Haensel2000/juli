@@ -23,11 +23,18 @@ class TypeInfo {
 private:
 	Functions functions;
 	std::map<std::string, Type*> typeTable;
+
+	std::map<std::string, const NClassDefinition*> unresolvedTypes;
 public:
 
 	TypeInfo();
 
-	void declareFunction(const NFunctionDefinition* f);
+	void defineFunction(const NFunctionDefinition* f);
+	void defineClass(const NClassDefinition* def);
+
+	void declareClass(const NClassDefinition* def);
+
+	void resolveClasses();
 
 	void declareFunction(Function* f);
 
@@ -35,6 +42,8 @@ public:
 			throw (CompilerError);
 
 	const Functions& getFunctions() const;
+
+	const std::vector<Type*> getTypes() const;
 
 	const Type* getType(const std::string& name, const Indentable* astNode) const throw (CompilerError);
 
