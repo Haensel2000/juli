@@ -2,8 +2,7 @@ C int printf(char[] s, ...);
 
 int strlen(char[] str) 
 {
-  int l;
-  l = 0;
+  int l = 0;
   while (str[l] != 0) 
   {
     l = l + 1;
@@ -18,12 +17,9 @@ int digit(char c)
 
 int parse(char[] str) 
 {
-  int i;
-  int v;
-  int b;
-  i = strlen(str) - 1;
-  v = 0;
-  b = 1;
+  int i = strlen(str) - 1;
+  int v = 0;
+  int b = 1;
   while (i >= 0) 
   {
     v = v + b*digit(str[i]);
@@ -58,7 +54,6 @@ void insertion_sort(int[] numbers)
 	numbers[i] = tmp;
 	i = i - 1;
       }
-      dump(numbers);
       j = j + 1;
     }
     return;
