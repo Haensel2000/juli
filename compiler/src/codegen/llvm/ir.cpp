@@ -32,6 +32,23 @@ void juli::IRGenerator::fieldSet(llvm::Value* objAddr, int index,
 	builder.CreateStore(value, fieldPtr(objAddr, index));
 }
 
+llvm::Value* juli::IRGenerator::staticArrayIndex(llvm::Value* arrAddr,
+		int index) {
+	std::vector<llvm::Value*> indices;
+	indices.push_back(zero_i32);
+	//indices.push_back(zero_i32);
+	indices.push_back(
+			llvm::ConstantInt::get(context, llvm::APInt(32, index, true)));
+	std::cerr << "AddrType: ";
+	arrAddr->getType()->dump();
+	std::cerr << std::endl;
+	std::cerr << "Indices: " << indices << std::endl;
+	llvm::Value* ptr = builder.CreateGEP(arrAddr, indices);
+	std::cerr << "StaticArrayIndex: " << std::endl;
+	ptr->dump();
+	return builder.CreateLoad(ptr);
+}
+
 llvm::ConstantInt* juli::IRGenerator::getConstantInt32(int v) {
 	return llvm::ConstantInt::get(context, llvm::APInt(32, v, true));
 }
@@ -231,6 +248,12 @@ llvm::Value* juli::IRGenerator::visitQualifiedAccess(NQualifiedAccess* n) {
 		return builder.CreateCall(function, argValues);
 	}
 
+	if (n->ref->expressionType->getCategory() == ARRAY
+			&& static_cast<const ArrayType*>(n->ref->expressionType)->getStaticSize()
+					>= 0) {
+		return getConstantInt32(static_cast<const ArrayType*>(n->ref->expressionType)->getStaticSize());
+	}
+
 	std::cerr << "Reference: ";
 	p->dump();
 
@@ -240,7 +263,10 @@ llvm::Value* juli::IRGenerator::visitQualifiedAccess(NQualifiedAccess* n) {
 	f->dump();
 
 	llvm::Value* result;
-	if (n->address)
+	if (n->address
+			|| (n->expressionType->getCategory() == ARRAY
+					&& static_cast<const ArrayType*>(n->expressionType)->getStaticSize()
+							>= 0))
 		result = f;
 	else
 		result = builder.CreateLoad(f);
@@ -447,7 +473,8 @@ llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
 
 	const ArrayType* at = dynamic_cast<const ArrayType*>(n->expressionType);
 	// allocate space to store the array ref:
-	llvm::Value* pi8 = builder.CreateCall(malloc, getConstantInt32(getSizeOf(n->expressionType)));
+	llvm::Value* pi8 = builder.CreateCall(malloc,
+			getConstantInt32(getSizeOf(n->expressionType)));
 	pi8->dump();
 	llvm::Value* result = builder.CreateBitCast(pi8, resolveType(at));
 	result->dump();
@@ -480,7 +507,8 @@ llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
 		builder.CreateStore(arraySize, sizePtr)->dump();
 	}
 	pi8 = builder.CreateCall(malloc, memorySize);
-	llvm::Value* ptr = builder.CreateBitCast(pi8, llvm::PointerType::get(elementType, 0));
+	llvm::Value* ptr = builder.CreateBitCast(pi8,
+			llvm::PointerType::get(elementType, 0));
 	fieldSet(result, ARRAY_FIELD_PTR, ptr);
 
 	return result;
@@ -506,18 +534,66 @@ llvm::Value* juli::IRGenerator::visitArrayAccess(const NArrayAccess* n) {
 	std::cerr << "Visiting " << n << std::endl;
 
 	llvm::Value* vref = visit(n->ref);
-	llvm::Value* vindex = visit(n->index);
+	std::cerr << "VREF: " << std::endl;
+	vref->dump();
+	llvm::Value* vindex;
+	if (n->indices.size() > 1) {
+		llvm::Value* lengthArray = fieldPtr(vref, ARRAY_FIELD_LENGTH);
+		std::cerr << "lengthArray: " << std::endl;
+		lengthArray->dump();
+		llvm::Value* factor = one_i32;
+		int c = 0;
+		vindex = zero_i32;
+		for (ExpressionList::const_iterator i = n->indices.begin();
+				i != n->indices.end(); ++i) {
+			llvm::Value * currentIndex = visit(*i);
+			std::cerr << "currentIndex: " << std::endl;
+			currentIndex->dump();
+			llvm::Value * offsetIndex = builder.CreateMul(currentIndex, factor);
+			std::cerr << "offsetIndex: " << std::endl;
+			offsetIndex->dump();
+			vindex = builder.CreateAdd(vindex, offsetIndex);
+			std::cerr << "VINDEX: " << std::endl;
+			vindex->dump();
+			factor = builder.CreateMul(staticArrayIndex(lengthArray, c++), factor);
+			std::cerr << "factor: " << std::endl;
+			factor->dump();
+		}
+	} else {
+		vindex = visit(n->indices[0]);
+	}
+
 	llvm::Value* ptr;
 	llvm::Value* result;
+	vindex->dump();
+	const ArrayType* at = dynamic_cast<const ArrayType*>(n->ref->expressionType);
+
 	if (*n->expressionType == PrimitiveType::INT8_TYPE) {
 		ptr = builder.CreateGEP(vref, vindex);
 	} else {
-		std::vector<llvm::Value*> indices;
-		indices.push_back(zero_i32);
-		indices.push_back(zero_i32);
-		ptr = builder.CreateGEP(vref, indices);
-		llvm::Value* arr = builder.CreateLoad(ptr);
-		ptr = builder.CreateGEP(arr, vindex);
+		vindex->dump();
+		if (at->getStaticSize() >= 0) {
+			std::vector<llvm::Value*> indices;
+			indices.push_back(zero_i32);
+			indices.push_back(zero_i32);
+			indices.push_back(vindex);
+			ptr = builder.CreateGEP(vref, vindex);
+			ptr->dump();
+		} else {
+			vindex->dump();
+			std::vector<llvm::Value*> indices;
+			indices.push_back(zero_i32);
+			indices.push_back(zero_i32);
+
+			llvm::Value* p_dataPtr = builder.CreateGEP(vref, indices);
+			p_dataPtr->dump();
+			llvm::Value* dataPtr = builder.CreateLoad(p_dataPtr);
+			dataPtr->dump();
+			vindex->dump();
+			vindex->getType()->dump();
+			ptr = builder.CreateGEP(dataPtr, vindex);
+			ptr->dump();
+		}
 	}
 	if (n->address) {
 		result = ptr;

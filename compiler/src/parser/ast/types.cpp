@@ -152,8 +152,10 @@ ArrayType* juli::ArrayType::getMultiDimensionalArray(const Type* elementType,
 	return new ArrayType(elementType, dimension);
 }
 
-juli::ArrayType::ArrayType(const Type* elementType, int dimension) :
-		Type(ARRAY), elementType(elementType), dimension(dimension) {
+juli::ArrayType::ArrayType(const Type* elementType, int dimension,
+		int staticSize) :
+		Type(ARRAY), elementType(elementType), dimension(dimension), staticSize(
+				staticSize) {
 }
 
 juli::ArrayType::~ArrayType() {
@@ -167,19 +169,27 @@ int juli::ArrayType::getDimension() const {
 	return dimension;
 }
 
+int juli::ArrayType::getStaticSize() const {
+	return staticSize;
+}
+
 bool juli::ArrayType::operator==(const Type& t) const {
 	const ArrayType* pt = dynamic_cast<const ArrayType*>(&t);
 	if (!pt)
 		return false;
-	return (*elementType == *pt->elementType && dimension == pt->dimension);
+	return (*elementType == *pt->elementType && dimension == pt->dimension
+			&& staticSize == pt->staticSize);
 }
 
 void juli::ArrayType::print(std::ostream& os) const {
 	if (dimension == 1) {
-		os << elementType << "[]";
+		if (staticSize >= 0)
+			os << elementType << "[" << staticSize << "]";
+		else
+			os << elementType << "[]";
 	} else {
 		os << elementType << "[";
-		for (int i = 0; i < dimension-1; ++i) {
+		for (int i = 0; i < dimension - 1; ++i) {
 			os << ",";
 		}
 		os << "]";
@@ -196,7 +206,10 @@ bool juli::ArrayType::canCastTo(const Type* t) const {
 
 const Field* juli::ArrayType::getField(const std::string& name) const {
 	if (name == "length") {
-		return &LENGTH;
+		if (dimension == 1)
+			return &LENGTH;
+		else
+			return new Field("length", 1, new ArrayType(&PrimitiveType::INT32_TYPE, 1, dimension));
 	} else {
 		return 0;
 	}
@@ -204,11 +217,16 @@ const Field* juli::ArrayType::getField(const std::string& name) const {
 
 //http://theory.uwinnipeg.ca/localfiles/infofiles/gcc/gxxint_15.html
 const std::string juli::ArrayType::mangle() const {
-	if (dimension == 1) {
-		return "P" + elementType->mangle();
-	} else {
-		std::stringstream s;
-		s << "M_" << dimension << "_" << elementType->mangle();
-		return s.str();
+	std::stringstream s;
+	s << "A";
+	if (staticSize >= 0) {
+		s << "S_" << staticSize << "_";
 	}
+	else if (dimension == 1) {
+		s << "P";
+	} else {
+		s << "M_" << dimension << "_";
+	}
+	s << elementType->mangle();
+	return s.str();
 }

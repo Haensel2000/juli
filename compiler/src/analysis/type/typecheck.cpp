@@ -199,7 +199,8 @@ const Type* juli::TypeChecker::visitAllocateArray(NAllocateArray* n) {
 	n->expressionType = ArrayType::getMultiDimensionalArray(
 			n->type->resolve(typeInfo), n->sizes.size());
 
-	for (std::vector<NExpression*>::iterator i = n->sizes.begin(); i != n->sizes.end(); ++i) {
+	for (std::vector<NExpression*>::iterator i = n->sizes.begin();
+			i != n->sizes.end(); ++i) {
 		visit(*i);
 
 		*i = checkAssignment(&PrimitiveType::INT32_TYPE, *i, *i);
@@ -245,9 +246,18 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 		throw err;
 	}
 
-	visit(n->index);
+	if (t->getDimension() != n->indices.size()) {
+		CompilerError err(n);
+		err.getStream() << "Array is of dimension " << t->getDimension()
+				<< " but " << n->indices.size() << " indices were provided.";
+		throw err;
+	}
 
-	n->index = checkAssignment(&PrimitiveType::INT32_TYPE, n->index, n->index);
+	for (ExpressionList::iterator i = n->indices.begin(); i != n->indices.end();
+			++i) {
+		visit(*i);
+		*i = checkAssignment(&PrimitiveType::INT32_TYPE, *i, *i);
+	}
 
 	n->expressionType = t->getElementType();
 	return n->expressionType;

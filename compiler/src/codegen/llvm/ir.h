@@ -43,6 +43,8 @@ private:
 	llvm::Value* fieldGet(llvm::Value* objAddr, int index);
 	void fieldSet(llvm::Value* objAddr, int index, llvm::Value* value);
 
+	llvm::Value* staticArrayIndex(llvm::Value* arrAddr, int index);
+
 	llvm::ConstantInt* getConstantInt32(int v);
 	llvm::ConstantFP* getConstantDouble(double v);
 

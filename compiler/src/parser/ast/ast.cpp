@@ -158,17 +158,24 @@ void juli::NQualifiedAccess::print(std::ostream& os, int indent,
 }
 
 juli::NAllocateArray::NAllocateArray(NArrayAccess* aacc) :
-		NExpression(NEW_ARRAY), type(0), sizes() {
+		NExpression(NEW_ARRAY), type(0), sizes(aacc->indices) {
 
 	NExpression* ref;
 	NArrayAccess* cacc = aacc;
-	while (cacc) {
-		sizes.push_back(cacc->index);
-		ref = cacc->ref;
-		cacc = dynamic_cast<NArrayAccess*>(ref);
+//	while (cacc) {
+//		sizes.push_back(cacc->indices[0]);
+//		ref = cacc->ref;
+//		cacc = dynamic_cast<NArrayAccess*>(ref);
+//	}
+//
+	NVariableRef* vref = dynamic_cast<NVariableRef*>(aacc->ref);
+	if (!vref) {
+		CompilerError err(this);
+		err.getStream() << "Invalid nested array allocation. Use multi-dimensional arrays.";
+		throw err;
 	}
 
-	type = new NBasicType(new NIdentifier(((NVariableRef*) ref)->name));
+	type = new NBasicType(new NIdentifier(vref->name));
 
 }
 
@@ -312,8 +319,8 @@ void juli::NFunctionCall::print(std::ostream& os, int indent,
 	}
 }
 
-juli::NArrayAccess::NArrayAccess(NExpression* ref, NExpression* index) :
-		NAddressable(ARRAY_ACCESS), ref(ref), index(index) {
+juli::NArrayAccess::NArrayAccess(NExpression* ref, ExpressionList& indices) :
+		NAddressable(ARRAY_ACCESS), ref(ref), indices(indices) {
 }
 
 void juli::NArrayAccess::print(std::ostream& os, int indent,
@@ -324,9 +331,11 @@ void juli::NArrayAccess::print(std::ostream& os, int indent,
 		os << "ArrayAccess: ";
 		printType(os);
 		ref->print(os, indent + 2, flags);
-		index->print(os, indent + 2, flags);
+		for (ExpressionList::const_iterator i = indices.begin(); i != indices.end(); ++i) {
+			(*i)->print(os, indent + 2, flags);
+		}
 	} else {
-		os << ref << "[" << index << "]";
+		os << ref << "[" << indices << "]";
 	}
 }
 

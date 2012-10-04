@@ -344,24 +344,49 @@ qualified_access returns [juli::NExpression* result = 0]:
   )*
 ;
 
-array_access returns [juli::NExpression* result = 0]:
+array_access returns [juli::NExpression* result = 0]
+@declarations
+{
+  std::vector<juli::NExpression*> indices;
+}:
 vref=term { result = vref; }
-(OSBR vindex=expression CSBR 
+(OSBR vindex=expression { indices.clear(); indices.push_back(vindex); } 
+(COMMA i=expression { indices.push_back(i); })* CSBR 
 { 
-  result = new juli::NArrayAccess(result, vindex);
+  result = new juli::NArrayAccess(result, indices);
   setSourceLoc(result, vref, $CSBR);
 }
 )*
 ;
 
-qarray_access returns [juli::NExpression* result = 0]:
+qarray_access returns [juli::NExpression* result = 0]
+@declarations
+{
+  std::vector<juli::NExpression*> indices;
+}:
 vref=identifier { result = new juli::NVariableRef(vref); }
-(OSBR vindex=expression CSBR 
+(OSBR vindex=expression { indices.clear(); indices.push_back(vindex); } 
+(COMMA i=expression { indices.push_back(i); })* CSBR 
 { 
-  result = new juli::NArrayAccess(result, vindex);
+  result = new juli::NArrayAccess(result, indices);
   setSourceLoc(result, vref, $CSBR);
 }
 )*
+;
+
+alloc_array_access returns [juli::NExpression* result = 0]
+@declarations
+{
+  std::vector<juli::NExpression*> indices;
+}:
+vref=identifier { result = new juli::NVariableRef(vref); }
+(OSBR vindex=expression { indices.clear(); indices.push_back(vindex); } 
+(COMMA i=expression { indices.push_back(i); })* CSBR 
+{ 
+  result = new juli::NArrayAccess(result, indices);
+  setSourceLoc(result, vref, $CSBR);
+}
+)
 ;
 
 term returns [juli::NExpression* result = 0]:
@@ -376,7 +401,7 @@ OPAR val=expression CPAR
 ;
 
 allocation returns [juli::NExpression* result = 0]:
-NEW val=qarray_access { result = new juli::NAllocateArray((juli::NArrayAccess*)val); }
+NEW val=alloc_array_access { result = new juli::NAllocateArray((juli::NArrayAccess*)val); }
 ;
 
 literal returns [juli::NExpression* result = 0]: 

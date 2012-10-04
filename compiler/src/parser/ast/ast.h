@@ -190,9 +190,9 @@ public:
 class NArrayAccess: public NAddressable {
 public:
 	NExpression* ref;
-	NExpression* index;
+	ExpressionList indices;
 
-	NArrayAccess(NExpression* ref, NExpression* index);
+	NArrayAccess(NExpression* ref, ExpressionList& indices);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
