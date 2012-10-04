@@ -147,8 +147,13 @@ const std::string juli::PrimitiveType::mangle() const {
 	}
 }
 
-juli::ArrayType::ArrayType(const Type* elementType) :
-		Type(ARRAY), elementType(elementType) {
+ArrayType* juli::ArrayType::getMultiDimensionalArray(const Type* elementType,
+		int dimension) {
+	return new ArrayType(elementType, dimension);
+}
+
+juli::ArrayType::ArrayType(const Type* elementType, int dimension) :
+		Type(ARRAY), elementType(elementType), dimension(dimension) {
 }
 
 juli::ArrayType::~ArrayType() {
@@ -156,6 +161,10 @@ juli::ArrayType::~ArrayType() {
 
 const Type* juli::ArrayType::getElementType() const {
 	return elementType;
+}
+
+int juli::ArrayType::getDimension() const {
+	return dimension;
 }
 
 bool juli::ArrayType::operator==(const Type& t) const {
@@ -187,5 +196,11 @@ const Field* juli::ArrayType::getField(const std::string& name) const {
 
 //http://theory.uwinnipeg.ca/localfiles/infofiles/gcc/gxxint_15.html
 const std::string juli::ArrayType::mangle() const {
-	return "P" + elementType->mangle();
+	if (dimension == 1) {
+		return "P" + elementType->mangle();
+	} else {
+		std::stringstream s;
+		s << "M_" << dimension << "_" << elementType->mangle();
+		return s.str();
+	}
 }

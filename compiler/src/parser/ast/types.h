@@ -103,14 +103,20 @@ public:
 class ArrayType: public Type {
 private:
 	const Type* elementType;
+	int dimension;
 
 	static const Field LENGTH;
 public:
-	ArrayType(const Type* elementType);
+
+	static ArrayType* getMultiDimensionalArray(const Type* elementType, int dimension);
+
+	ArrayType(const Type* elementType, int dimension = 1);
 
 	virtual ~ArrayType();
 
 	const Type* getElementType() const;
+
+	int getDimension() const;
 
 	virtual bool operator==(const Type& t) const;
 

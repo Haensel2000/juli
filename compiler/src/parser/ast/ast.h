@@ -219,9 +219,14 @@ public:
 
 class NAllocateArray : public NExpression {
 public:
-	NArrayAccess* data;
+	NBasicType* type;
+	std::vector<NExpression*> sizes;
 
-	NAllocateArray(NArrayAccess* data);
+	NAllocateArray(NArrayAccess* aacc);
+
+	NAllocateArray(NBasicType* type, std::vector<NExpression*>& sizes);
+
+	const Type* getType(const TypeInfo& typeInfo) const;
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 

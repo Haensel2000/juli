@@ -68,7 +68,7 @@ llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 				// create type:
 				std::vector<llvm::Type*> fields;
 				fields.push_back(llvm::PointerType::get(resolveLLVMType(at->getElementType()), 0));
-				fields.push_back(llvm::Type::getInt32Ty(c));
+				fields.push_back(llvm::ArrayType::get(llvm::Type::getInt32Ty(c), at->getDimension()));
 				t = llvm::StructType::create(fields, s.str());
 			}
 			return llvm::PointerType::get(t, 0);

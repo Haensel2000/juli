@@ -12,6 +12,59 @@
 
 using namespace juli;
 
+const int juli::IRGenerator::ARRAY_FIELD_PTR = 0;
+const int juli::IRGenerator::ARRAY_FIELD_LENGTH = 1;
+
+llvm::Value* juli::IRGenerator::fieldPtr(llvm::Value* objAddr, int index) {
+	std::vector<llvm::Value*> indices;
+	indices.push_back(zero_i32);
+	indices.push_back(
+			llvm::ConstantInt::get(context, llvm::APInt(32, index, true)));
+	return builder.CreateGEP(objAddr, indices);
+}
+
+llvm::Value* juli::IRGenerator::fieldGet(llvm::Value* objAddr, int index) {
+	return builder.CreateLoad(fieldPtr(objAddr, index));
+}
+
+void juli::IRGenerator::fieldSet(llvm::Value* objAddr, int index,
+		llvm::Value* value) {
+	builder.CreateStore(value, fieldPtr(objAddr, index));
+}
+
+llvm::ConstantInt* juli::IRGenerator::getConstantInt32(int v) {
+	return llvm::ConstantInt::get(context, llvm::APInt(32, v, true));
+}
+
+llvm::ConstantFP* juli::IRGenerator::getConstantDouble(double v) {
+	return llvm::ConstantFP::get(context, llvm::APFloat(v));
+}
+
+unsigned int juli::IRGenerator::getSizeOf(const Type* type) {
+	switch (type->getCategory()) {
+	case PRIMITIVE:
+		switch (static_cast<const PrimitiveType*>(type)->getPrimitive()) {
+		case VOID:
+			return 0;
+		case BOOLEAN:
+			return 1;
+		case INT8:
+			return 1;
+		case INT32:
+			return 4;
+		case FLOAT64:
+			return 8;
+		}
+	case ARRAY:
+		unsigned int pointerSize =
+				(module.getPointerSize() == llvm::Module::Pointer64) ? 8 : 4;
+		return pointerSize
+				+ getSizeOf(&PrimitiveType::INT32_TYPE)
+						* static_cast<const ArrayType*>(type)->getDimension();
+	}
+
+}
+
 juli::IRGenerator::IRGenerator(const std::string& moduleName,
 		const TypeInfo& typeInfo) :
 		typeInfo(typeInfo), translationUnit(moduleName, typeInfo), builder(
@@ -24,11 +77,14 @@ juli::IRGenerator::IRGenerator(const std::string& moduleName,
 			llvm::APInt(32, 0, bool(false)));
 	zero_i8 = llvm::ConstantInt::get(context, llvm::APInt(8, 0, true));
 	zero_i16 = llvm::ConstantInt::get(context, llvm::APInt(16, 0, true));
-	zero_i32 = llvm::ConstantInt::get(context, llvm::APInt(32, 0, true));
+	zero_i32 = getConstantInt32(0);
 
-	one_i32 = llvm::ConstantInt::get(context, llvm::APInt(32, 1, true));
+	one_i32 = getConstantInt32(1);
 
-	zero_float = llvm::ConstantFP::get(context, llvm::APFloat(0.0));
+	zero_float = getConstantDouble(0.0);
+
+	array_struct_size = llvm::ConstantInt::get(context,
+			llvm::APInt(32, 8, true));
 
 	const Type* t_int8 = &PrimitiveType::INT8_TYPE;
 	const Type* t_int32 = &PrimitiveType::INT32_TYPE;
@@ -42,7 +98,7 @@ juli::IRGenerator::IRGenerator(const std::string& moduleName,
 	params.clear();
 	params.push_back(FormalParameter(t_int32, "size"));
 	createFunction(
-				new Function("malloc", t_arr_int8, params, false, MODIFIER_C, 0));
+			new Function("malloc", t_arr_int8, params, false, MODIFIER_C, 0));
 }
 
 llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
@@ -72,6 +128,7 @@ llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
 				llvm::Value* pPtr = builder.CreateGEP(argsValue, indices); // ptr
 				indices.pop_back();
 				indices.push_back(one_i32);
+				indices.push_back(zero_i32);
 				llvm::Value* pLength = builder.CreateGEP(argsValue, indices); // length
 				builder.CreateStore(i, pLength);
 				builder.CreateStore(++i, pPtr);
@@ -177,11 +234,7 @@ llvm::Value* juli::IRGenerator::visitQualifiedAccess(NQualifiedAccess* n) {
 	std::cerr << "Reference: ";
 	p->dump();
 
-	std::vector<llvm::Value*> indices;
-	indices.push_back(zero_i32);
-	indices.push_back(
-			llvm::ConstantInt::get(context, llvm::APInt(32, n->index, true)));
-	llvm::Value * f = builder.CreateGEP(p, indices, n->name->name);
+	llvm::Value * f = fieldPtr(p, n->index);
 
 	std::cerr << "Field Access: ";
 	f->dump();
@@ -389,8 +442,52 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 	return 0;
 }
 
-
 llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
+	llvm::Function* malloc = module.getFunction("malloc");
+
+	const ArrayType* at = dynamic_cast<const ArrayType*>(n->expressionType);
+	// allocate space to store the array ref:
+	llvm::Value* pi8 = builder.CreateCall(malloc, getConstantInt32(getSizeOf(n->expressionType)));
+	pi8->dump();
+	llvm::Value* result = builder.CreateBitCast(pi8, resolveType(at));
+	result->dump();
+
+	// allocate the actual array memory:
+	const Type* etype = n->type->resolve(typeInfo);
+	llvm::Type* elementType = resolveType(etype);
+	std::cerr << "ElementType: " << std::endl;
+	elementType->dump();
+	std::cerr << std::endl;
+
+	llvm::Value* memorySize = getConstantInt32(getSizeOf(etype));
+	std::cerr << "ElementSize: " << std::endl;
+	memorySize->dump();
+	memorySize = builder.CreateIntCast(memorySize,
+			llvm::Type::getInt32Ty(context), true);
+	std::cerr << "ElementSize: " << std::endl;
+	memorySize->dump();
+	int i = 0;
+	for (std::vector<NExpression*>::const_iterator s = n->sizes.begin();
+			s != n->sizes.end(); ++s) {
+		llvm::Value* arraySize = visit(*s);
+		std::cerr << "ArraySize: " << std::endl;
+		arraySize->dump();
+		memorySize = builder.CreateMul(arraySize, memorySize);
+		memorySize->dump();
+
+		std::vector<llvm::Value*> indices;
+		indices.push_back(zero_i32);
+		indices.push_back(one_i32);
+		indices.push_back(getConstantInt32(i));
+		llvm::Value* sizePtr = builder.CreateGEP(result, indices);
+		sizePtr->dump();
+		builder.CreateStore(arraySize, sizePtr)->dump();
+	}
+	pi8 = builder.CreateCall(malloc, memorySize);
+	llvm::Value* ptr = builder.CreateBitCast(pi8, llvm::PointerType::get(elementType, 0));
+	fieldSet(result, ARRAY_FIELD_PTR, ptr);
+
+	return result;
 }
 
 llvm::Value* juli::IRGenerator::visitAllocateObject(const NAllocateObject* n) {

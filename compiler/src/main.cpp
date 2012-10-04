@@ -46,6 +46,8 @@ int main(int argc, char **argv) {
 		try {
 			NBlock* ast = parser.parse(argv[i]);
 
+			//ast->print(std::cout, 0, Indentable::FLAG_TREE);
+
 			Declarator declarator;
 			declarator.visit(ast);
 

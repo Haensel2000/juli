@@ -30,6 +30,13 @@ public:
 
 	SymbolTable(const TypeInfo& typeInfo);
 
+	~SymbolTable() {
+
+		std::cerr << scopes.size();
+		std::cerr << scopes;
+
+	}
+
 	void startScope(const std::vector<NVariableDeclaration*> functionParams);
 
 	void startScope();

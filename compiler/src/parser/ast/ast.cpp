@@ -157,8 +157,28 @@ void juli::NQualifiedAccess::print(std::ostream& os, int indent,
 	}
 }
 
-juli::NAllocateArray::NAllocateArray(NArrayAccess* data) : NExpression(NEW_ARRAY),
-		data(data) {
+juli::NAllocateArray::NAllocateArray(NArrayAccess* aacc) :
+		NExpression(NEW_ARRAY), type(0), sizes() {
+
+	NExpression* ref;
+	NArrayAccess* cacc = aacc;
+	while (cacc) {
+		sizes.push_back(cacc->index);
+		ref = cacc->ref;
+		cacc = dynamic_cast<NArrayAccess*>(ref);
+	}
+
+	type = new NBasicType(new NIdentifier(((NVariableRef*) ref)->name));
+
+}
+
+juli::NAllocateArray::NAllocateArray(NBasicType* type,
+		std::vector<NExpression*>& sizes) :
+		NExpression(NEW_ARRAY), type(type), sizes(sizes) {
+}
+
+const Type* juli::NAllocateArray::getType(const TypeInfo& typeInfo) const {
+	return ArrayType::getMultiDimensionalArray(type->resolve(typeInfo), sizes.size());
 }
 
 void juli::NAllocateArray::print(std::ostream& os, int indent,
@@ -168,14 +188,22 @@ void juli::NAllocateArray::print(std::ostream& os, int indent,
 	if (flags & FLAG_TREE) {
 		os << "AllocateArray: ";
 		printType(os);
-		data->print(os, indent + 2, flags);
+		type->print(os, indent + 2, flags);
+		for (std::vector<NExpression*>::const_iterator i = sizes.begin();
+				i != sizes.end(); ++i) {
+			(*i)->print(os, indent + 2, flags);
+		}
 	} else {
-		os << "new " << data;
+		os << "new " << type;
+		for (std::vector<NExpression*>::const_iterator i = sizes.begin();
+				i != sizes.end(); ++i) {
+			os << "[" << *i << "]";
+		}
 	}
 }
 
-juli::NAllocateObject::NAllocateObject(NBasicType* type) : NExpression(NEW_OBJECT),
-		type(type) {
+juli::NAllocateObject::NAllocateObject(NBasicType* type) :
+		NExpression(NEW_OBJECT), type(type) {
 }
 
 void juli::NAllocateObject::print(std::ostream& os, int indent,

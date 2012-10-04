@@ -21,10 +21,12 @@ void juli::SymbolTable::startScope(
 }
 
 void juli::SymbolTable::startScope() {
+	std::cerr << "STARTING SCOPE" << std::endl;
 	scopes.push_back(std::map<std::string, const Type*>());
 }
 
 void juli::SymbolTable::endScope() {
+	std::cerr << "ENDING SCOPE" << std::endl;
 	scopes.pop_back();
 }
 
@@ -48,7 +50,7 @@ void juli::SymbolTable::addSymbol(NVariableDeclaration* node) {
 
 juli::TypeChecker::TypeChecker(const TypeInfo& typeInfo) :
 		symbolTable(typeInfo), typeInfo(typeInfo) {
-	_newScope = false;
+	_newScope = true;
 	_addressing = false;
 	_currentFunction = 0;
 }
@@ -193,8 +195,17 @@ const Type* juli::TypeChecker::visitBinaryOperator(NBinaryOperator* n) {
 	return n->expressionType;
 }
 
-
 const Type* juli::TypeChecker::visitAllocateArray(NAllocateArray* n) {
+	n->expressionType = ArrayType::getMultiDimensionalArray(
+			n->type->resolve(typeInfo), n->sizes.size());
+
+	for (std::vector<NExpression*>::iterator i = n->sizes.begin(); i != n->sizes.end(); ++i) {
+		visit(*i);
+
+		*i = checkAssignment(&PrimitiveType::INT32_TYPE, *i, *i);
+	}
+
+	return n->expressionType;
 }
 
 const Type* juli::TypeChecker::visitAllocateObject(NAllocateObject* n) {
@@ -298,8 +309,12 @@ const Type* juli::TypeChecker::visitFunctionDef(NFunctionDefinition* n) {
 	_currentFunction = n;
 	symbolTable.startScope(n->signature->arguments);
 	_newScope = false;
-	if (n->body)
+	if (n->body) {
 		visit(n->body);
+	} else {
+		_newScope = true;
+		symbolTable.endScope();
+	}
 	_currentFunction = 0;
 	return 0;
 }

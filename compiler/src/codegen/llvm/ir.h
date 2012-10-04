@@ -36,6 +36,21 @@ private:
 
 	llvm::ConstantInt* one_i32;
 
+	llvm::ConstantInt* array_struct_size;
+
+	//helpers:
+	llvm::Value* fieldPtr(llvm::Value* objAddr, int index);
+	llvm::Value* fieldGet(llvm::Value* objAddr, int index);
+	void fieldSet(llvm::Value* objAddr, int index, llvm::Value* value);
+
+	llvm::ConstantInt* getConstantInt32(int v);
+	llvm::ConstantFP* getConstantDouble(double v);
+
+	unsigned int getSizeOf(const Type* type);
+
+	static const int ARRAY_FIELD_PTR;
+	static const int ARRAY_FIELD_LENGTH;
+
 public:
 
 
