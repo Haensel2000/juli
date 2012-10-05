@@ -82,7 +82,7 @@ public:
 	virtual void print(std::ostream& os) const;
 };
 
-class Indentable {
+class Indentable : public cpputils::debug::Printable {
 public:
 	std::string filename;
 	Marker start;
@@ -101,6 +101,8 @@ public:
 
 	virtual void print(std::ostream& os, int indent,
 			unsigned int flags) const = 0;
+
+	void print(std::ostream& os) const;
 
 	static const unsigned int FLAG_TREE;
 

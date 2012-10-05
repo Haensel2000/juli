@@ -292,6 +292,10 @@ const std::string juli::ArrayType::mangle() const {
 juli::ClassType::ClassType(const std::string& name,
 		const std::vector<Field>& fields) :
 		Type(CLASS), name(name), fields() {
+	addFields(fields);
+}
+
+void juli::ClassType::addFields(const std::vector<Field>& fields) {
 	for (std::vector<Field>::const_iterator i = fields.begin();
 			i != fields.end(); ++i) {
 		this->fields[i->name] = *i;

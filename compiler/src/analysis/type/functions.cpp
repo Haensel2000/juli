@@ -68,6 +68,9 @@ unsigned int juli::Function::matches(std::vector<const Type*>& argTypes) const {
 
 	int s = 0;
 
+	if (argTypes.empty())
+		return 2;
+
 	std::vector<const Type*>::iterator i = argTypes.begin();
 	std::vector<FormalParameter>::const_iterator fi = formalArguments.begin();
 

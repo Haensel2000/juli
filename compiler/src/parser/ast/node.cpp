@@ -29,6 +29,10 @@ void juli::Indentable::setSourceLocation(const std::string& filename,
 	this->end = end;
 }
 
+void juli::Indentable::print(std::ostream& os) const {
+	print(os, 0, 0);
+}
+
 void juli::Indentable::beginLine(std::ostream& os, int indent) const {
 	os << std::string(indent * 2, ' ');
 }

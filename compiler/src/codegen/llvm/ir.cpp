@@ -57,7 +57,11 @@ llvm::ConstantFP* juli::IRGenerator::getConstantDouble(double v) {
 	return llvm::ConstantFP::get(context, llvm::APFloat(v));
 }
 
-unsigned int juli::IRGenerator::getSizeOf(const Type* type) {
+unsigned int juli::IRGenerator::getPointerSize() {
+	return (module.getPointerSize() == llvm::Module::Pointer64) ? 8 : 4;
+}
+
+unsigned int juli::IRGenerator::getSizeOf(const Type* type, bool deep) {
 	switch (type->getCategory()) {
 	case PRIMITIVE: {
 		switch (static_cast<const PrimitiveType*>(type)->getPrimitive()) {
@@ -75,8 +79,7 @@ unsigned int juli::IRGenerator::getSizeOf(const Type* type) {
 		return 0;
 	}
 	case ARRAY: {
-		unsigned int pointerSize =
-				(module.getPointerSize() == llvm::Module::Pointer64) ? 8 : 4;
+		unsigned int pointerSize = getPointerSize();
 		const ArrayType* at = static_cast<const ArrayType*>(type);
 		if (*at->getElementType() == PrimitiveType::INT8_TYPE
 				&& at->getDimension() == 1) {
@@ -86,14 +89,18 @@ unsigned int juli::IRGenerator::getSizeOf(const Type* type) {
 				+ getSizeOf(&PrimitiveType::INT32_TYPE) * at->getDimension();
 	}
 	case CLASS: {
-		unsigned int sum = 0;
-		std::vector<Field> fields =
-				static_cast<const ClassType*>(type)->getFields();
-		for (std::vector<Field>::const_iterator i = fields.begin();
-				i != fields.end(); ++i) {
-			sum += getSizeOf(i->type);
+		if (deep) {
+			unsigned int sum = 0;
+			std::vector<Field> fields =
+					static_cast<const ClassType*>(type)->getFields();
+			for (std::vector<Field>::const_iterator i = fields.begin();
+					i != fields.end(); ++i) {
+				sum += getSizeOf(i->type, false);
+			}
+			return sum;
+		} else {
+			getPointerSize();
 		}
-		return sum;
 	}
 	}
 
@@ -147,71 +154,73 @@ juli::IRGenerator::IRGenerator(const std::string& moduleName,
 //	}
 //}
 
+void juli::IRGenerator::defineFunction(const Function* function) {
+	llvm::Function* f = getFunction(function);
+	if (function->body) {
+
+		llvm::BasicBlock* llvmBlock = llvm::BasicBlock::Create(context, "entry",
+				f);
+		builder.SetInsertPoint(llvmBlock);
+
+		if (function->name == "main") {
+			llvm::Function::arg_iterator i = f->getArgumentList().begin();
+
+			llvm::Type* arrTypePtr = translationUnit.resolveLLVMType(
+					function->formalArguments[0].type);
+			llvm::Value* args = builder.CreateAlloca(arrTypePtr);
+			llvm::Value* argsValue = builder.CreateAlloca(
+					arrTypePtr->getPointerElementType());
+			std::vector<llvm::Value*> indices;
+			indices.push_back(zero_i32);
+			indices.push_back(zero_i32);
+			llvm::Value* pPtr = builder.CreateGEP(argsValue, indices); // ptr
+			indices.pop_back();
+			indices.push_back(one_i32);
+			//indices.push_back(zero_i32);
+			llvm::Value* pLength = builder.CreateGEP(argsValue, indices); // length
+			builder.CreateStore(i, pLength);
+			builder.CreateStore(++i, pPtr);
+			builder.CreateStore(argsValue, args);
+
+			translationUnit.addSymbol(function->formalArguments[0].name, args);
+		} else {
+			llvm::Function::arg_iterator i = f->getArgumentList().begin();
+			for (std::vector<FormalParameter>::const_iterator vi =
+					function->formalArguments.begin();
+					vi != function->formalArguments.end(); ++i, ++vi) {
+				//(*vi)->generateCode(builder);
+
+				llvm::Value* param = builder.CreateAlloca(i->getType());
+				builder.CreateStore(i, param);
+				translationUnit.addSymbol(vi->name, param);
+			}
+		}
+
+		visit(function->body);
+
+		//	if (f->getReturnType() == llvm::Type::getVoidTy(translationUnit->getContext())) {
+		//		builder.CreateRet(0);
+		//	}
+
+		for (std::vector<FormalParameter>::const_iterator i =
+				function->formalArguments.begin();
+				i != function->formalArguments.end(); ++i) {
+			translationUnit.removeSymbol(i->name);
+		}
+
+		if (llvm::verifyFunction(*f, llvm::PrintMessageAction)) {
+			f->dump();
+		}
+
+	}
+}
+
 llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
 	const std::string llvmName = function->mangle();
 	std::map<std::string, llvm::Function*>::iterator i = llvmFunctionTable.find(
 			llvmName);
 	if (i == llvmFunctionTable.end()) {
 		llvm::Function* f = createFunction(function);
-
-		if (function->body) {
-
-			llvm::BasicBlock* llvmBlock = llvm::BasicBlock::Create(context,
-					"entry", f);
-			builder.SetInsertPoint(llvmBlock);
-
-			if (function->name == "main") {
-				llvm::Function::arg_iterator i = f->getArgumentList().begin();
-
-				llvm::Type* arrTypePtr = translationUnit.resolveLLVMType(
-						function->formalArguments[0].type);
-				llvm::Value* args = builder.CreateAlloca(arrTypePtr);
-				llvm::Value* argsValue = builder.CreateAlloca(
-						arrTypePtr->getPointerElementType());
-				std::vector<llvm::Value*> indices;
-				indices.push_back(zero_i32);
-				indices.push_back(zero_i32);
-				llvm::Value* pPtr = builder.CreateGEP(argsValue, indices); // ptr
-				indices.pop_back();
-				indices.push_back(one_i32);
-				//indices.push_back(zero_i32);
-				llvm::Value* pLength = builder.CreateGEP(argsValue, indices); // length
-				builder.CreateStore(i, pLength);
-				builder.CreateStore(++i, pPtr);
-				builder.CreateStore(argsValue, args);
-
-				translationUnit.addSymbol(function->formalArguments[0].name,
-						args);
-			} else {
-				llvm::Function::arg_iterator i = f->getArgumentList().begin();
-				for (std::vector<FormalParameter>::const_iterator vi =
-						function->formalArguments.begin();
-						vi != function->formalArguments.end(); ++i, ++vi) {
-					//(*vi)->generateCode(builder);
-
-					llvm::Value* param = builder.CreateAlloca(i->getType());
-					builder.CreateStore(i, param);
-					translationUnit.addSymbol(vi->name, param);
-				}
-			}
-
-			visit(function->body);
-
-			//	if (f->getReturnType() == llvm::Type::getVoidTy(translationUnit->getContext())) {
-			//		builder.CreateRet(0);
-			//	}
-
-			for (std::vector<FormalParameter>::const_iterator i =
-					function->formalArguments.begin();
-					i != function->formalArguments.end(); ++i) {
-				translationUnit.removeSymbol(i->name);
-			}
-
-			if (llvm::verifyFunction(*f, llvm::PrintMessageAction)) {
-				f->dump();
-			}
-
-		}
 		llvmFunctionTable[llvmName] = f;
 	}
 	return llvmFunctionTable[llvmName];
@@ -756,7 +765,7 @@ llvm::Function* juli::IRGenerator::createFunction(const Function * n) {
 
 llvm::Value* juli::IRGenerator::visitFunctionDef(const NFunctionDefinition* n) {
 
-	getFunction(new Function(n, typeInfo));
+	defineFunction(new Function(n, typeInfo));
 
 	return 0;
 

@@ -43,6 +43,13 @@ stmt7=if_statement { result = stmt7; } |
 stmt8=while_statement { result = stmt8; }
 ;
 
+import_statement returns [juli::NStatement* result = 0]:
+IMPORT id=identifier
+{
+  
+}
+;
+
 class_definition returns [juli::NStatement* result = 0]
 @declarations
 {
@@ -647,6 +654,7 @@ OP_NOT : 'not' ;
 OP_TILDE : '~' ;
 OP_HASH : '#' ;
 RETURN : 'return' ;
+IMPORT : 'import' ;
 IF : 'if' ;
 ELSE : 'else' ;
 WHILE : 'while' ;

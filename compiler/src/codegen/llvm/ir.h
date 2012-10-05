@@ -48,10 +48,13 @@ private:
 	llvm::ConstantInt* getConstantInt32(int v);
 	llvm::ConstantFP* getConstantDouble(double v);
 
-	unsigned int getSizeOf(const Type* type);
+	unsigned int getPointerSize();
+	unsigned int getSizeOf(const Type* type, bool deep = true);
 
 	static const int ARRAY_FIELD_PTR;
 	static const int ARRAY_FIELD_LENGTH;
+
+	void defineFunction(const Function* function);
 
 public:
 

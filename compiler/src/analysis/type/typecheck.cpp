@@ -148,6 +148,7 @@ const Type* juli::TypeChecker::visitQualifiedAccess(NQualifiedAccess* n) {
 
 	const Type* refType = visit(n->ref);
 
+
 	const Field* f = refType->getField(n->name->name);
 	if (!f) {
 		CompilerError err(n);

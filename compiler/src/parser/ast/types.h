@@ -174,6 +174,8 @@ private:
 public:
 	ClassType(const std::string& name, const std::vector<Field>& fields);
 
+	void addFields(const std::vector<Field>& fields);
+
 	virtual ~ClassType();
 
 	virtual bool isAssignableTo(const Type* t) const;

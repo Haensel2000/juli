@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
 		std::cout << "Building file: " << argv[i] << std::endl;
 		try {
 			NBlock* ast = parser.parse(argv[i]);
+			ast->print(std::cout, 0, Indentable::FLAG_TREE);
 
 			//ast->print(std::cout, 0, Indentable::FLAG_TREE);
 

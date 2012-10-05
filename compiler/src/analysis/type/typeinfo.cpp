@@ -29,8 +29,8 @@ void juli::TypeInfo::defineClass(const NClassDefinition* def) {
 				Field((*i)->name->name, index, (*i)->type->resolve(*this)));
 	}
 
-	ClassType* type = new ClassType(def->name->name, fields);
-	typeTable[def->name->name] = type;
+	Type* type = typeTable[def->name->name];
+	static_cast<ClassType*>(type)->addFields(fields);
 }
 
 void juli::TypeInfo::declareClass(const NClassDefinition* def) {
