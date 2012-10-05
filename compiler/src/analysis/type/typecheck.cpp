@@ -40,7 +40,8 @@ const Type* juli::SymbolTable::getSymbol(const std::string& name) const {
 	return 0;
 }
 
-void juli::SymbolTable::addSymbol(const std::string& name, const Type* type, const Node* n) {
+void juli::SymbolTable::addSymbol(const std::string& name, const Type* type,
+		const Node* n) {
 	Scope& currentScope = scopes.back();
 	if (currentScope.find(name) != currentScope.end()) {
 		CompilerError err(n);
@@ -147,7 +148,6 @@ const Type* juli::TypeChecker::visitVariableRef(NVariableRef* n) {
 const Type* juli::TypeChecker::visitQualifiedAccess(NQualifiedAccess* n) {
 
 	const Type* refType = visit(n->ref);
-
 
 	const Field* f = refType->getField(n->name->name);
 	if (!f) {
@@ -302,6 +302,7 @@ const Type* juli::TypeChecker::visitAssignment(NAssignment* n) {
 
 	const Type* varType = n->lhs->expressionType;
 	n->rhs = checkAssignment(varType, n->rhs, n);
+	n->terminates = false;
 	return 0;
 }
 
@@ -317,6 +318,8 @@ const Type* juli::TypeChecker::visitBlock(NBlock* n) {
 		visit(*i);
 	}
 
+	n->terminates = n->statements.back()->terminates;
+
 	symbolTable.endScope();
 	return 0;
 }
@@ -324,6 +327,7 @@ const Type* juli::TypeChecker::visitBlock(NBlock* n) {
 const Type* juli::TypeChecker::visitExpressionStatement(
 		NExpressionStatement* n) {
 	visit(n->expression);
+	n->terminates = false;
 	return 0;
 }
 
@@ -344,10 +348,23 @@ const Type* juli::TypeChecker::visitFunctionDef(NFunctionDefinition* n) {
 	_newScope = false;
 	if (n->body) {
 		visit(n->body);
+		if (!n->body->terminates) {
+			const Type* t = n->signature->type->resolve(typeInfo);
+			if (*t == PrimitiveType::VOID_TYPE) {
+				n->body->addStatement(new NReturnStatement(0)); // auto return void
+			} else {
+				// require value return:
+				CompilerError err(n);
+				err.getStream() << "Function " << n->signature->name
+						<< " must return a value of type " << t;
+				throw err;
+			}
+		}
 	} else {
 		_newScope = true;
 		symbolTable.endScope();
 	}
+
 	_currentFunction = 0;
 	return 0;
 }
@@ -368,10 +385,13 @@ const Type* juli::TypeChecker::visitReturn(NReturnStatement* n) {
 		}
 	}
 
+	n->terminates = true;
+
 	return 0;
 }
 
 const Type* juli::TypeChecker::visitIf(NIfStatement* n) {
+	n->terminates = true;
 	for (vector<NIfClause*>::iterator i = n->clauses.begin();
 			i != n->clauses.end(); ++i) {
 		if ((*i)->condition) {
@@ -381,6 +401,7 @@ const Type* juli::TypeChecker::visitIf(NIfStatement* n) {
 		}
 
 		visit((*i)->body);
+		n->terminates = n->terminates && (*i)->body->terminates;
 	}
 	return 0;
 }
@@ -390,6 +411,7 @@ const Type* juli::TypeChecker::visitWhile(NWhileStatement* n) {
 	n->condition = checkAssignment(&PrimitiveType::BOOLEAN_TYPE, n->condition,
 			n->condition);
 	visit(n->body);
+	n->terminates = n->body->terminates;
 	return 0;
 }
 

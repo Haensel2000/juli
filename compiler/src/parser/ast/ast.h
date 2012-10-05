@@ -108,6 +108,8 @@ public:
 
 class NStatement: public Node {
 public:
+	bool terminates;
+
 	NStatement(NodeType nodeType);
 };
 

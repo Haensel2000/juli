@@ -36,7 +36,6 @@ void print(LinkedList l)
     i = i.next;
   }
   printf("\n");
-  return;
 }
 
 
@@ -53,7 +52,6 @@ void add(LinkedList l, int value)
     l.begin = n;
   }
   l.end = n;
-  return;
 }
 
 void remove(LinkedList l, int value)
@@ -84,7 +82,6 @@ void remove(LinkedList l, int value)
     }
    
   }
-  return;
 }
 
 LinkedList createLinkedList()
