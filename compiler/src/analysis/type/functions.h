@@ -15,13 +15,14 @@
 
 #include <map>
 #include <vector>
+#include <set>
 #include <string>
 
 namespace juli {
 
 class TypeInfo;
 
-class FormalParameter : public cpputils::debug::Printable {
+class FormalParameter: public cpputils::debug::Printable {
 public:
 	const Type* type;
 	std::string name;
@@ -30,14 +31,30 @@ public:
 
 	FormalParameter(const Type* type, const std::string& name);
 
-	virtual ~FormalParameter() {}
+	virtual ~FormalParameter() {
+	}
 
 	virtual void print(std::ostream& os) const;
 
 };
 
-class Function : public cpputils::debug::Printable {
+class Function: public cpputils::debug::Printable {
+private:
+	static std::map<std::string, Function*> functionPool;
+
+	static Function* get(Function* fNew);
+
+	Function(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo);
+
+	Function(const std::string& name, const Type* resultType, std::vector<FormalParameter>& argTypes, bool varArgs,
+			unsigned int modifiers, NBlock* body = 0);
+
 public:
+
+	static Function* get(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo);
+
+	static Function* get(const std::string& name, const Type* resultType, std::vector<FormalParameter>& argTypes,
+			bool varArgs, unsigned int modifiers, NBlock* body = 0);
 
 	const std::string name;
 	const Type* resultType;
@@ -47,15 +64,11 @@ public:
 	unsigned int modifiers;
 	NBlock* body;
 
-	Function(const NFunctionDefinition* functionDefinition,
-			const TypeInfo& typeInfo);
-
-	Function(const std::string& name, const Type* resultType,
-			std::vector<FormalParameter>& argTypes, bool varArgs, unsigned int modifiers, NBlock* body = 0);
-
 	unsigned int matches(std::vector<const Type*>& argTypes) const;
 
 	const std::string mangle() const;
+
+	bool operator==(const Function& f);
 
 	virtual void print(std::ostream& os) const;
 
@@ -63,14 +76,15 @@ public:
 
 class Functions {
 private:
-	std::map<std::string, std::vector<Function*> > data;
+	std::map<std::string, std::set<Function*> > data;
 
 public:
 
 	void addFunction(Function* function);
 
-	std::vector<Function*> resolve(const std::string& name,
-			std::vector<const Type*>& argTypes) const;
+	std::vector<Function*> resolve(const std::string& name, std::vector<const Type*>& argTypes) const;
+
+	void merge(const Functions& other);
 
 	void dump() const;
 

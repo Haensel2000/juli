@@ -117,6 +117,8 @@ public:
 
 	const Type* visitClassDef(const NClassDefinition* n);
 
+	const Type* visitImport(const NImportStatement* n);
+
 };
 
 }

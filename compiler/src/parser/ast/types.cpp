@@ -165,6 +165,7 @@ const std::string juli::PrimitiveType::mangle() const {
 	case NIL:
 		return "n";
 	}
+	return "???";
 }
 
 const ReferenceType juli::ReferenceType::REFERENCE_TYPE;
@@ -220,7 +221,7 @@ const Type* juli::ArrayType::getElementType() const {
 	return elementType;
 }
 
-int juli::ArrayType::getDimension() const {
+unsigned int juli::ArrayType::getDimension() const {
 	return dimension;
 }
 
@@ -247,7 +248,7 @@ void juli::ArrayType::print(std::ostream& os) const {
 			os << elementType << "[]";
 	} else {
 		os << elementType << "[";
-		for (int i = 0; i < dimension - 1; ++i) {
+		for (unsigned int i = 0; i < dimension - 1; ++i) {
 			os << ",";
 		}
 		os << "]";

@@ -92,7 +92,7 @@ LinkedList createLinkedList()
   return result;
 }
 
-int main(char[][] args) 
+/*int main(char[][] args) 
 {
   LinkedList l = createLinkedList();
   add(l, 4);
@@ -113,4 +113,4 @@ int main(char[][] args)
   add(l, 2);
   print(l);
   return 0;
-}
+}*/

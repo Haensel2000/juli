@@ -2,119 +2,28 @@
 
 #include <stdexcept>
 
+#include <builder/builder.h>
+
 using namespace juli;
 
-juli::Declarator::Declarator() {
-	// implicit declarations:
-	std::vector<std::string> comparison;
-	comparison.push_back(">");
-	comparison.push_back("<");
-	comparison.push_back(">=");
-	comparison.push_back("<=");
-	comparison.push_back("==");
-	comparison.push_back("!=");
-	declareImplicitOperator(comparison, &PrimitiveType::BOOLEAN_TYPE,
-			&PrimitiveType::INT8_TYPE, 2);
-	declareImplicitOperator(comparison, &PrimitiveType::BOOLEAN_TYPE,
-			&PrimitiveType::INT32_TYPE, 2);
-	declareImplicitOperator(comparison, &PrimitiveType::BOOLEAN_TYPE,
-			&PrimitiveType::FLOAT64_TYPE, 2);
-
-	std::vector<std::string> equality;
-	equality.push_back("==");
-	equality.push_back("!=");
-	declareImplicitOperator(equality, &PrimitiveType::BOOLEAN_TYPE,
-			&PrimitiveType::BOOLEAN_TYPE, 2);
-	declareImplicitOperator(equality, &PrimitiveType::BOOLEAN_TYPE,
-			&ReferenceType::REFERENCE_TYPE, 2);
-
-	std::vector<std::string> arithmetic;
-	arithmetic.push_back("+");
-	arithmetic.push_back("-");
-	arithmetic.push_back("/");
-	arithmetic.push_back("*");
-	declareImplicitOperator(arithmetic, &PrimitiveType::INT8_TYPE,
-			&PrimitiveType::INT8_TYPE, 2);
-	declareImplicitOperator(arithmetic, &PrimitiveType::INT32_TYPE,
-			&PrimitiveType::INT32_TYPE, 2);
-	declareImplicitOperator(arithmetic, &PrimitiveType::FLOAT64_TYPE,
-			&PrimitiveType::FLOAT64_TYPE, 2);
-
-	declareImplicitOperator("%", &PrimitiveType::INT8_TYPE,
-			&PrimitiveType::INT8_TYPE, 2);
-	declareImplicitOperator("%", &PrimitiveType::INT32_TYPE,
-			&PrimitiveType::INT32_TYPE, 2);
-	declareImplicitOperator("%", &PrimitiveType::FLOAT64_TYPE,
-			&PrimitiveType::FLOAT64_TYPE, 2);
-
-	std::vector<std::string> logical;
-	logical.push_back("and");
-	logical.push_back("or");
-	declareImplicitOperator(logical, &PrimitiveType::BOOLEAN_TYPE,
-			&PrimitiveType::BOOLEAN_TYPE, 2);
-
-	declareImplicitOperator("not", &PrimitiveType::BOOLEAN_TYPE,
-			&PrimitiveType::BOOLEAN_TYPE, 1);
-
-	declareImplicitOperator("-", &PrimitiveType::INT8_TYPE,
-			&PrimitiveType::INT8_TYPE, 1);
-	declareImplicitOperator("-", &PrimitiveType::INT32_TYPE,
-			&PrimitiveType::INT32_TYPE, 1);
-	declareImplicitOperator("-", &PrimitiveType::FLOAT64_TYPE,
-			&PrimitiveType::FLOAT64_TYPE, 1);
-
-	declareImplicitOperator("~", &PrimitiveType::INT8_TYPE,
-			&PrimitiveType::INT8_TYPE, 1);
-	declareImplicitOperator("~", &PrimitiveType::INT32_TYPE,
-			&PrimitiveType::INT32_TYPE, 1);
-	declareImplicitOperator("~", &PrimitiveType::FLOAT64_TYPE,
-			&PrimitiveType::FLOAT64_TYPE, 1);
-}
-
-void juli::Declarator::declareImplicitOperator(
-		const std::vector<std::string> names, const Type* returnType,
-		const Type* type, unsigned int arity) {
-	for (std::vector<std::string>::const_iterator i = names.begin();
-			i != names.end(); ++i) {
-		declareImplicitOperator(*i, returnType, type, arity);
-	}
-}
-
-void juli::Declarator::declareImplicitOperator(const std::string& name,
-		const Type* returnType, const Type* type, unsigned int arity) {
-	std::vector<FormalParameter> binaryArgs;
-	for (unsigned int i = 0; i < arity; ++i) {
-		std::stringstream s;
-		s << "x" << i;
-		binaryArgs.push_back(FormalParameter(type, s.str()));
-	}
-
-	Function* f = new Function(name, returnType, binaryArgs, false, 0);
-	typeInfo.declareFunction(f);
-
-}
-
-void juli::Declarator::declareImplicitOperator(const std::string& name,
-		const Type* type, unsigned int arity) {
-	declareImplicitOperator(name, type, type, arity);
+juli::Declarator::Declarator(Importer& importer, bool implicit) : typeInfo(new TypeInfo(implicit)), importer(importer) {
 }
 
 void juli::Declarator::visit(const Node* n) {
 	visitAST<Declarator, void>(*this, n);
 }
 
-const TypeInfo& juli::Declarator::define(const Node* n) {
+TypeInfo* juli::Declarator::declare(const Node* n) {
 	visit(n);
 	for (std::vector<const NClassDefinition*>::iterator i =
 			classDefinitions.begin(); i != classDefinitions.end(); ++i) {
-		typeInfo.declareClass(*i);
+		typeInfo->declareClass(*i);
 	}
 	for (std::vector<const NFunctionDefinition*>::iterator i =
 			functionDefinitions.begin(); i != functionDefinitions.end(); ++i) {
-		typeInfo.defineFunction(*i);
+		typeInfo->defineFunction(*i);
 	}
 
-	typeInfo.resolveClasses();
 	return typeInfo;
 }
 
@@ -194,4 +103,8 @@ void juli::Declarator::visitWhile(const NWhileStatement* n) {
 
 void juli::Declarator::visitClassDef(const NClassDefinition* n) {
 	classDefinitions.push_back(n);
+}
+
+void juli::Declarator::visitImport(const NImportStatement* n) {
+	typeInfo->merge(importer.getTypes(n->name->name));
 }

@@ -12,8 +12,7 @@ juli::NBasicType::NBasicType(NIdentifier* id) :
 	setSourceLocation(id->filename, id->start, id->end);
 }
 
-void juli::NBasicType::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NBasicType::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 	if (flags & FLAG_TREE) {
 		os << "BasicType: " << name;
@@ -23,8 +22,7 @@ void juli::NBasicType::print(std::ostream& os, int indent,
 	}
 }
 
-const Type* NBasicType::resolve(const TypeInfo& types) const
-		throw (CompilerError) {
+const Type* NBasicType::resolve(const TypeInfo& types) const throw (CompilerError) {
 	return types.getType(name, this);
 }
 
@@ -32,8 +30,7 @@ juli::NArrayType::NArrayType(NType* elementType, int dimension) :
 		elementType(elementType), dimension(dimension) {
 }
 
-void juli::NArrayType::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NArrayType::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -45,8 +42,7 @@ void juli::NArrayType::print(std::ostream& os, int indent,
 	}
 }
 
-const Type* NArrayType::resolve(const TypeInfo& types) const
-		throw (CompilerError) {
+const Type* NArrayType::resolve(const TypeInfo& types) const throw (CompilerError) {
 	return new ArrayType(elementType->resolve(types), dimension);
 }
 
@@ -73,8 +69,7 @@ NAddressable::NAddressable(NodeType nodeType) :
 }
 
 juli::NStringLiteral::NStringLiteral(std::string value) :
-		NLiteral<std::string>(STRING_LITERAL, value,
-				new ArrayType(&PrimitiveType::INT8_TYPE)) {
+		NLiteral<std::string>(STRING_LITERAL, value, new ArrayType(&PrimitiveType::INT8_TYPE)) {
 
 	std::stringstream sstream;
 	unsigned char escCount = 0;
@@ -98,8 +93,7 @@ juli::NStringLiteral::NStringLiteral(std::string value) :
 
 }
 
-void juli::NStringLiteral::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NStringLiteral::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -119,8 +113,7 @@ juli::NCharLiteral::NCharLiteral(std::string text) :
 	}
 }
 
-void juli::NCharLiteral::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NCharLiteral::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -153,12 +146,10 @@ juli::NQualifiedAccess::NQualifiedAccess(NExpression* ref, NIdentifier* name) :
 }
 
 juli::NQualifiedAccess::NQualifiedAccess(NExpression* ref, NVariableRef* name) :
-		NAddressable(QUALIFIED_ACCESS), ref(ref), name(
-				new NIdentifier(name->name)), index(-1) {
+		NAddressable(QUALIFIED_ACCESS), ref(ref), name(new NIdentifier(name->name)), index(-1) {
 }
 
-void juli::NQualifiedAccess::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NQualifiedAccess::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -185,8 +176,7 @@ juli::NAllocateArray::NAllocateArray(NArrayAccess* aacc) :
 	NVariableRef* vref = dynamic_cast<NVariableRef*>(aacc->ref);
 	if (!vref) {
 		CompilerError err(this);
-		err.getStream()
-				<< "Invalid nested array allocation. Use multi-dimensional arrays.";
+		err.getStream() << "Invalid nested array allocation. Use multi-dimensional arrays.";
 		throw err;
 	}
 
@@ -194,32 +184,27 @@ juli::NAllocateArray::NAllocateArray(NArrayAccess* aacc) :
 
 }
 
-juli::NAllocateArray::NAllocateArray(NType* type,
-		std::vector<NExpression*>& sizes) :
+juli::NAllocateArray::NAllocateArray(NType* type, std::vector<NExpression*>& sizes) :
 		NExpression(NEW_ARRAY), type(type), sizes(sizes) {
 }
 
 const Type* juli::NAllocateArray::getType(const TypeInfo& typeInfo) const {
-	return ArrayType::getMultiDimensionalArray(type->resolve(typeInfo),
-			sizes.size());
+	return ArrayType::getMultiDimensionalArray(type->resolve(typeInfo), sizes.size());
 }
 
-void juli::NAllocateArray::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NAllocateArray::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
 		os << "AllocateArray: ";
 		printType(os);
 		type->print(os, indent + 2, flags);
-		for (std::vector<NExpression*>::const_iterator i = sizes.begin();
-				i != sizes.end(); ++i) {
+		for (std::vector<NExpression*>::const_iterator i = sizes.begin(); i != sizes.end(); ++i) {
 			(*i)->print(os, indent + 2, flags);
 		}
 	} else {
 		os << "new " << type;
-		for (std::vector<NExpression*>::const_iterator i = sizes.begin();
-				i != sizes.end(); ++i) {
+		for (std::vector<NExpression*>::const_iterator i = sizes.begin(); i != sizes.end(); ++i) {
 			os << "[" << *i << "]";
 		}
 	}
@@ -229,8 +214,7 @@ juli::NAllocateObject::NAllocateObject(NBasicType* type) :
 		NExpression(NEW_OBJECT), type(type) {
 }
 
-void juli::NAllocateObject::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NAllocateObject::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -246,8 +230,7 @@ juli::NIdentifier::NIdentifier(const std::string& name) :
 		name(name) {
 }
 
-void juli::NIdentifier::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NIdentifier::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -271,8 +254,7 @@ juli::NVariableRef::NVariableRef(NIdentifier* id) :
 	setSourceLocation(id->filename, id->start, id->end);
 }
 
-void juli::NVariableRef::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NVariableRef::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -292,8 +274,7 @@ juli::NCast::NCast(NExpression* expression, NType* target) :
 	}
 }
 
-void juli::NCast::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NCast::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -314,24 +295,21 @@ void juli::NCast::print(std::ostream& os, int indent,
 }
 
 juli::NFunctionCall::NFunctionCall(NIdentifier* name, ExpressionList& arguments) :
-		NExpression(FUNCTION_CALL), name(name), arguments(arguments), function(
-				0) {
+		NExpression(FUNCTION_CALL), name(name), arguments(arguments), function(0) {
 }
 
 juli::NFunctionCall::NFunctionCall(NIdentifier* name) :
 		NExpression(FUNCTION_CALL), name(name), function(0) {
 }
 
-void juli::NFunctionCall::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NFunctionCall::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
 		os << "FunctionCall: ";
 		printType(os);
 		name->print(os, indent + 2, flags);
-		for (ExpressionList::const_iterator i = arguments.begin();
-				i != arguments.end(); ++i) {
+		for (ExpressionList::const_iterator i = arguments.begin(); i != arguments.end(); ++i) {
 			(*i)->print(os, indent + 2, flags);
 		}
 	} else {
@@ -343,16 +321,14 @@ juli::NArrayAccess::NArrayAccess(NExpression* ref, ExpressionList& indices) :
 		NAddressable(ARRAY_ACCESS), ref(ref), indices(indices) {
 }
 
-void juli::NArrayAccess::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NArrayAccess::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
 		os << "ArrayAccess: ";
 		printType(os);
 		ref->print(os, indent + 2, flags);
-		for (ExpressionList::const_iterator i = indices.begin();
-				i != indices.end(); ++i) {
+		for (ExpressionList::const_iterator i = indices.begin(); i != indices.end(); ++i) {
 			(*i)->print(os, indent + 2, flags);
 		}
 	} else {
@@ -365,8 +341,7 @@ juli::NUnaryOperator::NUnaryOperator(NExpression* expression, Operator op) :
 
 }
 
-void juli::NUnaryOperator::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NUnaryOperator::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -378,13 +353,11 @@ void juli::NUnaryOperator::print(std::ostream& os, int indent,
 	}
 }
 
-juli::NBinaryOperator::NBinaryOperator(NExpression* lhs, Operator op,
-		NExpression* rhs) :
+juli::NBinaryOperator::NBinaryOperator(NExpression* lhs, Operator op, NExpression* rhs) :
 		NExpression(BINARY_OPERATOR), lhs(lhs), op(op), rhs(rhs) {
 }
 
-void juli::NBinaryOperator::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NBinaryOperator::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -405,8 +378,7 @@ juli::NExpressionStatement::NExpressionStatement(NExpression* expression) :
 		NStatement(EXPRESSION), expression(expression) {
 }
 
-void juli::NExpressionStatement::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NExpressionStatement::print(std::ostream& os, int indent, unsigned int flags) const {
 
 	//os << expression;
 	if (flags & FLAG_TREE) {
@@ -423,8 +395,7 @@ juli::NAssignment::NAssignment(NExpression* lhs, NExpression* rhs) :
 		NStatement(ASSIGNMENT), lhs(lhs), rhs(rhs) {
 }
 
-void juli::NAssignment::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NAssignment::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -445,10 +416,8 @@ void juli::NBlock::addStatement(NStatement* statement) {
 	statements.push_back(statement);
 }
 
-void juli::NBlock::print(std::ostream& os, int indent,
-		unsigned int flags) const {
-	for (std::vector<NStatement*>::const_iterator i = statements.begin();
-			i != statements.end(); ++i) {
+void juli::NBlock::print(std::ostream& os, int indent, unsigned int flags) const {
+	for (std::vector<NStatement*>::const_iterator i = statements.begin(); i != statements.end(); ++i) {
 		(*i)->print(os, indent, flags);
 	}
 	if (!(flags & FLAG_TREE)) {
@@ -457,14 +426,11 @@ void juli::NBlock::print(std::ostream& os, int indent,
 	}
 }
 
-juli::NVariableDeclaration::NVariableDeclaration(NType* type, NIdentifier* name,
-		NExpression *assignmentExpr) :
-		NStatement(VARIABLE_DECL), name(name), type(type), assignmentExpr(
-				assignmentExpr) {
+juli::NVariableDeclaration::NVariableDeclaration(NType* type, NIdentifier* name, NExpression *assignmentExpr) :
+		NStatement(VARIABLE_DECL), name(name), type(type), assignmentExpr(assignmentExpr) {
 }
 
-void juli::NVariableDeclaration::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NVariableDeclaration::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -486,8 +452,7 @@ juli::NReturnStatement::NReturnStatement(NExpression* expression) :
 		NStatement(RETURN), expression(expression) {
 }
 
-void juli::NReturnStatement::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NReturnStatement::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -506,8 +471,7 @@ juli::NIfClause::NIfClause(NExpression* condition, NBlock* body, bool first) :
 		condition(condition), body(body), first(first) {
 }
 
-void juli::NIfClause::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NIfClause::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 	if (flags & FLAG_TREE) {
 		os << "IfClause: ";
@@ -536,20 +500,17 @@ juli::NIfStatement::NIfStatement(std::vector<NIfClause*> clauses) :
 	assert((*clauses.begin())->condition);
 }
 
-void juli::NIfStatement::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NIfStatement::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
 		os << "If: ";
 		printLocation(os);
-		for (std::vector<NIfClause*>::const_iterator i = clauses.begin();
-				i != clauses.end(); ++i) {
+		for (std::vector<NIfClause*>::const_iterator i = clauses.begin(); i != clauses.end(); ++i) {
 			(*i)->print(os, indent + 2, flags);
 		}
 	} else {
-		for (std::vector<NIfClause*>::const_iterator i = clauses.begin();
-				i != clauses.end(); ++i) {
+		for (std::vector<NIfClause*>::const_iterator i = clauses.begin(); i != clauses.end(); ++i) {
 			(*i)->print(os, indent, flags);
 		}
 	}
@@ -559,8 +520,7 @@ juli::NWhileStatement::NWhileStatement(NExpression* condition, NBlock* body) :
 		NStatement(WHILE), condition(condition), body(body) {
 }
 
-void juli::NWhileStatement::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NWhileStatement::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -574,23 +534,19 @@ void juli::NWhileStatement::print(std::ostream& os, int indent,
 	}
 }
 
-juli::NFunctionSignature::NFunctionSignature(const NType* type,
-		const std::string& name, const VariableList arguments, bool varArgs,
-		unsigned int modifiers) :
-		name(name), type(type), arguments(arguments), varArgs(varArgs), modifiers(
-				modifiers) {
+juli::NFunctionSignature::NFunctionSignature(const NType* type, const std::string& name, const VariableList arguments,
+		bool varArgs, unsigned int modifiers) :
+		name(name), type(type), arguments(arguments), varArgs(varArgs), modifiers(modifiers) {
 }
 
-void juli::NFunctionSignature::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NFunctionSignature::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
 		os << "FunctionSignature: " << name;
 		printLocation(os);
 		type->print(os, indent + 2, flags);
-		for (VariableList::const_iterator i = arguments.begin();
-				i != arguments.end(); ++i) {
+		for (VariableList::const_iterator i = arguments.begin(); i != arguments.end(); ++i) {
 			(*i)->print(os, indent + 2, flags);
 		}
 		beginLine(os, indent + 2);
@@ -607,13 +563,11 @@ void juli::NFunctionSignature::print(std::ostream& os, int indent,
 
 const unsigned int juli::MODIFIER_C = 1;
 
-juli::NFunctionDefinition::NFunctionDefinition(NFunctionSignature * signature,
-		NBlock* body) :
+juli::NFunctionDefinition::NFunctionDefinition(NFunctionSignature * signature, NBlock* body) :
 		NStatement(FUNCTION_DEF), signature(signature), body(body) {
 }
 
-void juli::NFunctionDefinition::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NFunctionDefinition::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -635,8 +589,7 @@ juli::NFieldDeclaration::NFieldDeclaration(NType* type, NIdentifier* name) :
 
 }
 
-void juli::NFieldDeclaration::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NFieldDeclaration::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
@@ -652,26 +605,37 @@ juli::NClassDefinition::NClassDefinition(NIdentifier* name, FieldList& fields) :
 
 }
 
-void juli::NClassDefinition::print(std::ostream& os, int indent,
-		unsigned int flags) const {
+void juli::NClassDefinition::print(std::ostream& os, int indent, unsigned int flags) const {
 	beginLine(os, indent);
 
 	if (flags & FLAG_TREE) {
 		os << "ClassDefinition: " << name;
 		printLocation(os);
-		for (FieldList::const_iterator i = fields.begin(); i != fields.end();
-				++i) {
+		for (FieldList::const_iterator i = fields.begin(); i != fields.end(); ++i) {
 			(*i)->print(os, indent + 2, flags);
 		}
 	} else {
 		os << "struct" << std::endl;
 		beginLine(os, indent);
 		os << "{";
-		for (FieldList::const_iterator i = fields.begin(); i != fields.end();
-				++i) {
+		for (FieldList::const_iterator i = fields.begin(); i != fields.end(); ++i) {
 			(*i)->print(os, indent + 2, flags);
 		}
 		beginLine(os, indent);
 		os << "}";
+	}
+}
+
+juli::NImportStatement::NImportStatement(NIdentifier* name) :
+		NStatement(IMPORT), name(name) {
+}
+
+void juli::NImportStatement::print(std::ostream& os, int indent, unsigned int flags) const {
+	beginLine(os, indent);
+
+	if (flags & FLAG_TREE) {
+		os << "Import: " << name;
+	} else {
+		os << "import " << name;
 	}
 }

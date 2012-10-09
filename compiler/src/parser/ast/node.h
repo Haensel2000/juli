@@ -67,7 +67,8 @@ enum NodeType {
 	WHILE,
 	RETURN,
 	FUNCTION_DEF,
-	CLASS_DEF
+	CLASS_DEF,
+	IMPORT
 };
 
 class Marker : public cpputils::debug::Printable {

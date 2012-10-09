@@ -27,6 +27,7 @@
 #include <analysis/type/declare.h>
 #include <analysis/type/typecheck.h>
 #include <codegen/llvm/ir.h>
+#include <builder/builder.h>
 
 //extern NBlock* programBlock;
 //extern int yyparse();
@@ -39,27 +40,30 @@ using std::cerr;
 int main(int argc, char **argv) {
 
 	CodeEmitter emitter;
+	Importer importer;
 	Parser parser;
+
+	importer.add(new SourceImportLoader(parser, importer));
+	//Parser parser;
 
 	for (int i = 1; i < argc; ++i) {
 		std::cout << "Building file: " << argv[i] << std::endl;
 		try {
-			NBlock* ast = parser.parse(argv[i]);
+			Node* ast = parser.parse(argv[i]);
 			ast->print(std::cout, 0, Indentable::FLAG_TREE);
 
-			//ast->print(std::cout, 0, Indentable::FLAG_TREE);
-
-			Declarator declarator;
-			const TypeInfo& typeInfo = declarator.define(ast);
+			Declarator declarator(importer);
+			TypeInfo* typeInfo = declarator.declare(ast);
+			typeInfo->resolveClasses();
 
 			//declarator.getTypeInfo().dump();
 
-			TypeChecker typeChecker(typeInfo);
+			TypeChecker typeChecker(*typeInfo);
 			typeChecker.visit(ast);
 
 			ast->print(std::cout, 0, Indentable::FLAG_TREE);
 
-			IRGenerator irgen("test", typeInfo);
+			IRGenerator irgen("test", *typeInfo);
 			irgen.process(ast);
 
 			irgen.getTranslationUnit().module->dump();
@@ -80,7 +84,9 @@ int main(int argc, char **argv) {
 				}
 			}
 
-		} catch (CompilerError& ce) {
+			delete typeInfo;
+
+		} catch (Error& ce) {
 			cerr << "Uncaught error: " << ce;
 		}
 

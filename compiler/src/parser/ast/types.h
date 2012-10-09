@@ -135,7 +135,7 @@ public:
 class ArrayType: public Type {
 private:
 	const Type* elementType;
-	int dimension;
+	unsigned int dimension;
 	int staticSize;
 
 	static const Field LENGTH;
@@ -150,7 +150,7 @@ public:
 
 	const Type* getElementType() const;
 
-	int getDimension() const;
+	unsigned int getDimension() const;
 
 	int getStaticSize() const;
 

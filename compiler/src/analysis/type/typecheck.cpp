@@ -152,7 +152,8 @@ const Type* juli::TypeChecker::visitQualifiedAccess(NQualifiedAccess* n) {
 	const Field* f = refType->getField(n->name->name);
 	if (!f) {
 		CompilerError err(n);
-		err.getStream() << "Unknown field " << n->name->name;
+		err.getStream() << "Unknown field " << n->name->name << std::endl;
+		err.getStream() << "Type = " << refType;
 		throw err;
 	}
 
@@ -318,7 +319,11 @@ const Type* juli::TypeChecker::visitBlock(NBlock* n) {
 		visit(*i);
 	}
 
-	n->terminates = n->statements.back()->terminates;
+	if (n->statements.size() > 0) {
+		n->terminates = n->statements.back()->terminates;
+	} else {
+		n->terminates = true;
+	}
 
 	symbolTable.endScope();
 	return 0;
@@ -416,5 +421,9 @@ const Type* juli::TypeChecker::visitWhile(NWhileStatement* n) {
 }
 
 const Type* juli::TypeChecker::visitClassDef(const NClassDefinition* n) {
+	return 0;
+}
+
+const Type* juli::TypeChecker::visitImport(const NImportStatement* n) {
 	return 0;
 }

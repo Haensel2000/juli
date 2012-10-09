@@ -40,13 +40,15 @@ stmt4=function_definition { result = stmt4; } |
 stmt4=class_definition { result = stmt4; } |
 stmt5=variable_definition { result = stmt5; } |
 stmt7=if_statement { result = stmt7; } |
-stmt8=while_statement { result = stmt8; }
+stmt8=while_statement { result = stmt8; } |
+stmt9=import_statement { result = stmt9; }
 ;
 
 import_statement returns [juli::NStatement* result = 0]:
-IMPORT id=identifier
+IMPORT id=identifier SCOL
 {
-  
+  result = new juli::NImportStatement(id);
+  setSourceLoc(result, filename, $IMPORT, $SCOL);
 }
 ;
 

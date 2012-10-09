@@ -116,6 +116,8 @@ public:
 
 	llvm::Value* visitClassDef(const NClassDefinition* n);
 
+	llvm::Value* visitImport(const NImportStatement* n);
+
 	llvm::Type* resolveType(const NType* n);
 	llvm::Type* resolveType(const Type* n);
 

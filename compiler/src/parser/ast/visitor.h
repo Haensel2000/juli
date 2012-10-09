@@ -66,7 +66,10 @@ ReturnValue visitAST(Handler& handler, const Node* n) {
 		return handler.visitFunctionDef((NFunctionDefinition*) n);
 	case CLASS_DEF:
 		return handler.visitClassDef((NClassDefinition*) n);
+	case IMPORT:
+		return handler.visitImport((NImportStatement*) n);
 	}
+	return ReturnValue();
 }
 
 }

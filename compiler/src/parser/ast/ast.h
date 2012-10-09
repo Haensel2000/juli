@@ -334,10 +334,9 @@ public:
 
 class NIfClause : public Indentable {
 public:
-	bool first;
-
 	NExpression* condition;
 	NBlock* body;
+	bool first;
 
 	NIfClause(NExpression* condition, NBlock* body, bool first = false);
 
@@ -387,6 +386,15 @@ public:
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 
+};
+
+class NImportStatement : public NStatement {
+public:
+	NIdentifier* name;
+
+	NImportStatement(NIdentifier* name);
+
+	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 };
 
 }

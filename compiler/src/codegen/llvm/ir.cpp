@@ -18,8 +18,7 @@ const int juli::IRGenerator::ARRAY_FIELD_LENGTH = 1;
 llvm::Value* juli::IRGenerator::fieldPtr(llvm::Value* objAddr, int index) {
 	std::vector<llvm::Value*> indices;
 	indices.push_back(zero_i32);
-	indices.push_back(
-			llvm::ConstantInt::get(context, llvm::APInt(32, index, true)));
+	indices.push_back(llvm::ConstantInt::get(context, llvm::APInt(32, index, true)));
 	return builder.CreateGEP(objAddr, indices);
 }
 
@@ -27,18 +26,15 @@ llvm::Value* juli::IRGenerator::fieldGet(llvm::Value* objAddr, int index) {
 	return builder.CreateLoad(fieldPtr(objAddr, index));
 }
 
-void juli::IRGenerator::fieldSet(llvm::Value* objAddr, int index,
-		llvm::Value* value) {
+void juli::IRGenerator::fieldSet(llvm::Value* objAddr, int index, llvm::Value* value) {
 	builder.CreateStore(value, fieldPtr(objAddr, index));
 }
 
-llvm::Value* juli::IRGenerator::staticArrayIndex(llvm::Value* arrAddr,
-		int index) {
+llvm::Value* juli::IRGenerator::staticArrayIndex(llvm::Value* arrAddr, int index) {
 	std::vector<llvm::Value*> indices;
 	indices.push_back(zero_i32);
 	//indices.push_back(zero_i32);
-	indices.push_back(
-			llvm::ConstantInt::get(context, llvm::APInt(32, index, true)));
+	indices.push_back(llvm::ConstantInt::get(context, llvm::APInt(32, index, true)));
 	std::cerr << "AddrType: ";
 	arrAddr->getType()->dump();
 	std::cerr << std::endl;
@@ -75,47 +71,43 @@ unsigned int juli::IRGenerator::getSizeOf(const Type* type, bool deep) {
 			return 4;
 		case FLOAT64:
 			return 8;
+		case NIL:
+			return getPointerSize();
 		}
 		return 0;
 	}
 	case ARRAY: {
 		unsigned int pointerSize = getPointerSize();
 		const ArrayType* at = static_cast<const ArrayType*>(type);
-		if (*at->getElementType() == PrimitiveType::INT8_TYPE
-				&& at->getDimension() == 1) {
+		if (*at->getElementType() == PrimitiveType::INT8_TYPE && at->getDimension() == 1) {
 			return pointerSize;
 		}
-		return pointerSize
-				+ getSizeOf(&PrimitiveType::INT32_TYPE) * at->getDimension();
+		return pointerSize + getSizeOf(&PrimitiveType::INT32_TYPE) * at->getDimension();
 	}
 	case CLASS: {
 		if (deep) {
 			unsigned int sum = 0;
-			std::vector<Field> fields =
-					static_cast<const ClassType*>(type)->getFields();
-			for (std::vector<Field>::const_iterator i = fields.begin();
-					i != fields.end(); ++i) {
+			std::vector<Field> fields = static_cast<const ClassType*>(type)->getFields();
+			for (std::vector<Field>::const_iterator i = fields.begin(); i != fields.end(); ++i) {
 				sum += getSizeOf(i->type, false);
 			}
 			return sum;
 		} else {
-			getPointerSize();
+			return getPointerSize();
 		}
 	}
+	case REFERENCE:
+		return getPointerSize();
 	}
 
 }
 
-juli::IRGenerator::IRGenerator(const std::string& moduleName,
-		const TypeInfo& typeInfo) :
-		typeInfo(typeInfo), translationUnit(moduleName, typeInfo), builder(
-				translationUnit.getContext()), module(*translationUnit.module), context(
-				translationUnit.getContext()) {
+juli::IRGenerator::IRGenerator(const std::string& moduleName, const TypeInfo& typeInfo) :
+		typeInfo(typeInfo), translationUnit(moduleName, typeInfo), builder(translationUnit.getContext()), module(
+				*translationUnit.module), context(translationUnit.getContext()) {
 	zero_ui8 = llvm::ConstantInt::get(context, llvm::APInt(8, 0, bool(false)));
-	zero_ui16 = llvm::ConstantInt::get(context,
-			llvm::APInt(16, 0, bool(false)));
-	zero_ui32 = llvm::ConstantInt::get(context,
-			llvm::APInt(32, 0, bool(false)));
+	zero_ui16 = llvm::ConstantInt::get(context, llvm::APInt(16, 0, bool(false)));
+	zero_ui32 = llvm::ConstantInt::get(context, llvm::APInt(32, 0, bool(false)));
 	zero_i8 = llvm::ConstantInt::get(context, llvm::APInt(8, 0, true));
 	zero_i16 = llvm::ConstantInt::get(context, llvm::APInt(16, 0, true));
 	zero_i32 = getConstantInt32(0);
@@ -124,8 +116,7 @@ juli::IRGenerator::IRGenerator(const std::string& moduleName,
 
 	zero_float = getConstantDouble(0.0);
 
-	array_struct_size = llvm::ConstantInt::get(context,
-			llvm::APInt(32, 8, true));
+	array_struct_size = llvm::ConstantInt::get(context, llvm::APInt(32, 8, true));
 
 	const Type* t_int8 = &PrimitiveType::INT8_TYPE;
 	const Type* t_int32 = &PrimitiveType::INT32_TYPE;
@@ -133,13 +124,11 @@ juli::IRGenerator::IRGenerator(const std::string& moduleName,
 
 	std::vector<FormalParameter> params;
 	params.push_back(FormalParameter(t_arr_int8, "str"));
-	createFunction(
-			new Function("strlen", t_int32, params, false, MODIFIER_C, 0));
+	createFunction(Function::get("strlen", t_int32, params, false, MODIFIER_C, 0));
 
 	params.clear();
 	params.push_back(FormalParameter(t_int32, "size"));
-	createFunction(
-			new Function("malloc", t_arr_int8, params, false, MODIFIER_C, 0));
+	createFunction(Function::get("malloc", t_arr_int8, params, false, MODIFIER_C, 0));
 
 	//emitClassDefinitions();
 }
@@ -158,18 +147,15 @@ void juli::IRGenerator::defineFunction(const Function* function) {
 	llvm::Function* f = getFunction(function);
 	if (function->body) {
 
-		llvm::BasicBlock* llvmBlock = llvm::BasicBlock::Create(context, "entry",
-				f);
+		llvm::BasicBlock* llvmBlock = llvm::BasicBlock::Create(context, "entry", f);
 		builder.SetInsertPoint(llvmBlock);
 
 		if (function->name == "main") {
 			llvm::Function::arg_iterator i = f->getArgumentList().begin();
 
-			llvm::Type* arrTypePtr = translationUnit.resolveLLVMType(
-					function->formalArguments[0].type);
+			llvm::Type* arrTypePtr = translationUnit.resolveLLVMType(function->formalArguments[0].type);
 			llvm::Value* args = builder.CreateAlloca(arrTypePtr);
-			llvm::Value* argsValue = builder.CreateAlloca(
-					arrTypePtr->getPointerElementType());
+			llvm::Value* argsValue = builder.CreateAlloca(arrTypePtr->getPointerElementType());
 			std::vector<llvm::Value*> indices;
 			indices.push_back(zero_i32);
 			indices.push_back(zero_i32);
@@ -185,8 +171,7 @@ void juli::IRGenerator::defineFunction(const Function* function) {
 			translationUnit.addSymbol(function->formalArguments[0].name, args);
 		} else {
 			llvm::Function::arg_iterator i = f->getArgumentList().begin();
-			for (std::vector<FormalParameter>::const_iterator vi =
-					function->formalArguments.begin();
+			for (std::vector<FormalParameter>::const_iterator vi = function->formalArguments.begin();
 					vi != function->formalArguments.end(); ++i, ++vi) {
 				//(*vi)->generateCode(builder);
 
@@ -202,8 +187,7 @@ void juli::IRGenerator::defineFunction(const Function* function) {
 		//		builder.CreateRet(0);
 		//	}
 
-		for (std::vector<FormalParameter>::const_iterator i =
-				function->formalArguments.begin();
+		for (std::vector<FormalParameter>::const_iterator i = function->formalArguments.begin();
 				i != function->formalArguments.end(); ++i) {
 			translationUnit.removeSymbol(i->name);
 		}
@@ -217,8 +201,7 @@ void juli::IRGenerator::defineFunction(const Function* function) {
 
 llvm::Function* juli::IRGenerator::getFunction(const Function* function) {
 	const std::string llvmName = function->mangle();
-	std::map<std::string, llvm::Function*>::iterator i = llvmFunctionTable.find(
-			llvmName);
+	std::map<std::string, llvm::Function*>::iterator i = llvmFunctionTable.find(llvmName);
 	if (i == llvmFunctionTable.end()) {
 		llvm::Function* f = createFunction(function);
 		llvmFunctionTable[llvmName] = f;
@@ -238,21 +221,18 @@ llvm::Value* juli::IRGenerator::visitDoubleLiteral(const NLiteral<double>* n) {
 	return llvm::ConstantFP::get(context, llvm::APFloat(n->value));
 }
 
-llvm::Value* juli::IRGenerator::visitIntegerLiteral(
-		const NLiteral<uint64_t>* n) {
+llvm::Value* juli::IRGenerator::visitIntegerLiteral(const NLiteral<uint64_t>* n) {
 	return llvm::ConstantInt::get(context, llvm::APInt(32, n->value, true));
 }
 
 llvm::Value* juli::IRGenerator::visitStringLiteral(const NStringLiteral* n) {
-	llvm::Constant * s = llvm::ConstantDataArray::getString(context,
-			llvm::StringRef(n->value));
-	llvm::GlobalVariable* globalStr = new llvm::GlobalVariable(module,
-			s->getType(), true, llvm::GlobalValue::PrivateLinkage, 0, ".str");
+	llvm::Constant * s = llvm::ConstantDataArray::getString(context, llvm::StringRef(n->value));
+	llvm::GlobalVariable* globalStr = new llvm::GlobalVariable(module, s->getType(), true,
+			llvm::GlobalValue::PrivateLinkage, 0, ".str");
 	globalStr->setInitializer(s);
 
 	std::vector<llvm::Constant*> indices;
-	llvm::ConstantInt* const_int64_8 = llvm::ConstantInt::get(context,
-			llvm::APInt(64, llvm::StringRef("0"), 10));
+	llvm::ConstantInt* const_int64_8 = llvm::ConstantInt::get(context, llvm::APInt(64, llvm::StringRef("0"), 10));
 	indices.push_back(const_int64_8);
 	indices.push_back(const_int64_8);
 	return llvm::ConstantExpr::getGetElementPtr(globalStr, indices);
@@ -288,8 +268,7 @@ llvm::Value* juli::IRGenerator::visitQualifiedAccess(NQualifiedAccess* n) {
 
 	llvm::Value* p = visit(n->ref);
 
-	if (p->getType() == llvm::Type::getInt8PtrTy(context)
-			&& n->name->name == "length") {
+	if (p->getType() == llvm::Type::getInt8PtrTy(context) && n->name->name == "length") {
 		llvm::Function* function = module.getFunction("strlen");
 
 		std::vector<llvm::Value*> argValues;
@@ -299,10 +278,8 @@ llvm::Value* juli::IRGenerator::visitQualifiedAccess(NQualifiedAccess* n) {
 	}
 
 	if (n->ref->expressionType->getCategory() == ARRAY
-			&& static_cast<const ArrayType*>(n->ref->expressionType)->getStaticSize()
-					>= 0) {
-		return getConstantInt32(
-				static_cast<const ArrayType*>(n->ref->expressionType)->getStaticSize());
+			&& static_cast<const ArrayType*>(n->ref->expressionType)->getStaticSize() >= 0) {
+		return getConstantInt32(static_cast<const ArrayType*>(n->ref->expressionType)->getStaticSize());
 	}
 
 	std::cerr << "Reference: ";
@@ -316,8 +293,7 @@ llvm::Value* juli::IRGenerator::visitQualifiedAccess(NQualifiedAccess* n) {
 	llvm::Value* result;
 	if (n->address
 			|| (n->expressionType->getCategory() == ARRAY
-					&& static_cast<const ArrayType*>(n->expressionType)->getStaticSize()
-							>= 0))
+					&& static_cast<const ArrayType*>(n->expressionType)->getStaticSize() >= 0))
 		result = f;
 	else
 		result = builder.CreateLoad(f);
@@ -329,6 +305,9 @@ llvm::Value* juli::IRGenerator::visitQualifiedAccess(NQualifiedAccess* n) {
 }
 
 llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
+
+	/* TODO: cleanup */
+
 	llvm::Value* v = visit(n->expression);
 	llvm::Type* targetType = resolveType(n->expressionType);
 	const Type* tfrom = n->expression->expressionType;
@@ -386,6 +365,8 @@ llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
 				} else {
 					return builder.CreateFPToSI(v, targetType);
 				}
+			} else {
+				return 0;
 			}
 
 		} else if (from->getPrimitive() == NIL) {
@@ -394,17 +375,17 @@ llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
 			else
 				return v;
 		}
-	} else if ((tfrom->getCategory() == CLASS || tfrom->getCategory() == ARRAY)
-			&& tto->getCategory() == REFERENCE) {
+	} else if ((tfrom->getCategory() == CLASS || tfrom->getCategory() == ARRAY) && tto->getCategory() == REFERENCE) {
 		return builder.CreatePtrToInt(v, targetType);
+	} else {
+		return 0;
 	}
 }
 
 llvm::Value* juli::IRGenerator::visitUnaryOperator(const NUnaryOperator* n) {
 	llvm::Value* expressionValue = visit(n->expression);
 
-	const PrimitiveType* pt =
-			dynamic_cast<const PrimitiveType*>(n->expressionType);
+	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(n->expressionType);
 
 	switch (n->op) {
 	case MINUS:
@@ -434,10 +415,8 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 	if (left == 0 || right == 0) // error handling
 		return 0;
 
-	if (n->lhs->expressionType->getCategory() == PRIMITIVE
-			&& n->rhs->expressionType->getCategory() == PRIMITIVE) {
-		const PrimitiveType* pt =
-				static_cast<const PrimitiveType*>(n->lhs->expressionType);
+	if (n->lhs->expressionType->getCategory() == PRIMITIVE && n->rhs->expressionType->getCategory() == PRIMITIVE) {
+		const PrimitiveType* pt = static_cast<const PrimitiveType*>(n->lhs->expressionType);
 		switch (n->op) {
 		case PLUS:
 			if (pt->isFloatingPoint())
@@ -537,6 +516,8 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 			return builder.CreateICmpEQ(left, right, "eq_res");
 		case NEQ:
 			return builder.CreateICmpNE(left, right, "ne_res");
+		default:
+			return 0; // todo
 		}
 	}
 	return 0;
@@ -548,8 +529,7 @@ llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
 	const ArrayType* at = dynamic_cast<const ArrayType*>(n->expressionType);
 
 	// Treat char[] differently:
-	if (*at->getElementType() == PrimitiveType::INT8_TYPE
-			&& n->sizes.size() == 1) {
+	if (*at->getElementType() == PrimitiveType::INT8_TYPE && n->sizes.size() == 1) {
 		llvm::Value* size = visit(n->sizes[0]);
 		llvm::Value* sizep1 = builder.CreateAdd(size, one_i32);
 		llvm::Value* pi8 = builder.CreateCall(malloc, sizep1);
@@ -559,8 +539,7 @@ llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
 	}
 
 	// allocate space to store the array ref:
-	llvm::Value* pi8 = builder.CreateCall(malloc,
-			getConstantInt32(getSizeOf(n->expressionType)));
+	llvm::Value* pi8 = builder.CreateCall(malloc, getConstantInt32(getSizeOf(n->expressionType)));
 	pi8->dump();
 	llvm::Value* result = builder.CreateBitCast(pi8, resolveType(at));
 	result->dump();
@@ -576,8 +555,7 @@ llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
 	std::cerr << "ElementSize: " << std::endl;
 	memorySize->dump();
 	int i = 0;
-	for (std::vector<NExpression*>::const_iterator s = n->sizes.begin();
-			s != n->sizes.end(); ++s) {
+	for (std::vector<NExpression*>::const_iterator s = n->sizes.begin(); s != n->sizes.end(); ++s) {
 		llvm::Value* arraySize = visit(*s);
 		std::cerr << "ArraySize: " << std::endl;
 		arraySize->dump();
@@ -594,8 +572,7 @@ llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
 		builder.CreateStore(arraySize, sizePtr)->dump();
 	}
 	pi8 = builder.CreateCall(malloc, memorySize);
-	llvm::Value* ptr = builder.CreateBitCast(pi8,
-			llvm::PointerType::get(elementType, 0));
+	llvm::Value* ptr = builder.CreateBitCast(pi8, llvm::PointerType::get(elementType, 0));
 	fieldSet(result, ARRAY_FIELD_PTR, ptr);
 
 	return result;
@@ -606,8 +583,7 @@ llvm::Value* juli::IRGenerator::visitAllocateObject(const NAllocateObject* n) {
 	llvm::Value* size = getConstantInt32(getSizeOf(n->expressionType));
 	llvm::Value* pi8 = builder.CreateCall(malloc, size);
 	pi8->dump();
-	llvm::Value* result = builder.CreateBitCast(pi8,
-			resolveType(n->expressionType));
+	llvm::Value* result = builder.CreateBitCast(pi8, resolveType(n->expressionType));
 	result->dump();
 
 	return result;
@@ -640,8 +616,7 @@ llvm::Value* juli::IRGenerator::visitArrayAccess(const NArrayAccess* n) {
 		llvm::Value* factor = one_i32;
 		int c = 0;
 		vindex = zero_i32;
-		for (ExpressionList::const_iterator i = n->indices.begin();
-				i != n->indices.end(); ++i) {
+		for (ExpressionList::const_iterator i = n->indices.begin(); i != n->indices.end(); ++i) {
 			llvm::Value * currentIndex = visit(*i);
 			std::cerr << "currentIndex: " << std::endl;
 			currentIndex->dump();
@@ -651,8 +626,7 @@ llvm::Value* juli::IRGenerator::visitArrayAccess(const NArrayAccess* n) {
 			vindex = builder.CreateAdd(vindex, offsetIndex);
 			std::cerr << "VINDEX: " << std::endl;
 			vindex->dump();
-			factor = builder.CreateMul(staticArrayIndex(lengthArray, c++),
-					factor);
+			factor = builder.CreateMul(staticArrayIndex(lengthArray, c++), factor);
 			std::cerr << "factor: " << std::endl;
 			factor->dump();
 		}
@@ -665,8 +639,7 @@ llvm::Value* juli::IRGenerator::visitArrayAccess(const NArrayAccess* n) {
 	vindex->dump();
 	const ArrayType* at = dynamic_cast<const ArrayType*>(n->ref->expressionType);
 
-	if (*n->expressionType == PrimitiveType::INT8_TYPE
-			&& at->getDimension() == 1) {
+	if (*n->expressionType == PrimitiveType::INT8_TYPE && at->getDimension() == 1) {
 		ptr = builder.CreateGEP(vref, vindex);
 	} else {
 		vindex->dump();
@@ -712,21 +685,18 @@ llvm::Value* juli::IRGenerator::visitAssignment(const NAssignment* n) {
 }
 
 llvm::Value* juli::IRGenerator::visitBlock(const NBlock* n) {
-	for (std::vector<NStatement*>::const_iterator i = n->statements.begin();
-			i != n->statements.end(); ++i) {
+	for (std::vector<NStatement*>::const_iterator i = n->statements.begin(); i != n->statements.end(); ++i) {
 		visit(*i);
 	}
 	return 0;
 }
 
-llvm::Value* juli::IRGenerator::visitExpressionStatement(
-		const NExpressionStatement* n) {
+llvm::Value* juli::IRGenerator::visitExpressionStatement(const NExpressionStatement* n) {
 	visit(n->expression);
 	return 0;
 }
 
-llvm::Value* juli::IRGenerator::visitVariableDecl(
-		const NVariableDeclaration* n) {
+llvm::Value* juli::IRGenerator::visitVariableDecl(const NVariableDeclaration* n) {
 	llvm::Value* param = builder.CreateAlloca(resolveType(n->type));
 	if (n->assignmentExpr)
 		builder.CreateStore(visit(n->assignmentExpr), param);
@@ -740,15 +710,12 @@ llvm::FunctionType* juli::IRGenerator::createFunctionType(const Function * n) {
 	if (n->name == "main") {
 		returnType = llvm::Type::getInt32Ty(context);
 		argumentTypes.push_back(returnType);
-		argumentTypes.push_back(
-				llvm::PointerType::get(llvm::Type::getInt8PtrTy(context, 0),
-						0));
+		argumentTypes.push_back(llvm::PointerType::get(llvm::Type::getInt8PtrTy(context, 0), 0));
 	} else {
 
 		returnType = resolveType(n->resultType);
 
-		for (std::vector<FormalParameter>::const_iterator i =
-				n->formalArguments.begin(); i != n->formalArguments.end();
+		for (std::vector<FormalParameter>::const_iterator i = n->formalArguments.begin(); i != n->formalArguments.end();
 				++i) {
 			argumentTypes.push_back(resolveType(i->type));
 		}
@@ -758,14 +725,14 @@ llvm::FunctionType* juli::IRGenerator::createFunctionType(const Function * n) {
 }
 
 llvm::Function* juli::IRGenerator::createFunction(const Function * n) {
-	llvm::Function* f = llvm::Function::Create(createFunctionType(n),
-			llvm::Function::ExternalLinkage, n->mangle(), &module);
+	llvm::Function* f = llvm::Function::Create(createFunctionType(n), llvm::Function::ExternalLinkage, n->mangle(),
+			&module);
 	return f;
 }
 
 llvm::Value* juli::IRGenerator::visitFunctionDef(const NFunctionDefinition* n) {
 
-	defineFunction(new Function(n, typeInfo));
+	defineFunction(Function::get(n, typeInfo));
 
 	return 0;
 
@@ -821,18 +788,14 @@ llvm::Value* juli::IRGenerator::visitIf(const NIfStatement* n) {
 
 	std::vector<NIfClause*>::const_iterator ifc = n->clauses.begin();
 
-	llvm::BasicBlock* contBlock = llvm::BasicBlock::Create(context, "continue",
-			f);
+	llvm::BasicBlock* contBlock = llvm::BasicBlock::Create(context, "continue", f);
 
 	while (ifc != n->clauses.end()) {
 		if ((*ifc)->condition) {
-			llvm::BasicBlock* thenBlock = llvm::BasicBlock::Create(context,
-					"then", f);
-			llvm::BasicBlock* elseBlock = llvm::BasicBlock::Create(context,
-					"else", f);
+			llvm::BasicBlock* thenBlock = llvm::BasicBlock::Create(context, "then", f);
+			llvm::BasicBlock* elseBlock = llvm::BasicBlock::Create(context, "else", f);
 
-			builder.CreateCondBr(visit((*ifc)->condition), thenBlock,
-					elseBlock);
+			builder.CreateCondBr(visit((*ifc)->condition), thenBlock, elseBlock);
 
 			builder.SetInsertPoint(thenBlock);
 			visit((*ifc)->body);
@@ -855,11 +818,9 @@ llvm::Value* juli::IRGenerator::visitIf(const NIfStatement* n) {
 llvm::Value* juli::IRGenerator::visitWhile(const NWhileStatement* n) {
 	llvm::Function* f = builder.GetInsertBlock()->getParent();
 
-	llvm::BasicBlock* condBlock = llvm::BasicBlock::Create(context, "condition",
-			f);
+	llvm::BasicBlock* condBlock = llvm::BasicBlock::Create(context, "condition", f);
 	llvm::BasicBlock* bodyBlock = llvm::BasicBlock::Create(context, "body", f);
-	llvm::BasicBlock* contBlock = llvm::BasicBlock::Create(context, "continue",
-			f);
+	llvm::BasicBlock* contBlock = llvm::BasicBlock::Create(context, "continue", f);
 
 	builder.CreateBr(condBlock);
 	builder.SetInsertPoint(condBlock);
@@ -874,6 +835,10 @@ llvm::Value* juli::IRGenerator::visitWhile(const NWhileStatement* n) {
 }
 
 llvm::Value* juli::IRGenerator::visitClassDef(const NClassDefinition* n) {
+	return 0;
+}
+
+llvm::Value* juli::IRGenerator::visitImport(const NImportStatement* n) {
 	return 0;
 }
 

@@ -1,4 +1,4 @@
-//import linked_list;
+import linked_list;
 
 C int printf(char[] s, ...);
 

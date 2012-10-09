@@ -15,12 +15,19 @@
 
 namespace juli {
 
+class Importer;
+
 class Declarator {
 private:
-	TypeInfo typeInfo;
+	TypeInfo* typeInfo;
+	Importer& importer;
 
 	std::vector<const NFunctionDefinition*> functionDefinitions;
 	std::vector<const NClassDefinition*> classDefinitions;
+
+
+
+	//std::vector<std::string> imports;
 
 	void declareImplicitOperator(const std::vector<std::string> names,
 			const Type* returnType, const Type* type, unsigned int arity);
@@ -32,13 +39,9 @@ private:
 			unsigned int arity);
 public:
 
-	Declarator();
+	Declarator(Importer& importer, bool implicit = true);
 
-	const TypeInfo& getTypeInfo() {
-		return typeInfo;
-	}
-
-	const TypeInfo&  define(const Node* n);
+	TypeInfo* declare(const Node* n);
 
 	void visit(const Node* n);
 
@@ -91,6 +94,8 @@ public:
 	void visitWhile(const NWhileStatement* n);
 
 	void visitClassDef(const NClassDefinition* n);
+
+	void visitImport(const NImportStatement* n);
 
 };
 

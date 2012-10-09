@@ -15,30 +15,43 @@
 
 namespace juli {
 
-class CompilerError {
+class Error {
 private:
 	std::stringstream msgstream;
-	const Indentable* node;
 public:
-	CompilerError(const CompilerError& ce);
+	Error(const Error& ce);
 
-	void operator=(const CompilerError& ce);
+	Error() {}
 
-	CompilerError(const Indentable* node);
+	void operator=(const Error& ce);
 
 	const std::string getMessage() const;
 
 	std::stringstream& getStream();
+};
+
+class CompilerError: public Error {
+private:
+	const Indentable* node;
+public:
+
+	CompilerError(const Indentable* node);
 
 	const std::string& getFile() const;
 
 	const Marker getStart() const;
 
 	const Marker getEnd() const;
+};
 
+class ImportError: public Error {
+private:
+public:
 };
 
 }
+
+std::ostream& operator<<(std::ostream& os, const juli::Error& ce);
 
 std::ostream& operator<<(std::ostream& os, const juli::CompilerError& ce);
 
