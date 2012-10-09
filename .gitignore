@@ -24,3 +24,4 @@ JLLexer*
 JL.tokens
 
 *.out
+*.class
