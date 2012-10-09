@@ -42,16 +42,20 @@ class Function: public cpputils::debug::Printable {
 private:
 	static std::map<std::string, Function*> functionPool;
 
-	static Function* get(Function* fNew);
+	//static Function* get(Function* fNew);
 
-	Function(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo);
+	static std::vector<FormalParameter> transformParameterList(VariableList list, const TypeInfo& typeInfo);
+
+	//Function(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo);
 
 	Function(const std::string& name, const Type* resultType, std::vector<FormalParameter>& argTypes, bool varArgs,
 			unsigned int modifiers, NBlock* body = 0);
 
+
+
 public:
 
-	static Function* get(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo);
+	static Function* get(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo, bool importing);
 
 	static Function* get(const std::string& name, const Type* resultType, std::vector<FormalParameter>& argTypes,
 			bool varArgs, unsigned int modifiers, NBlock* body = 0);
@@ -73,6 +77,8 @@ public:
 	virtual void print(std::ostream& os) const;
 
 };
+
+const std::string mangleFunction(const std::string& name, const Type* resultType, std::vector<FormalParameter> formalArguments, bool varArgs, unsigned int modifiers);
 
 class Functions {
 private:

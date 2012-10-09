@@ -124,23 +124,6 @@ void juli::NCharLiteral::print(std::ostream& os, int indent, unsigned int flags)
 	}
 }
 
-//juli::NQualifiedName::NQualifiedName(std::vector<std::string>& path) :
-//		path(path) {
-//}
-//
-//void juli::NQualifiedName::print(std::ostream& os, int indent,
-//		unsigned int flags) const {
-//	beginLine(os, indent);
-//
-//	if (flags & FLAG_TREE) {
-//		os << "Identifier: ";
-//		cpputils::debug::print(os, path, ".");
-//		printLocation(os);
-//	} else {
-//		cpputils::debug::print(os, path, ".");
-//	}
-//}
-
 juli::NQualifiedAccess::NQualifiedAccess(NExpression* ref, NIdentifier* name) :
 		NAddressable(QUALIFIED_ACCESS), ref(ref), name(name), index(-1) {
 }
@@ -164,15 +147,6 @@ void juli::NQualifiedAccess::print(std::ostream& os, int indent, unsigned int fl
 
 juli::NAllocateArray::NAllocateArray(NArrayAccess* aacc) :
 		NExpression(NEW_ARRAY), type(0), sizes(aacc->indices) {
-
-//	NExpression* ref;
-//	NArrayAccess* cacc = aacc;
-//	while (cacc) {
-//		sizes.push_back(cacc->indices[0]);
-//		ref = cacc->ref;
-//		cacc = dynamic_cast<NArrayAccess*>(ref);
-//	}
-//
 	NVariableRef* vref = dynamic_cast<NVariableRef*>(aacc->ref);
 	if (!vref) {
 		CompilerError err(this);
@@ -379,8 +353,6 @@ juli::NExpressionStatement::NExpressionStatement(NExpression* expression) :
 }
 
 void juli::NExpressionStatement::print(std::ostream& os, int indent, unsigned int flags) const {
-
-	//os << expression;
 	if (flags & FLAG_TREE) {
 		beginLine(os, indent);
 		os << "ExpressionStatement: ";

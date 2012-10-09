@@ -7,7 +7,7 @@ juli::SourceImportLoader::SourceImportLoader(Parser& parser, Importer& parent) :
 }
 
 TypeInfo* juli::SourceImportLoader::importTypes(const std::string& module) {
-	Declarator declarator(parent, false);
+	Declarator declarator(parent, true);
 	try {
 		return declarator.declare(parser.parse(module + ".jl"));
 	} catch (CompilerError& e) {
@@ -47,7 +47,5 @@ TypeInfo& juli::Importer::getTypes(const std::string& module) {
 			throw err;
 		}
 	}
-	std::cerr << "Importing " << module;
-	ti->dump();
 	return *ti;
 }

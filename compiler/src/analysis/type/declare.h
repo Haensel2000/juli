@@ -22,12 +22,10 @@ private:
 	TypeInfo* typeInfo;
 	Importer& importer;
 
+	bool importing;
+
 	std::vector<const NFunctionDefinition*> functionDefinitions;
 	std::vector<const NClassDefinition*> classDefinitions;
-
-
-
-	//std::vector<std::string> imports;
 
 	void declareImplicitOperator(const std::vector<std::string> names,
 			const Type* returnType, const Type* type, unsigned int arity);
@@ -39,7 +37,7 @@ private:
 			unsigned int arity);
 public:
 
-	Declarator(Importer& importer, bool implicit = true);
+	Declarator(Importer& importer, bool importing = false);
 
 	TypeInfo* declare(const Node* n);
 

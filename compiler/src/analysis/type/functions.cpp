@@ -9,62 +9,14 @@ using namespace juli;
 
 std::map<std::string, Function*> juli::Function::functionPool;
 
-Function* juli::Function::get(Function* fNew) {
-	std::string mangledName = fNew->mangle();
-	std::cerr << "Getting function: " << mangledName << std::endl;
-	//std::cerr << "FunctionPool: " << functionPool << std::endl;
-
-	Function* & f = functionPool[mangledName];
-
-	if (f)
-		std::cerr << f << std::endl;
-
-	if (f == 0) {
-		f = fNew;
-	} else {
-		if (fNew->body) {
-			if (f->body && f->body != fNew->body) {
-				CompilerError err(fNew->body);
-				err.getStream() << "Redefinition of function " << f;
-				throw err;
-			}
-			f->body = fNew->body;
-		}
-		delete fNew;
-	}
-	return f;
-}
-
-Function* juli::Function::get(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo) {
-	return get(new Function(functionDefinition, typeInfo));
-}
-
-Function* juli::Function::get(const std::string& name, const Type* resultType,
-		std::vector<FormalParameter>& argTypes, bool varArgs, unsigned int modifiers, NBlock* body) {
-	return get(new Function(name, resultType, argTypes, varArgs, modifiers, body));
-}
-
-juli::FormalParameter::FormalParameter(const FormalParameter& copy) :
-		type(copy.type), name(copy.name) {
-}
-
-juli::FormalParameter::FormalParameter(const Type* type, const std::string& name) :
-		type(type), name(name) {
-}
-
-void juli::FormalParameter::print(std::ostream& os) const {
-	os << type << " " << name;
-}
-
-juli::Function::Function(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo) :
-		name(functionDefinition->signature->name), resultType(functionDefinition->signature->type->resolve(typeInfo)), varArgs(
-				functionDefinition->signature->varArgs), modifiers(functionDefinition->signature->modifiers), body(
-				functionDefinition->body) {
-
-	VariableList args = functionDefinition->signature->arguments;
-	for (VariableList::iterator i = args.begin(); i != args.end(); ++i) {
-		formalArguments.push_back(FormalParameter((*i)->type->resolve(typeInfo), (*i)->name->name));
-	}
+Function* juli::Function::get(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo, bool importing) {
+	const std::string& name = functionDefinition->signature->name;
+	const Type* resultType = functionDefinition->signature->type->resolve(typeInfo);
+	std::vector<FormalParameter> formalArguments = transformParameterList(functionDefinition->signature->arguments,
+			typeInfo);
+	bool varArgs = functionDefinition->signature->varArgs;
+	unsigned int modifiers = functionDefinition->signature->modifiers;
+	NBlock* body = (importing) ? 0 : functionDefinition->body;
 
 	if (name == "main") {
 		if (!(*resultType == PrimitiveType::INT32_TYPE)) {
@@ -81,6 +33,48 @@ juli::Function::Function(const NFunctionDefinition* functionDefinition, const Ty
 		}
 	}
 
+	return get(name, resultType, formalArguments, varArgs, modifiers, body);
+}
+
+Function* juli::Function::get(const std::string& name, const Type* resultType, std::vector<FormalParameter>& argTypes,
+		bool varArgs, unsigned int modifiers, NBlock* body) {
+	std::string mangledName = mangleFunction(name, resultType, argTypes, varArgs, modifiers);
+
+	Function* & f = functionPool[mangledName];
+
+	if (f == 0) {
+		f = new Function(name, resultType, argTypes, varArgs, modifiers, body);
+	} else {
+		if (body) {
+			if (f->body && f->body != body) {
+				CompilerError err(body);
+				err.getStream() << "Redefinition of function " << f;
+				throw err;
+			}
+			f->body = body;
+		}
+	}
+	return f;
+}
+
+std::vector<FormalParameter> juli::Function::transformParameterList(VariableList args, const TypeInfo& typeInfo) {
+	std::vector<FormalParameter> formalArguments;
+	for (VariableList::iterator i = args.begin(); i != args.end(); ++i) {
+		formalArguments.push_back(FormalParameter((*i)->type->resolve(typeInfo), (*i)->name->name));
+	}
+	return formalArguments;
+}
+
+juli::FormalParameter::FormalParameter(const FormalParameter& copy) :
+		type(copy.type), name(copy.name) {
+}
+
+juli::FormalParameter::FormalParameter(const Type* type, const std::string& name) :
+		type(type), name(name) {
+}
+
+void juli::FormalParameter::print(std::ostream& os) const {
+	os << type << " " << name;
 }
 
 juli::Function::Function(const std::string& name, const Type* resultType, std::vector<FormalParameter>& argTypes,
@@ -124,8 +118,21 @@ unsigned int juli::Function::matches(std::vector<const Type*>& argTypes) const {
 	return (s >= 0) ? s : 0;
 }
 
-//http://theory.uwinnipeg.ca/localfiles/infofiles/gcc/gxxint_15.html
 const std::string juli::Function::mangle() const {
+	return mangleFunction(name, resultType, formalArguments, varArgs, modifiers);
+}
+
+bool juli::Function::operator==(const Function& f) {
+	return mangle() == f.mangle();
+}
+
+void juli::Function::print(std::ostream& os) const {
+	os << resultType << " " << name << "(" << formalArguments << ")";
+}
+
+//http://theory.uwinnipeg.ca/localfiles/infofiles/gcc/gxxint_15.html
+const std::string juli::mangleFunction(const std::string& name, const Type* resultType,
+		std::vector<FormalParameter> formalArguments, bool varArgs, unsigned int modifiers) {
 	if ((modifiers & MODIFIER_C) || name == "main") {
 		return name;
 	} else {
@@ -137,14 +144,6 @@ const std::string juli::Function::mangle() const {
 		}
 		return s.str();
 	}
-}
-
-bool juli::Function::operator==(const Function& f) {
-	return mangle() == f.mangle();
-}
-
-void juli::Function::print(std::ostream& os) const {
-	os << resultType << " " << name << "(" << formalArguments << ")";
 }
 
 void juli::Functions::addFunction(Function* function) {
@@ -179,8 +178,7 @@ std::vector<Function*> juli::Functions::resolve(const std::string& name, std::ve
 void juli::Functions::merge(const Functions& other) {
 	typedef std::map<std::string, std::set<Function*> >::const_iterator ConstMapIterator;
 	typedef std::set<Function*>::const_iterator ConstFunctionIterator;
-	for (ConstMapIterator i = other.data.begin(); i != other.data.end();
-			++i) {
+	for (ConstMapIterator i = other.data.begin(); i != other.data.end(); ++i) {
 		const std::set<Function*> & newCandidates = i->second;
 		std::set<Function*> & candidates = data[i->first];
 		candidates.insert(newCandidates.begin(), newCandidates.end());

@@ -29,7 +29,6 @@ namespace juli {
 		StatementList statements;
 
 		std::map<std::string, llvm::Value*> llvmSymbolTable;
-		//std::map<std::string, const Type*> symbolTable;
 
 		const TypeInfo& types;
 
@@ -50,7 +49,6 @@ namespace juli {
 
 		llvm::LLVMContext& getContext() const;
 
-		//const Type* getVariableType(const std::string& name) const throw (CompilerError);
 		llvm::Type* resolveLLVMType(const Type* t) const throw (CompilerError);
 		llvm::Type* resolveLLVMType(const NType* t) const throw (CompilerError);
 

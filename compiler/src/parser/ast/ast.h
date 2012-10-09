@@ -19,20 +19,6 @@ namespace juli {
 class TypeInfo;
 class Function;
 
-//class NQualifiedName : public Indentable {
-//public:
-//	std::vector<std::string> path;
-//	std::vector<unsigned int> access;
-//
-//	NQualifiedName(std::vector<std::string>& path);
-//
-//	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
-//
-//	operator std::string();
-//
-//	operator const std::string() const;
-//};
-
 class NIdentifier : public Indentable {
 public:
 	std::string name;

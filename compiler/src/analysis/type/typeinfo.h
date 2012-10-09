@@ -34,9 +34,9 @@ private:
 		typedef typename std::map<K, V>::const_iterator ConstIt;
 		typedef typename std::map<K, V>::const_iterator It;
 
-		std::cerr << "Merging: " << std::endl;
-		std::cerr << first << std::endl;
-		std::cerr << second << std::endl;
+//		std::cerr << "Merging: " << std::endl;
+//		std::cerr << first << std::endl;
+//		std::cerr << second << std::endl;
 
 		for (ConstIt i = second.begin(); i != second.end(); ++i) {
 			std::pair<It, bool> res = first.insert(*i);
@@ -61,7 +61,7 @@ public:
 
 	TypeInfo(bool implicit = true);
 
-	void defineFunction(const NFunctionDefinition* f);
+	void defineFunction(const NFunctionDefinition* f, bool importing);
 	void defineClass(const NClassDefinition* def);
 
 	void declareClass(const NClassDefinition* def);

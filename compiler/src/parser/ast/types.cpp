@@ -191,8 +191,6 @@ const Field* juli::ReferenceType::getField(const std::string& name) const {
 
 bool juli::ReferenceType::operator==(const Type& t) const {
 	return t.getCategory() == REFERENCE;
-//	return (t.getCategory() == ARRAY || t.getCategory() == CLASS
-//			|| t.getCategory() == REFERENCE || ((const PrimitiveType&)t).getPrimitive() == NIL);
 }
 
 const std::string juli::ReferenceType::mangle() const {
@@ -230,9 +228,6 @@ int juli::ArrayType::getStaticSize() const {
 }
 
 bool juli::ArrayType::operator==(const Type& t) const {
-//	if (t.getCategory() == REFERENCE)
-//		return true;
-
 	const ArrayType* pt = dynamic_cast<const ArrayType*>(&t);
 	if (!pt)
 		return false;
@@ -324,9 +319,6 @@ const Field* juli::ClassType::getField(const std::string& name) const {
 }
 
 bool juli::ClassType::operator==(const Type& t) const {
-//	if (t.getCategory() == REFERENCE)
-//			return true;
-
 	const ClassType* ct = dynamic_cast<const ClassType*>(&t);
 	if (!ct)
 		return false;

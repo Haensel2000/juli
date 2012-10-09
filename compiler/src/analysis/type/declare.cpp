@@ -6,7 +6,8 @@
 
 using namespace juli;
 
-juli::Declarator::Declarator(Importer& importer, bool implicit) : typeInfo(new TypeInfo(implicit)), importer(importer) {
+juli::Declarator::Declarator(Importer& importer, bool importing) :
+		typeInfo(new TypeInfo(!importing)), importer(importer), importing(importing) {
 }
 
 void juli::Declarator::visit(const Node* n) {
@@ -15,13 +16,13 @@ void juli::Declarator::visit(const Node* n) {
 
 TypeInfo* juli::Declarator::declare(const Node* n) {
 	visit(n);
-	for (std::vector<const NClassDefinition*>::iterator i =
-			classDefinitions.begin(); i != classDefinitions.end(); ++i) {
+	for (std::vector<const NClassDefinition*>::iterator i = classDefinitions.begin(); i != classDefinitions.end();
+			++i) {
 		typeInfo->declareClass(*i);
 	}
-	for (std::vector<const NFunctionDefinition*>::iterator i =
-			functionDefinitions.begin(); i != functionDefinitions.end(); ++i) {
-		typeInfo->defineFunction(*i);
+	for (std::vector<const NFunctionDefinition*>::iterator i = functionDefinitions.begin();
+			i != functionDefinitions.end(); ++i) {
+		typeInfo->defineFunction(*i, importing);
 	}
 
 	return typeInfo;

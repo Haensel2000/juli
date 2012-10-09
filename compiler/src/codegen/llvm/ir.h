@@ -58,8 +58,6 @@ private:
 
 public:
 
-	//void emitClassDefinitions();
-
 	llvm::Function* getFunction(const Function* f);
 
 	llvm::Value* visit(const Node* n);

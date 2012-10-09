@@ -3,93 +3,75 @@
 
 #include <parser/parser.h>
 #include <codegen/llvm/native.h>
-
 #include <debug/print.h>
 #include <parser/ast/node.h>
-
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/JIT.h"
-#include <llvm/ExecutionEngine/GenericValue.h>
-
-#include <llvm/PassManager.h>
-#include <llvm/Support/raw_os_ostream.h>
-#include <llvm/Support/FormattedStream.h>
-#include <llvm/Target/TargetData.h>
-#include <llvm/Target/TargetMachine.h>
-#include <llvm/Target/TargetLibraryInfo.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/Support/TargetRegistry.h>
-#include <llvm/Support/Program.h>
-#include <llvm/Support/PathV1.h>
-
-#include "llvm/Support/Host.h"
-
 #include <analysis/type/declare.h>
 #include <analysis/type/typecheck.h>
 #include <codegen/llvm/ir.h>
 #include <builder/builder.h>
 
-//extern NBlock* programBlock;
-//extern int yyparse();
+#include <llvm/Support/CommandLine.h>
 
 using namespace llvm;
 using namespace juli;
 
 using std::cerr;
 
+cl::opt<string> inputFilename(cl::Positional, cl::desc("<input file>"), cl::Required);
+cl::opt<string> outputFilename("o", cl::desc("Specify output filename"), cl::value_desc("filename"), cl::Required);
+cl::opt<string> outputIRFilename("irtext", cl::desc("Output ir assembly code"), cl::value_desc("filename"));
+cl::opt<string> outputASTFilename("ast", cl::desc("Output debug ast"), cl::value_desc("filename"));
+
 int main(int argc, char **argv) {
+	int result = 0;
+
+	cl::ParseCommandLineOptions(argc, argv);
 
 	CodeEmitter emitter;
 	Importer importer;
 	Parser parser;
 
 	importer.add(new SourceImportLoader(parser, importer));
-	//Parser parser;
+	try {
+		Node* ast = parser.parse(inputFilename);
 
-	for (int i = 1; i < argc; ++i) {
-		std::cout << "Building file: " << argv[i] << std::endl;
-		try {
-			Node* ast = parser.parse(argv[i]);
-			ast->print(std::cout, 0, Indentable::FLAG_TREE);
+		Declarator declarator(importer);
+		TypeInfo* typeInfo = declarator.declare(ast);
+		typeInfo->resolveClasses();
 
-			Declarator declarator(importer);
-			TypeInfo* typeInfo = declarator.declare(ast);
-			typeInfo->resolveClasses();
+		TypeChecker typeChecker(*typeInfo);
+		typeChecker.visit(ast);
 
-			//declarator.getTypeInfo().dump();
-
-			TypeChecker typeChecker(*typeInfo);
-			typeChecker.visit(ast);
-
-			ast->print(std::cout, 0, Indentable::FLAG_TREE);
-
-			IRGenerator irgen("test", *typeInfo);
-			irgen.process(ast);
-
-			irgen.getTranslationUnit().module->dump();
-
-			if (irgen.getTranslationUnit().getErrors().empty()) {
-				std::string filename(argv[i]);
-				std::string basename = filename.substr(0,
-						filename.find_last_of('.', filename.size()));
-				filename = basename + ".o";
-				emitter.emitCode(filename.c_str(),
-						irgen.getTranslationUnit().module);
-			} else {
-				std::vector<CompilerError> errors =
-						irgen.getTranslationUnit().getErrors();
-				for (std::vector<CompilerError>::iterator i = errors.begin();
-						i != errors.end(); ++i) {
-					std::cerr << *i;
-				}
-			}
-
-			delete typeInfo;
-
-		} catch (Error& ce) {
-			cerr << "Uncaught error: " << ce;
+		if (!outputASTFilename.empty()) {
+			std::ofstream astos(outputASTFilename.c_str());
+			ast->print(astos, 0, Indentable::FLAG_TREE);
 		}
 
-	}
+		IRGenerator irgen("test", *typeInfo);
+		irgen.process(ast);
 
+		if (!outputIRFilename.empty()) {
+			std::ofstream iros(outputIRFilename.c_str());
+			llvm::raw_os_ostream ros(iros);
+			irgen.getTranslationUnit().module->print(ros, 0);
+		}
+
+
+		if (irgen.getTranslationUnit().getErrors().empty()) {
+			emitter.emitCode(outputFilename.c_str(), irgen.getTranslationUnit().module);
+		} else {
+			std::vector<CompilerError> errors = irgen.getTranslationUnit().getErrors();
+			for (std::vector<CompilerError>::iterator i = errors.begin(); i != errors.end(); ++i) {
+				std::cerr << *i;
+			}
+			result = 1;
+		}
+
+		delete typeInfo;
+
+	} catch (Error& ce) {
+		cerr << "Uncaught error: " << ce;
+		result = 2;
+	}
+	return result;
 }

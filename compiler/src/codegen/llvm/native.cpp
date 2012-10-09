@@ -10,9 +10,9 @@ juli::CodeEmitter::CodeEmitter(bool allTargets) {
 		llvm::InitializeAllAsmParsers();*/
 	} else {
 		llvm::InitializeNativeTarget();
-		llvm::InitializeNativeTargetAsmParser();
 		llvm::InitializeNativeTargetAsmPrinter();
-		llvm::InitializeNativeTargetDisassembler();
+		//llvm::InitializeNativeTargetAsmParser();
+		//llvm::InitializeNativeTargetDisassembler();
 	}
 }
 

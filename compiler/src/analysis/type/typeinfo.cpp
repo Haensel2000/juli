@@ -93,8 +93,8 @@ void juli::TypeInfo::declareImplicitOperator(const std::string& name, const Type
 	declareImplicitOperator(name, type, type, arity);
 }
 
-void juli::TypeInfo::defineFunction(const NFunctionDefinition* def) {
-	Function* f = Function::get(def, *this);
+void juli::TypeInfo::defineFunction(const NFunctionDefinition* def, bool importing) {
+	Function* f = Function::get(def, *this, importing);
 	declareFunction(f);
 }
 

@@ -21,12 +21,10 @@ void juli::SymbolTable::startScope(
 }
 
 void juli::SymbolTable::startScope() {
-	std::cerr << "STARTING SCOPE" << std::endl;
 	scopes.push_back(std::map<std::string, const Type*>());
 }
 
 void juli::SymbolTable::endScope() {
-	std::cerr << "ENDING SCOPE" << std::endl;
 	scopes.pop_back();
 }
 
