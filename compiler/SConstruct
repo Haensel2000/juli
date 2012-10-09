@@ -20,7 +20,7 @@ lib_path = [
   os.path.join(LLVM_PATH, 'Debug+Asserts/lib')
 ]
 
-libs = [
+"""libs = [
   'pthread',
   'm',
   'antlr3c',
@@ -50,7 +50,35 @@ libs = [
   'LLVMCore',
   'LLVMSupport',
   'dl'
-]
+]"""
+
+libs=[
+  'pthread', 
+  'm', 
+  'antlr3c', 
+  'cpputils', 
+  'LLVMX86CodeGen',
+  'LLVMSelectionDAG',
+  'LLVMAsmPrinter',
+  'LLVMMCParser',
+  'LLVMX86Desc',
+  'LLVMX86AsmPrinter',
+  'LLVMX86Utils',
+  'LLVMX86Info',
+  'LLVMJIT',
+  'LLVMRuntimeDyld',
+  'LLVMExecutionEngine',
+  'LLVMCodeGen',
+  'LLVMScalarOpts',
+  'LLVMInstCombine',
+  'LLVMTransformUtils',
+  'LLVMipa',
+  'LLVMAnalysis',
+  'LLVMTarget',
+  'LLVMMC',
+  'LLVMCore', 
+  'LLVMSupport', 
+  'dl']
 
 ccflags = '-D__STDC_FORMAT_MACROS -D_DEBUG -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -O0 -g3 -Wall -c -fmessage-length=0'
 
