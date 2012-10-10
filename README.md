@@ -23,15 +23,13 @@ In order to be able to compile the project, some dependencies need to be install
 ##### 1. LLVM
 
 * `cd where-you-want-llvm-to-live`
-* `svn co http://llvm.org/svn/llvm-project/llvm/tags/RELEASE_31/final llvm`
+* `svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm`
 * `cd llvm/tools`
-* `svn co http://llvm.org/svn/llvm-project/cfe/tags/RELEASE_31/final clang`
+* `svn co http://llvm.org/svn/llvm-project/cfe/trunk clang`
 * `cd ../projects`
-* `svn co http://llvm.org/svn/llvm-project/compiler-rt/tags/RELEASE_31/final compiler-rt`
+* `svn co http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt`
 * `cd ..`
-* `mkdir build`
-* `cd build`
-* `../configure`
+* `configure`
 * `make`
 
 ##### 2. ANTLR3C
@@ -56,7 +54,7 @@ In order to be able to compile the project, some dependencies need to be install
 
 * `cd where-you-want-juli-to-live`
 * `git clone git://github.com/Haensel2000/juli.git juli`
-* `cd juli`
-* scons
+* `cd juli/compiler`
+* `scons llvm=path-to-llvm llvm-build=path-to-llvm/Debug+Asserts cpputils=path-to-cpputils antlr3c=path-to-antlr3c`
 
 #### Run the samples:
