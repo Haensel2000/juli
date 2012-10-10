@@ -1,56 +1,25 @@
 import os;
 import os.path;
+          
+CPPUTILS_PATH = ARGUMENTS.get('cpputils', None)
+LLVM_PATH = ARGUMENTS.get('llvm', None)
+LLVM_BUILD_PATH = ARGUMENTS.get('llvm-build', None)
+ANTLR3C_PATH = ARGUMENTS.get('antlr3c', None)
 
-#for r,d,fs in os.walk('src'):
-#  for f in fs:
-#    if f.endswith('.c'):
-#      os.rename(os.path.join(r, f), os.path.join(r, f[:-2] + '.cpp'))
+include_path = []
+lib_path = []
 
-CPPUTILS_PATH = '/home/hannes/development/lib/utils/cpp-utils'
-LLVM_PATH = '/home/hannes/development/lib/compiler/llvm/'
-
-include_path = [
-  '#src', 
-  os.path.join(CPPUTILS_PATH, 'src'), 
-  os.path.join(LLVM_PATH, 'include')
-]
-
-lib_path = [
-  os.path.join(CPPUTILS_PATH, 'build'), 
-  os.path.join(LLVM_PATH, 'Debug+Asserts/lib')
-]
-
-"""libs = [
-  'pthread',
-  'm',
-  'antlr3c',
-  'cpputils',
-  'LLVMX86CodeGen',
-  'LLVMSelectionDAG',
-  'LLVMAsmPrinter',
-  'LLVMX86AsmParser',
-  'LLVMX86Disassembler',
-  'LLVMMCParser',
-  'LLVMX86Desc',
-  'LLVMX86AsmPrinter',
-  'LLVMX86Utils',
-  'LLVMX86Info',
-  'LLVMJIT',
-  'LLVMRuntimeDyld',
-  'LLVMExecutionEngine',
-  'LLVMCodeGen',
-  'LLVMScalarOpts',
-  'LLVMInstCombine',
-  'LLVMTransformUtils',
-  'LLVMipa',
-  'LLVMAnalysis',
-  'LLVMTarget',
-  'LLVMMC',
-  'LLVMObject',
-  'LLVMCore',
-  'LLVMSupport',
-  'dl'
-]"""
+if CPPUTILS_PATH:
+  include_path.append(os.path.join(CPPUTILS_PATH, 'src'))
+if LLVM_PATH:
+  include_path.append(os.path.join(LLVM_PATH, 'include'))
+  
+if CPPUTILS_PATH:
+  lib_path.append(os.path.join(CPPUTILS_PATH, 'build'))
+if LLVM_BUILD_PATH:
+  lib_path.append(os.path.join(LLVM_BUILD_PATH, 'lib'))
+if ANTLR3C_PATH:
+  lib_path.append(os.path.join(ANTLR3C_PATH, 'build'))
 
 libs=[
   'pthread', 
@@ -83,7 +52,6 @@ libs=[
 ccflags = '-D__STDC_FORMAT_MACROS -D_DEBUG -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -O0 -g3 -Wall -c -fmessage-length=0'
 
 source_files = ['#' + os.path.join(r,f).replace('src', 'build') for r,d,fs in os.walk('src') for f in fs if f.endswith('.cpp')]
-#source_files = source_files + ['#src/parser/antlr/JLLexer.o', '#build/parser/antlr/JLParser.o']
 
 env = Environment(CC = 'g++',
                   CPPPATH = include_path, 
