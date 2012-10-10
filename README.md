@@ -8,18 +8,55 @@ README v. 0.0.2
 
 This procedure was tested only on Ubuntu 12.04 so far. Please report any experiences with other systems.
 
+#### SCons Build System
+
+The project and some dependencies require the scons build system. It can be installed as follows:
+* Download scons from http://www.scons.org/
+* Extract the archive
+* `cd` to the scons directory
+* `sudo python setup.py install`
+
 #### Dependencies
 
 In order to be able to compile the project, some dependencies need to be installed:
-* Install ANTLR3 including ANTLR3C
-* Install LLVM
 
-The easiest way to build the project is by using SCons:
-* Install SCons
+##### 1. LLVM
+
+* `cd where-you-want-llvm-to-live`
+* `svn co http://llvm.org/svn/llvm-project/llvm/tags/RELEASE_31/final llvm`
+* `cd llvm/tools`
+* `svn co http://llvm.org/svn/llvm-project/cfe/tags/RELEASE_31/final clang`
+* `cd ../projects`
+* `svn co http://llvm.org/svn/llvm-project/compiler-rt/tags/RELEASE_31/final compiler-rt`
+* `cd ..`
+* `mkdir build`
+* `cd build`
+* `../configure`
+* `make`
+
+##### 2. ANTLR3C
+
+* Download `libantlr3c-3.4.tar.gz` from http://www.antlr.org/download/C
+* Extract the files to the directoy of your choice. `antlr3c-dir` will refer to this directory in the following.
+* `cd antlr3c-dir`
+* `mkdir build`
+* `cd build`
+* `../configue`
+ * `../configure --enable-64bit` on 64-bit systems
+* `make`
+
+##### 3. cpputils
+
+* `cd where-you-want-cpputils-to-live`
+* `git clone git://github.com/Haensel2000/cpputils.git cpputils`
+* `cd cpputils`
+* scons
 
 #### Compile
 
-* cd \<path-to-juli\>/compiler
+* `cd where-you-want-juli-to-live`
+* `git clone git://github.com/Haensel2000/juli.git juli`
+* `cd juli`
 * scons
 
 #### Run the samples:
