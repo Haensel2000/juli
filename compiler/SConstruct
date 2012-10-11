@@ -6,7 +6,7 @@ LLVM_PATH = ARGUMENTS.get('llvm', None)
 LLVM_BUILD_PATH = ARGUMENTS.get('llvm-build', None)
 ANTLR3C_PATH = ARGUMENTS.get('antlr3c', None)
 
-include_path = []
+include_path = ['src']
 lib_path = []
 
 if CPPUTILS_PATH:
