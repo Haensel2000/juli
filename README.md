@@ -57,4 +57,12 @@ In order to be able to compile the project, some dependencies need to be install
 * `cd juli/compiler`
 * `scons llvm=path-to-llvm llvm-build=path-to-llvm/Debug+Asserts cpputils=path-to-cpputils antlr3c=path-to-antlr3c`
 
-#### Run the samples:
+#### Running the samples:
+
+* Add `path-to-juli/compiler/build/` to your PATH
+* `cd path-to-juli/builder`
+
+To compile the linked_list test sample:
+* java -cp bin/:lib/commons-cli-1.2.jar juli.builder.Builder -o test.out -b ../samples/build/ ../samples/src/test.jl ../samples/src/linked_list.jl` 
+
+You can write your own code and compile it the same way.
