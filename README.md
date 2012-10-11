@@ -1,6 +1,6 @@
 # Juli Programming Language
 
-README v. 0.0.2
+README v. 0.0.4
 
 ## 1. Getting started
 
@@ -63,6 +63,11 @@ In order to be able to compile the project, some dependencies need to be install
 * `cd path-to-juli/builder`
 
 To compile the linked_list test sample:
-* java -cp bin/:lib/commons-cli-1.2.jar juli.builder.Builder -o test.out -b ../samples/build/ ../samples/src/test.jl ../samples/src/linked_list.jl` 
+```
+java -cp bin/:lib/commons-cli-1.2.jar juli.builder.Builder -o test.out -b ../samples/build/ ../samples/src/test.jl ../samples/src/linked_list.jl
+```
 
-You can write your own code and compile it the same way.
+You can write your own code and compile it the same way. For a more thorough introduction please refer to the wiki at https://github.com/Haensel2000/juli/wiki
+
+
+Have fun!
