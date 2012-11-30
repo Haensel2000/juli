@@ -11,7 +11,7 @@ This procedure was tested only on Ubuntu 12.04 so far. Please report any experie
 #### SCons Build System
 
 The project and some dependencies require the scons build system. It can be installed as follows:
-* Download scons from http://www.scons.org/
+* Download (Zip) scons from http://www.scons.org/
 * Extract the archive
 * `cd` to the scons directory
 * `sudo python setup.py install`
@@ -34,13 +34,11 @@ In order to be able to compile the project, some dependencies need to be install
 
 ##### 2. ANTLR3C
 
-* Download `libantlr3c-3.4.tar.gz` from http://www.antlr.org/download/C
+* Download `libantlr3c-3.4.tar.gz` from http://www.antlr.org/download/C (make sure you download the correct version)
 * Extract the files to the directoy of your choice. `antlr3c-dir` will refer to this directory in the following.
 * `cd antlr3c-dir`
-* `mkdir build`
-* `cd build`
-* `../configue`
- * `../configure --enable-64bit` on 64-bit systems
+* `./configue`
+ * `./configure --enable-64bit` on 64-bit systems
 * `make`
 
 ##### 3. cpputils
@@ -68,6 +66,9 @@ java -cp bin/:lib/commons-cli-1.2.jar juli.builder.Builder -o test.out -b ../sam
 ```
 
 You can write your own code and compile it the same way. For a more thorough introduction please refer to the wiki at https://github.com/Haensel2000/juli/wiki
+
+### b) Mac OS X
+
 
 
 Have fun!
