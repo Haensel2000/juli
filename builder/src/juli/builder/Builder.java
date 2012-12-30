@@ -94,6 +94,8 @@ public class Builder {
 		this.output = output;
 		this.buildDir = buildDir;
 		
+		this.buildDir.mkdirs();
+		
 		configuration = new Properties();
 		configuration.load(new FileReader(CONFIGURATION_FILE));
 	}
