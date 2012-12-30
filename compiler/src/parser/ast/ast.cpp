@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <llvm/Analysis/Verifier.h>
+#include <llvm/Support/Casting.h>
 
 using namespace juli;
 
@@ -147,7 +148,7 @@ void juli::NQualifiedAccess::print(std::ostream& os, int indent, unsigned int fl
 
 juli::NAllocateArray::NAllocateArray(NArrayAccess* aacc) :
 		NExpression(NEW_ARRAY), type(0), sizes(aacc->indices) {
-	NVariableRef* vref = dynamic_cast<NVariableRef*>(aacc->ref);
+    NVariableRef* vref = llvm::dyn_cast<NVariableRef>(aacc->ref);
 	if (!vref) {
 		CompilerError err(this);
 		err.getStream() << "Invalid nested array allocation. Use multi-dimensional arrays.";

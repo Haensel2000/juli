@@ -10,6 +10,8 @@
 #include <llvm/Module.h>
 #include <llvm/Value.h>
 
+#include <llvm/Support/Casting.h>
+
 using namespace juli;
 
 const int juli::IRGenerator::ARRAY_FIELD_PTR = 0;
@@ -51,8 +53,8 @@ unsigned int juli::IRGenerator::getPointerSize() {
 }
 
 unsigned int juli::IRGenerator::getSizeOf(const Type* type, bool deep) {
-	switch (type->getCategory()) {
-	case PRIMITIVE: {
+	switch (type->getKind()) {
+    case Type::K_PrimitiveType: {
 		switch (static_cast<const PrimitiveType*>(type)->getPrimitive()) {
 		case VOID:
 			return 0;
@@ -69,7 +71,7 @@ unsigned int juli::IRGenerator::getSizeOf(const Type* type, bool deep) {
 		}
 		return 0;
 	}
-	case ARRAY: {
+	case Type::K_ArrayType: {
 		unsigned int pointerSize = getPointerSize();
 		const ArrayType* at = static_cast<const ArrayType*>(type);
 		if (*at->getElementType() == PrimitiveType::INT8_TYPE && at->getDimension() == 1) {
@@ -77,7 +79,7 @@ unsigned int juli::IRGenerator::getSizeOf(const Type* type, bool deep) {
 		}
 		return pointerSize + getSizeOf(&PrimitiveType::INT32_TYPE) * at->getDimension();
 	}
-	case CLASS: {
+	case Type::K_ClassType: {
 		if (deep) {
 			unsigned int sum = 0;
 			std::vector<Field> fields = static_cast<const ClassType*>(type)->getFields();
@@ -89,7 +91,7 @@ unsigned int juli::IRGenerator::getSizeOf(const Type* type, bool deep) {
 			return getPointerSize();
 		}
 	}
-	case REFERENCE:
+    case Type::K_ReferenceType:
 		return getPointerSize();
 	}
 
@@ -249,7 +251,7 @@ llvm::Value* juli::IRGenerator::visitQualifiedAccess(NQualifiedAccess* n) {
 		return builder.CreateCall(function, argValues);
 	}
 
-	if (n->ref->expressionType->getCategory() == ARRAY
+	if (n->ref->expressionType->getKind() == Type::K_ArrayType
 			&& static_cast<const ArrayType*>(n->ref->expressionType)->getStaticSize() >= 0) {
 		return getConstantInt32(static_cast<const ArrayType*>(n->ref->expressionType)->getStaticSize());
 	}
@@ -258,7 +260,7 @@ llvm::Value* juli::IRGenerator::visitQualifiedAccess(NQualifiedAccess* n) {
 
 	llvm::Value* result;
 	if (n->address
-			|| (n->expressionType->getCategory() == ARRAY
+			|| (n->expressionType->getKind() == Type::K_ArrayType
 					&& static_cast<const ArrayType*>(n->expressionType)->getStaticSize() >= 0))
 		result = f;
 	else
@@ -276,11 +278,11 @@ llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
 	const Type* tfrom = n->expression->expressionType;
 	const Type* tto = n->expressionType;
 
-	if (tfrom->getCategory() == PRIMITIVE) {
-		const PrimitiveType* from = dynamic_cast<const PrimitiveType*>(tfrom);
-		if (tto->getCategory() == PRIMITIVE) {
+	if (tfrom->getKind() == Type::K_PrimitiveType) {
+		const PrimitiveType* from = llvm::dyn_cast<const PrimitiveType>(tfrom);
+		if (tto->getKind() == Type::K_PrimitiveType) {
 
-			const PrimitiveType* to = dynamic_cast<const PrimitiveType*>(tto);
+			const PrimitiveType* to = llvm::dyn_cast<const PrimitiveType>(tto);
 
 			Primitive fp = from->getPrimitive();
 			Primitive tp = to->getPrimitive();
@@ -316,12 +318,12 @@ llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
 			}
 
 		} else if (from->getPrimitive() == NIL) {
-			if (tto->getCategory() != REFERENCE)
+			if (tto->getKind() != Type::K_ReferenceType)
 				return builder.CreateIntToPtr(v, targetType);
 			else
 				return v;
 		}
-	} else if ((tfrom->getCategory() == CLASS || tfrom->getCategory() == ARRAY) && tto->getCategory() == REFERENCE) {
+	} else if ((tfrom->getKind() == Type::K_ClassType || tfrom->getKind() == Type::K_ArrayType) && tto->getKind() == Type::K_ReferenceType) {
 		return builder.CreatePtrToInt(v, targetType);
 	} else {
 		return 0;
@@ -331,7 +333,7 @@ llvm::Value* juli::IRGenerator::visitCast(const NCast* n) {
 llvm::Value* juli::IRGenerator::visitUnaryOperator(const NUnaryOperator* n) {
 	llvm::Value* expressionValue = visit(n->expression);
 
-	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(n->expressionType);
+	const PrimitiveType* pt = llvm::dyn_cast<const PrimitiveType>(n->expressionType);
 
 	switch (n->op) {
 	case MINUS:
@@ -361,7 +363,7 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 	if (left == 0 || right == 0) // error handling
 		return 0;
 
-	if (n->lhs->expressionType->getCategory() == PRIMITIVE && n->rhs->expressionType->getCategory() == PRIMITIVE) {
+	if (n->lhs->expressionType->getKind() == Type::K_PrimitiveType && n->rhs->expressionType->getKind() == Type::K_PrimitiveType) {
 		const PrimitiveType* pt = static_cast<const PrimitiveType*>(n->lhs->expressionType);
 		switch (n->op) {
 		case PLUS:
@@ -451,8 +453,8 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 			std::cerr << "Unsupported binary operator " << n->op << std::endl;
 			return 0;
 		}
-	} else if (n->lhs->expressionType->getCategory() == REFERENCE
-			&& n->rhs->expressionType->getCategory() == REFERENCE) {
+	} else if (n->lhs->expressionType->getKind() == Type::K_ReferenceType
+			&& n->rhs->expressionType->getKind() == Type::K_ReferenceType) {
 		switch (n->op) {
 		case EQ:
 			return builder.CreateICmpEQ(left, right, "eq_res");
@@ -468,7 +470,7 @@ llvm::Value* juli::IRGenerator::visitBinaryOperator(const NBinaryOperator* n) {
 llvm::Value* juli::IRGenerator::visitAllocateArray(const NAllocateArray* n) {
 	llvm::Function* malloc = module.getFunction("malloc");
 
-	const ArrayType* at = dynamic_cast<const ArrayType*>(n->expressionType);
+	const ArrayType* at = llvm::dyn_cast<const ArrayType>(n->expressionType);
 
 	// Treat char[] differently:
 	if (*at->getElementType() == PrimitiveType::INT8_TYPE && n->sizes.size() == 1) {
@@ -549,7 +551,7 @@ llvm::Value* juli::IRGenerator::visitArrayAccess(const NArrayAccess* n) {
 
 	llvm::Value* ptr;
 	llvm::Value* result;
-	const ArrayType* at = dynamic_cast<const ArrayType*>(n->ref->expressionType);
+	const ArrayType* at = llvm::dyn_cast<const ArrayType>(n->ref->expressionType);
 
 	if (*n->expressionType == PrimitiveType::INT8_TYPE && at->getDimension() == 1) {
 		ptr = builder.CreateGEP(vref, vindex);

@@ -43,34 +43,6 @@ typedef std::vector<NVariableDeclaration*> VariableList;
 
 class TranslationUnit;
 
-enum NodeType {
-	DOUBLE_LITERAL,
-	INTEGER_LITERAL,
-	STRING_LITERAL,
-	CHAR_LITERAL,
-	BOOLEAN_LITERAL,
-	NULL_LITERAL,
-	VARIABLE_REF,
-	QUALIFIED_ACCESS,
-	CAST,
-	FUNCTION_CALL,
-	ARRAY_ACCESS,
-	UNARY_OPERATOR,
-	BINARY_OPERATOR,
-	NEW_ARRAY,
-	NEW_OBJECT,
-	EXPRESSION,
-	VARIABLE_DECL,
-	ASSIGNMENT,
-	BLOCK,
-	IF,
-	WHILE,
-	RETURN,
-	FUNCTION_DEF,
-	CLASS_DEF,
-	IMPORT
-};
-
 class Marker : public cpputils::debug::Printable {
 public:
 	unsigned int line;
@@ -110,6 +82,34 @@ public:
 };
 
 class Node: public Indentable {
+public:
+    enum NodeType {
+        DOUBLE_LITERAL,
+        INTEGER_LITERAL,
+        STRING_LITERAL,
+        CHAR_LITERAL,
+        BOOLEAN_LITERAL,
+        NULL_LITERAL,
+        VARIABLE_REF,
+        QUALIFIED_ACCESS,
+        ARRAY_ACCESS,
+        CAST,
+        FUNCTION_CALL,
+        UNARY_OPERATOR,
+        BINARY_OPERATOR,
+        NEW_ARRAY,
+        NEW_OBJECT,
+        EXPRESSION,
+        VARIABLE_DECL,
+        ASSIGNMENT,
+        BLOCK,
+        IF,
+        WHILE,
+        RETURN,
+        FUNCTION_DEF,
+        CLASS_DEF,
+        IMPORT
+    };
 protected:
 	const NodeType nodeType;
 public:
@@ -119,6 +119,8 @@ public:
 	virtual ~Node();
 
 	const NodeType& getType() const;
+    
+    
 
 };
 

@@ -15,6 +15,8 @@ options {
   #include <parser/ast/ast.h>
   #include <parser/ast/types.h>
   #include <parser/antlr/antlr_utils.h>
+  
+  #include <llvm/Support/Casting.h>
 }
 
 @postinclude {
@@ -364,12 +366,12 @@ qualified_access returns [juli::NExpression* result = 0]:
     '.'
     op2=qarray_access
     { 
-      juli::NArrayAccess* aa = dynamic_cast<juli::NArrayAccess*>(op2);
+      juli::NArrayAccess* aa = llvm::dyn_cast<juli::NArrayAccess>(op2);
       if (aa) {
-        aa->ref = new juli::NQualifiedAccess(result, dynamic_cast<juli::NVariableRef*>(aa->ref));
+        aa->ref = new juli::NQualifiedAccess(result, llvm::dyn_cast<juli::NVariableRef>(aa->ref));
         result = aa;
       } else {
-        result = new juli::NQualifiedAccess(result, dynamic_cast<juli::NVariableRef*>(op2));
+        result = new juli::NQualifiedAccess(result, llvm::dyn_cast<juli::NVariableRef>(op2));
       }
       setSourceLoc(result, op1, op2);
     }
@@ -525,7 +527,7 @@ FloatingPointLiteral
   std::stringstream valueStr(getTokenString($FloatingPointLiteral));
   double value = 0.0;
   valueStr >> value;
-  result = new juli::NLiteral<double>(juli::DOUBLE_LITERAL, value, &juli::PrimitiveType::FLOAT64_TYPE); 
+  result = new juli::NLiteral<double>(juli::Node::DOUBLE_LITERAL, value, &juli::PrimitiveType::FLOAT64_TYPE);
   setSourceLoc(result, filename, $FloatingPointLiteral);
 } 
 ;
@@ -553,12 +555,12 @@ CharacterLiteral
 boolean_literal returns [juli::NExpression* result = 0]:
   TRUE    
   { 
-    result = new juli::NLiteral<bool>(juli::BOOLEAN_LITERAL, true, &juli::PrimitiveType::BOOLEAN_TYPE); 
+    result = new juli::NLiteral<bool>(juli::Node::BOOLEAN_LITERAL, true, &juli::PrimitiveType::BOOLEAN_TYPE); 
     setSourceLoc(result, filename, $TRUE);
   } 
 | FALSE   
 { 
-  result = new juli::NLiteral<bool>(juli::BOOLEAN_LITERAL, false, &juli::PrimitiveType::BOOLEAN_TYPE); 
+  result = new juli::NLiteral<bool>(juli::Node::BOOLEAN_LITERAL, false, &juli::PrimitiveType::BOOLEAN_TYPE); 
   setSourceLoc(result, filename, $FALSE);
 } 
 ;
@@ -566,7 +568,7 @@ boolean_literal returns [juli::NExpression* result = 0]:
 null_literal returns [juli::NExpression* result = 0]:
   NIL    
   { 
-    result = new juli::NLiteral<int>(juli::NULL_LITERAL, 0, &juli::PrimitiveType::NULL_TYPE); 
+    result = new juli::NLiteral<int>(juli::Node::NULL_LITERAL, 0, &juli::PrimitiveType::NULL_TYPE);
     setSourceLoc(result, filename, $NIL);
   }
 ;
@@ -578,7 +580,7 @@ DecimalLiteral
   std::stringstream valueStr(getTokenString($DecimalLiteral));
   uint64_t value = 0;
   valueStr >> value;
-  result = new juli::NLiteral<uint64_t>(juli::INTEGER_LITERAL, value, &juli::PrimitiveType::INT32_TYPE);
+  result = new juli::NLiteral<uint64_t>(juli::Node::INTEGER_LITERAL, value, &juli::PrimitiveType::INT32_TYPE);
   setSourceLoc(result, filename, $DecimalLiteral);
 }
 ;

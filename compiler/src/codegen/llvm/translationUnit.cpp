@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include <iostream>
 
+#include <llvm/Support/Casting.h>
+
 using namespace juli;
 
 juli::TranslationUnit::TranslationUnit(const std::string& name,
@@ -62,11 +64,11 @@ llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 		throw (CompilerError) {
 	llvm::LLVMContext& c = getContext();
 
-	if (t->getCategory() == REFERENCE) {
+    if (t->getKind() == Type::K_ReferenceType) {
 		return getPointerIntType();
 	}
 
-	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(t);
+    const PrimitiveType* pt = llvm::dyn_cast<const PrimitiveType>(t);
 	if (pt) {
 		switch (pt->getPrimitive()) {
 		case BOOLEAN:
@@ -84,7 +86,7 @@ llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 		}
 	}
 
-	const ArrayType* at = dynamic_cast<const ArrayType*>(t);
+    const ArrayType* at = llvm::dyn_cast<const ArrayType>(t);
 	if (at) {
 		if (*at->getElementType() == PrimitiveType::INT8_TYPE
 				&& at->getDimension() == 1) { // char array
@@ -119,7 +121,7 @@ llvm::Type* juli::TranslationUnit::resolveLLVMType(const Type* t) const
 
 	}
 
-	const ClassType* ct = dynamic_cast<const ClassType*>(t);
+    const ClassType* ct = llvm::dyn_cast<const ClassType>(t);
 	if (ct) {
 		llvm::Type* llvmType = getType(ct);
 		if (!llvmType) {

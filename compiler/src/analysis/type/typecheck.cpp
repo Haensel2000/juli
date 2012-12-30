@@ -5,6 +5,8 @@
 #include <debug/print.h>
 #include <cassert>
 
+#include <llvm/Support/Casting.h>
+
 using namespace juli;
 
 juli::SymbolTable::SymbolTable(const TypeInfo& typeInfo) :
@@ -260,7 +262,7 @@ const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
 
 const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 	n->expressionType = 0;
-	const ArrayType* t = dynamic_cast<const ArrayType*>(visit(n->ref));
+	const ArrayType* t = llvm::dyn_cast<const ArrayType>(visit(n->ref));
 	if (t == 0) {
 		CompilerError err(n);
 		err.getStream()
@@ -289,7 +291,7 @@ const Type* juli::TypeChecker::visitAssignment(NAssignment* n) {
 	visit(n->rhs);
 	visit(n->lhs);
 
-	NAddressable* addressable = dynamic_cast<NAddressable*>(n->lhs);
+	NAddressable* addressable = llvm::dyn_cast<NAddressable>(n->lhs);
 
 	if (!addressable) {
 		CompilerError err(n);

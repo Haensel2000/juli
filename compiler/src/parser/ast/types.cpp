@@ -1,6 +1,7 @@
 #include "types.h"
 
 #include <stdexcept>
+#include <llvm/Support/Casting.h>
 
 using namespace juli;
 
@@ -33,16 +34,16 @@ void juli::Field::print(std::ostream& os) const {
 	os << name << "@" << index << ": " << type;
 }
 
-juli::Type::Type(TypeCategory category) :
-		category(category) {
+juli::Type::Type(TypeKind kind) :
+		kind(kind) {
 }
 
-TypeCategory juli::Type::getCategory() const {
-	return category;
+juli::Type::TypeKind juli::Type::getKind() const {
+	return kind;
 }
 
 juli::PrimitiveType::PrimitiveType(Primitive primitive) :
-		Type(PRIMITIVE), primitive(primitive) {
+		Type(K_PrimitiveType), primitive(primitive) {
 }
 
 juli::PrimitiveType::~PrimitiveType() {
@@ -95,7 +96,7 @@ bool juli::PrimitiveType::isFloatingPoint() const {
 }
 
 bool juli::PrimitiveType::operator==(const Type& t) const {
-	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(&t);
+	const PrimitiveType* pt = llvm::dyn_cast<const PrimitiveType>(&t);
 	return (pt != 0) ? primitive == pt->primitive : false;
 }
 
@@ -125,7 +126,7 @@ bool juli::PrimitiveType::isAssignableTo(const Type* t) const {
 	if (*this == *t)
 		return true;
 
-	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(t);
+	const PrimitiveType* pt = llvm::dyn_cast<const PrimitiveType>(t);
 	if (pt) {
 		return !(primitive < INT8 || pt->primitive < INT8)
 				&& (primitive < pt->primitive);
@@ -137,7 +138,7 @@ bool juli::PrimitiveType::isAssignableTo(const Type* t) const {
 }
 
 bool juli::PrimitiveType::canCastTo(const Type* t) const {
-	const PrimitiveType* pt = dynamic_cast<const PrimitiveType*>(t);
+	const PrimitiveType* pt = llvm::dyn_cast<const PrimitiveType>(t);
 	if (pt) {
 		return (primitive != VOID && pt->primitive != VOID);
 	} else {
@@ -171,7 +172,7 @@ const std::string juli::PrimitiveType::mangle() const {
 const ReferenceType juli::ReferenceType::REFERENCE_TYPE;
 
 juli::ReferenceType::ReferenceType() :
-		Type(REFERENCE) {
+		Type(K_ReferenceType) {
 }
 
 juli::ReferenceType::~ReferenceType() {
@@ -190,7 +191,7 @@ const Field* juli::ReferenceType::getField(const std::string& name) const {
 }
 
 bool juli::ReferenceType::operator==(const Type& t) const {
-	return t.getCategory() == REFERENCE;
+	return t.getKind() == K_ReferenceType;
 }
 
 const std::string juli::ReferenceType::mangle() const {
@@ -208,7 +209,7 @@ ArrayType* juli::ArrayType::getMultiDimensionalArray(const Type* elementType,
 
 juli::ArrayType::ArrayType(const Type* elementType, int dimension,
 		int staticSize) :
-		Type(ARRAY), elementType(elementType), dimension(dimension), staticSize(
+		Type(K_ArrayType), elementType(elementType), dimension(dimension), staticSize(
 				staticSize) {
 }
 
@@ -228,7 +229,7 @@ int juli::ArrayType::getStaticSize() const {
 }
 
 bool juli::ArrayType::operator==(const Type& t) const {
-	const ArrayType* pt = dynamic_cast<const ArrayType*>(&t);
+	const ArrayType* pt = llvm::dyn_cast<const ArrayType>(&t);
 	if (!pt)
 		return false;
 	return (*elementType == *pt->elementType && dimension == pt->dimension
@@ -287,7 +288,7 @@ const std::string juli::ArrayType::mangle() const {
 
 juli::ClassType::ClassType(const std::string& name,
 		const std::vector<Field>& fields) :
-		Type(CLASS), name(name), fields() {
+		Type(K_ClassType), name(name), fields() {
 	addFields(fields);
 }
 
@@ -302,7 +303,7 @@ juli::ClassType::~ClassType() {
 }
 
 bool juli::ClassType::isAssignableTo(const Type* t) const {
-	return (*this == *t) || (t->getCategory() == REFERENCE);
+	return (*this == *t) || (t->getKind() == K_ReferenceType);
 }
 
 bool juli::ClassType::canCastTo(const Type* t) const {
@@ -319,7 +320,7 @@ const Field* juli::ClassType::getField(const std::string& name) const {
 }
 
 bool juli::ClassType::operator==(const Type& t) const {
-	const ClassType* ct = dynamic_cast<const ClassType*>(&t);
+	const ClassType* ct = llvm::dyn_cast<const ClassType>(&t);
 	if (!ct)
 		return false;
 	return (name == ct->name);

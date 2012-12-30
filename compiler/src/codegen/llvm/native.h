@@ -15,7 +15,7 @@
 #include <llvm/PassManager.h>
 #include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/FormattedStream.h>
-#include <llvm/Target/TargetData.h>
+//#include <llvm/Target/TargetData.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetLibraryInfo.h>
 #include <llvm/Support/TargetSelect.h>

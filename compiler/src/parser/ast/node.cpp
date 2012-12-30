@@ -42,14 +42,14 @@ void juli::Indentable::printLocation(std::ostream& os) const {
 			<< std::endl;
 }
 
-juli::Node::Node(NodeType nodeType) :
+juli::Node::Node(juli::Node::NodeType nodeType) :
 		nodeType(nodeType) {
 }
 
 juli::Node::~Node() {
 }
 
-const NodeType& juli::Node::getType() const {
+const juli::Node::NodeType& juli::Node::getType() const {
 	return nodeType;
 }
 

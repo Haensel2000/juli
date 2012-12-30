@@ -16,6 +16,8 @@ The project and some dependencies require the scons build system. It can be inst
 * `cd` to the scons directory
 * `sudo python setup.py install`
 
+NOTE: If you like to use another build system (e.g. if it is part of your IDE) make sure, that you reproduce the settings returned by calling `llvm-config --cxxflags`. In particular, when compiling against LLVM, rtti and exceptions should be turned off.
+
 #### Dependencies
 
 In order to be able to compile the project, some dependencies need to be installed:
@@ -37,9 +39,10 @@ In order to be able to compile the project, some dependencies need to be install
 * Download `libantlr3c-3.4.tar.gz` from http://www.antlr.org/download/C (make sure you download the correct version)
 * Extract the files to the directoy of your choice. `antlr3c-dir` will refer to this directory in the following.
 * `cd antlr3c-dir`
-* `./configue`
- * `./configure --enable-64bit` on 64-bit systems
+* ``./configue --prefix=`pwd`/build ``
+ * ``./configure --prefix=`pwd`/build --enable-64bit`` on 64-bit systems
 * `make`
+* `make install`
 
 ##### 3. cpputils
 
@@ -53,7 +56,7 @@ In order to be able to compile the project, some dependencies need to be install
 * `cd where-you-want-juli-to-live`
 * `git clone git://github.com/Haensel2000/juli.git juli`
 * `cd juli/compiler`
-* `scons llvm=path-to-llvm llvm-build=path-to-llvm/Debug+Asserts cpputils=path-to-cpputils antlr3c=path-to-antlr3c`
+* `scons llvm=path-to-llvm llvm-build=path-to-llvm/Debug+Asserts cpputils=path-to-cpputils antlr3c=path-to-antlr3c-build`
 
 #### Running the samples:
 
@@ -66,8 +69,6 @@ java -cp bin/:lib/commons-cli-1.2.jar juli.builder.Builder -o test.out -b ../sam
 ```
 
 You can write your own code and compile it the same way. For a more thorough introduction please refer to the wiki at https://github.com/Haensel2000/juli/wiki
-
-### b) Mac OS X
 
 
 

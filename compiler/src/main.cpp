@@ -17,10 +17,11 @@ using namespace juli;
 
 using std::cerr;
 
-cl::opt<string> inputFilename(cl::Positional, cl::desc("<input file>"), cl::Required);
-cl::opt<string> outputFilename("o", cl::desc("Specify output filename"), cl::value_desc("filename"), cl::Required);
-cl::opt<string> outputIRFilename("irtext", cl::desc("Output ir assembly code"), cl::value_desc("filename"));
-cl::opt<string> outputASTFilename("ast", cl::desc("Output debug ast"), cl::value_desc("filename"));
+static cl::opt<string> inputFilename(cl::Positional, cl::desc("<input file>"), cl::Required);
+static cl::opt<string> outputFilename("o", cl::desc("Specify output filename"), cl::value_desc("filename"), cl::Required);
+static cl::opt<string> outputIRFilename("irtext", cl::desc("Output ir assembly code"), cl::value_desc("filename"));
+static cl::opt<string> outputASTFilename("ast", cl::desc("Output debug ast"), cl::value_desc("filename"));
+
 
 int main(int argc, char **argv) {
 	int result = 0;
@@ -75,3 +76,4 @@ int main(int argc, char **argv) {
 	}
 	return result;
 }
+

@@ -11,6 +11,8 @@
 #include <debug/print.h>
 #include <parser/ast/node.h>
 
+#include <llvm/Support/Casting.h>
+
 namespace juli {
 
 enum Primitive {
@@ -18,10 +20,6 @@ enum Primitive {
 };
 
 const std::string mangle(Primitive p);
-
-enum TypeCategory {
-	PRIMITIVE, ARRAY, CLASS, REFERENCE
-};
 
 class Type;
 
@@ -45,10 +43,20 @@ public:
 };
 
 class Type: public cpputils::debug::Printable {
-private:
-	TypeCategory category;
 public:
-	Type(TypeCategory category);
+    enum TypeKind {
+        K_PrimitiveType,
+        K_ReferenceType,
+        K_ArrayType,
+        K_ClassType
+    };
+private:
+    TypeKind kind;
+public:
+    
+    TypeKind getKind() const;
+    
+	Type(TypeKind kind);
 
 	virtual ~Type() {
 	}
@@ -62,8 +70,6 @@ public:
 	virtual bool operator==(const Type& t) const = 0;
 
 	virtual const std::string mangle() const = 0;
-
-	TypeCategory getCategory() const;
 };
 
 class PrimitiveType: public Type {
@@ -103,6 +109,10 @@ public:
 	virtual const Field* getField(const std::string& name) const;
 
 	virtual const std::string mangle() const;
+    
+    static bool classof(const Type* type) {
+        return type->getKind() == K_PrimitiveType;
+    }
 };
 
 class ReferenceType: public Type {
@@ -126,10 +136,11 @@ public:
 
 	virtual const std::string mangle() const;
 
-	TypeCategory getCategory() const;
-
 	virtual void print(std::ostream& os) const;
 
+    static bool classof(const Type* type) {
+        return type->getKind() == K_ReferenceType;
+    }
 };
 
 class ArrayType: public Type {
@@ -165,6 +176,10 @@ public:
 	virtual const Field* getField(const std::string& name) const;
 
 	virtual const std::string mangle() const;
+    
+    static bool classof(const Type* type) {
+        return type->getKind() == K_ArrayType;
+    }
 };
 
 class ClassType: public Type {
@@ -188,12 +203,13 @@ public:
 
 	virtual const std::string mangle() const;
 
-	TypeCategory getCategory() const;
-
 	virtual void print(std::ostream& os) const;
 
 	std::vector<Field> getFields() const;
 
+    static bool classof(const Type* type) {
+        return type->getKind() == K_ClassType;
+    }
 };
 
 }

@@ -82,6 +82,10 @@ public:
 	const Type* getExpressionType() const;
 
 	void printType(std::ostream& os) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() >= DOUBLE_LITERAL && node->getType() <= NEW_OBJECT;
+    }
 };
 
 class NAddressable : public NExpression {
@@ -89,6 +93,10 @@ public:
 	bool address;
 
 	NAddressable(NodeType nodeType);
+    
+    static bool classof(const Node* node) {
+        return node->getType() >= VARIABLE_REF && node->getType() <= ARRAY_ACCESS;
+    }
 
 };
 
@@ -97,6 +105,10 @@ public:
 	bool terminates;
 
 	NStatement(NodeType nodeType);
+    
+    static bool classof(const Node* node) {
+        return node->getType() >= EXPRESSION && node->getType() <= IMPORT;
+    }
 };
 
 template<typename T>
@@ -118,6 +130,10 @@ public:
 			os << value;
 		}
 	}
+    
+    static bool classof(const Node* node) {
+        return node->getType() >= DOUBLE_LITERAL && node->getType() <=NULL_LITERAL;
+    }
 };
 
 class NStringLiteral: public NLiteral<std::string> {
@@ -127,6 +143,10 @@ public:
 	NStringLiteral(std::string value);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == STRING_LITERAL;
+    }
 };
 
 class NCharLiteral : public NLiteral<char> {
@@ -136,6 +156,10 @@ public:
 	NCharLiteral(std::string text);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == CHAR_LITERAL;
+    }
 };
 
 class NVariableRef: public NAddressable {
@@ -145,6 +169,10 @@ public:
 	NVariableRef(NIdentifier* id);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == VARIABLE_REF;
+    }
 };
 
 class NQualifiedAccess : public NAddressable {
@@ -158,6 +186,10 @@ public:
 	NQualifiedAccess(NExpression* ref, NVariableRef* name);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == QUALIFIED_ACCESS;
+    }
 };
 
 class NCast : public NExpression {
@@ -168,6 +200,10 @@ public:
 	NCast(NExpression* expression, NType* target);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == CAST;
+    }
 };
 
 class NFunctionCall: public NExpression {
@@ -182,6 +218,10 @@ public:
 	NFunctionCall(NIdentifier* name);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == FUNCTION_CALL;
+    }
 };
 
 class NArrayAccess: public NAddressable {
@@ -192,6 +232,10 @@ public:
 	NArrayAccess(NExpression* ref, ExpressionList& indices);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == ARRAY_ACCESS;
+    }
 };
 
 class NUnaryOperator : public NExpression {
@@ -202,6 +246,10 @@ public:
 	NUnaryOperator(NExpression* expression, Operator op);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == UNARY_OPERATOR;
+    }
 };
 
 class NBinaryOperator: public NExpression {
@@ -213,6 +261,10 @@ public:
 	NBinaryOperator(NExpression* lhs, Operator op, NExpression* rhs);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == BINARY_OPERATOR;
+    }
 };
 
 class NAllocateArray : public NExpression {
@@ -227,6 +279,10 @@ public:
 	const Type* getType(const TypeInfo& typeInfo) const;
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == NEW_ARRAY;
+    }
 
 };
 
@@ -238,6 +294,9 @@ public:
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
 
+    static bool classof(const Node* node) {
+        return node->getType() == NEW_OBJECT;
+    }
 };
 
 class NAssignment: public NStatement {
@@ -248,6 +307,10 @@ public:
 	NAssignment(NExpression* lhs, NExpression* rhs);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == ASSIGNMENT;
+    }
 };
 
 class NBlock: public NStatement {
@@ -259,6 +322,10 @@ public:
 	void addStatement(NStatement* statement);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == BLOCK;
+    }
 };
 
 class NExpressionStatement: public NStatement {
@@ -268,6 +335,10 @@ public:
 	NExpressionStatement(NExpression* expression);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == EXPRESSION;
+    }
 };
 
 class NVariableDeclaration: public NStatement {
@@ -280,6 +351,10 @@ public:
 			NExpression *assignmentExpr = 0);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == VARIABLE_DECL;
+    }
 };
 
 extern const unsigned int MODIFIER_C;
@@ -307,6 +382,10 @@ public:
 	NFunctionDefinition(NFunctionSignature * signature, NBlock* body);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == FUNCTION_DEF;
+    }
 };
 
 class NReturnStatement: public NStatement {
@@ -316,6 +395,10 @@ public:
 	NReturnStatement(NExpression* expression);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == RETURN;
+    }
 };
 
 class NIfClause : public Indentable {
@@ -337,6 +420,10 @@ public:
 	NIfStatement(std::vector<NIfClause*> clauses);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == IF;
+    }
 
 };
 
@@ -348,6 +435,10 @@ public:
 	NWhileStatement(NExpression* condition, NBlock* body);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == WHILE;
+    }
 };
 
 class NFieldDeclaration : public Indentable {
@@ -371,6 +462,10 @@ public:
 	NClassDefinition(NIdentifier* name, FieldList& fields);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == CLASS_DEF;
+    }
 
 };
 
@@ -381,6 +476,10 @@ public:
 	NImportStatement(NIdentifier* name);
 
 	virtual void print(std::ostream& os, int indent, unsigned int flags) const;
+    
+    static bool classof(const Node* node) {
+        return node->getType() == IMPORT;
+    }
 };
 
 }
