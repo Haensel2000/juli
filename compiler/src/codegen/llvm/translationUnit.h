@@ -21,18 +21,17 @@
 #include <llvm/Type.h>
 
 #include <analysis/error.h>
+#include <compiler_component.h>
 
 namespace juli {
 
-	class TranslationUnit {
+	class TranslationUnit : public CompilerComponent {
 	private:
 		StatementList statements;
 
 		std::map<std::string, llvm::Value*> llvmSymbolTable;
 
 		const TypeInfo& types;
-
-		mutable std::vector<CompilerError> compilerErrors;
 
 		std::string getLLVMTypeName(const Type* t) const;
 
@@ -43,7 +42,7 @@ namespace juli {
 	public:
 		llvm::Module* module;
 
-		TranslationUnit(const std::string& name, const TypeInfo& types);
+		TranslationUnit(std::vector<Error>& errors, const std::string& name, const TypeInfo& types);
 
 		~TranslationUnit();
 
@@ -58,7 +57,8 @@ namespace juli {
 			} catch (std::out_of_range& e) {
 				CompilerError err(n);
 				err.getStream() << "Unknown symbol " << name;
-				throw err;
+				errors.push_back(err);
+                return 0;
 			}
 		}
 
@@ -70,12 +70,8 @@ namespace juli {
 			llvmSymbolTable.erase(name);
 		}
 
-		const std::vector<CompilerError>& getErrors() const {
-			return compilerErrors;
-		}
-
 		void reportError(CompilerError& e) const {
-			compilerErrors.push_back(e);
+			errors.push_back(e);
 		}
 
 		void printStatements(std::ostream& os) const {

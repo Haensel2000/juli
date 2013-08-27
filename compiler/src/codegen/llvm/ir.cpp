@@ -97,9 +97,9 @@ unsigned int juli::IRGenerator::getSizeOf(const Type* type, bool deep) {
 
 }
 
-juli::IRGenerator::IRGenerator(const std::string& moduleName, const TypeInfo& typeInfo) :
-		typeInfo(typeInfo), translationUnit(moduleName, typeInfo), builder(translationUnit.getContext()), module(
-				*translationUnit.module), context(translationUnit.getContext()) {
+juli::IRGenerator::IRGenerator(std::vector<Error>& errors, const std::string& moduleName, const TypeInfo& typeInfo) :
+		typeInfo(typeInfo), translationUnit(errors, moduleName, typeInfo), builder(translationUnit.getContext()), module(
+				*translationUnit.module), context(translationUnit.getContext()), CompilerComponent(errors) {
 	zero_ui8 = llvm::ConstantInt::get(context, llvm::APInt(8, 0, bool(false)));
 	zero_ui16 = llvm::ConstantInt::get(context, llvm::APInt(16, 0, bool(false)));
 	zero_ui32 = llvm::ConstantInt::get(context, llvm::APInt(32, 0, bool(false)));
@@ -119,11 +119,15 @@ juli::IRGenerator::IRGenerator(const std::string& moduleName, const TypeInfo& ty
 
 	std::vector<FormalParameter> params;
 	params.push_back(FormalParameter(t_arr_int8, "str"));
-	createFunction(Function::get("strlen", t_int32, params, false, MODIFIER_C, 0));
+    Function* strlen = Function::get("strlen", t_int32, params, false, MODIFIER_C, errors, 0);
+    if (strlen)
+        createFunction(strlen);
 
 	params.clear();
 	params.push_back(FormalParameter(t_int32, "size"));
-	createFunction(Function::get("malloc", t_arr_int8, params, false, MODIFIER_C, 0));
+    Function* malloc = Function::get("malloc", t_arr_int8, params, false, MODIFIER_C, errors, 0);
+    if (malloc)
+        createFunction(malloc);
 }
 
 void juli::IRGenerator::defineFunction(const Function* function) {
@@ -230,11 +234,14 @@ llvm::Value* juli::IRGenerator::visitVariableRef(const NVariableRef* n) {
 	llvm::Value* p = translationUnit.getSymbol(n->name, n);
 	llvm::Value* result;
 
+    if (!p)
+        return 0;
+    
 	if (n->address)
 		result = p;
 	else
 		result = builder.CreateLoad(p);
-	;
+	
 
 	return result;
 }
@@ -634,7 +641,9 @@ llvm::Function* juli::IRGenerator::createFunction(const Function * n) {
 }
 
 llvm::Value* juli::IRGenerator::visitFunctionDef(const NFunctionDefinition* n) {
-	defineFunction(Function::get(n, typeInfo, false));
+    Function* function = Function::get(n, typeInfo, false, errors);
+	if (function)
+        defineFunction(function);
 	return 0;
 }
 

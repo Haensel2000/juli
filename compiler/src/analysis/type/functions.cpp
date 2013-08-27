@@ -9,7 +9,7 @@ using namespace juli;
 
 std::map<std::string, Function*> juli::Function::functionPool;
 
-Function* juli::Function::get(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo, bool importing) {
+Function* juli::Function::get(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo, bool importing, std::vector<Error>& errors) {
 	const std::string& name = functionDefinition->signature->name;
 	const Type* resultType = functionDefinition->signature->type->resolve(typeInfo);
 	std::vector<FormalParameter> formalArguments = transformParameterList(functionDefinition->signature->arguments,
@@ -22,22 +22,23 @@ Function* juli::Function::get(const NFunctionDefinition* functionDefinition, con
 		if (!(*resultType == PrimitiveType::INT32_TYPE)) {
 			CompilerError err(functionDefinition);
 			err.getStream() << "main must return " << PrimitiveType::INT32_TYPE;
-			throw err;
+			errors.push_back(err);
+            return 0;
 		}
 
 		ArrayType p(new ArrayType(&PrimitiveType::INT8_TYPE));
 		if (formalArguments.size() != 1 || !(*formalArguments[0].type == p)) {
 			CompilerError err(functionDefinition);
 			err.getStream() << "main may only have one parameter " << p;
-			throw err;
+			errors.push_back(err);
+            return 0;
 		}
 	}
 
-	return get(name, resultType, formalArguments, varArgs, modifiers, body);
+	return get(name, resultType, formalArguments, varArgs, modifiers, errors, body);
 }
 
-Function* juli::Function::get(const std::string& name, const Type* resultType, std::vector<FormalParameter>& argTypes,
-		bool varArgs, unsigned int modifiers, NBlock* body) {
+Function* juli::Function::get(const std::string& name, const Type* resultType, std::vector<FormalParameter>& argTypes, bool varArgs, unsigned int modifiers, std::vector<Error>& errors, NBlock* body) {
 	std::string mangledName = mangleFunction(name, resultType, argTypes, varArgs, modifiers);
 
 	Function* & f = functionPool[mangledName];
@@ -49,7 +50,8 @@ Function* juli::Function::get(const std::string& name, const Type* resultType, s
 			if (f->body && f->body != body) {
 				CompilerError err(body);
 				err.getStream() << "Redefinition of function " << f;
-				throw err;
+				errors.push_back(err);
+                return 0;
 			}
 			f->body = body;
 		}
@@ -153,8 +155,8 @@ void juli::Functions::addFunction(Function* function) {
 
 std::vector<Function*> juli::Functions::resolve(const std::string& name, std::vector<const Type*>& argTypes) const {
 	std::vector<Function*> matches;
-
-	try {
+    std::map<std::string, std::set<Function*> >::const_iterator candidatesIterator = data.find(name);
+    if (candidatesIterator != data.end()) {
 		const std::set<Function*> candidates = data.at(name);
 		unsigned int bestScore = 0;
 		for (std::set<Function*>::const_iterator i = candidates.begin(); i != candidates.end(); ++i) {
@@ -167,12 +169,9 @@ std::vector<Function*> juli::Functions::resolve(const std::string& name, std::ve
 				matches.push_back(*i);
 			}
 		}
-		return matches;
-	} catch (std::out_of_range& e) {
-		return matches;
-	}
-
-	return matches;
+        
+    }
+    return matches;
 }
 
 void juli::Functions::merge(const Functions& other) {

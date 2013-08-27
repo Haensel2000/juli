@@ -13,11 +13,13 @@
 #include <parser/ast/ast.h>
 #include <codegen/llvm/translationUnit.h>
 
+#include <compiler_component.h>
+
 #include <utility>
 
 namespace juli {
 
-class IRGenerator {
+class IRGenerator : public CompilerComponent {
 private:
 	const TypeInfo& typeInfo;
 	TranslationUnit translationUnit;
@@ -119,7 +121,7 @@ public:
 	llvm::Type* resolveType(const NType* n);
 	llvm::Type* resolveType(const Type* n);
 
-	IRGenerator(const std::string& moduleName, const TypeInfo& typeInfo);
+	IRGenerator(std::vector<Error>& errors, const std::string& moduleName, const TypeInfo& typeInfo);
 
 	void process(const Node* n);
 

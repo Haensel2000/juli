@@ -55,10 +55,9 @@ private:
 
 public:
 
-	static Function* get(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo, bool importing);
+	static Function* get(const NFunctionDefinition* functionDefinition, const TypeInfo& typeInfo, bool importing, std::vector<Error>& errors);
 
-	static Function* get(const std::string& name, const Type* resultType, std::vector<FormalParameter>& argTypes,
-			bool varArgs, unsigned int modifiers, NBlock* body = 0);
+	static Function* get(const std::string& name, const Type* resultType, std::vector<FormalParameter>&argTypes, bool varArgs, unsigned int modifiers, std::vector<Error>& errors, NBlock* body = 0);
 
 	const std::string name;
 	const Type* resultType;

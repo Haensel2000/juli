@@ -12,25 +12,29 @@
 #include <analysis/type/declare.h>
 #include <parser/parser.h>
 
+#include <compiler_component.h>
+
 namespace juli {
 
 class Declarator;
 
-class ImportLoader {
+class ImportLoader : public CompilerComponent {
 private:
 public:
+    ImportLoader(std::vector<Error>& errors) : CompilerComponent(errors) {}
+    
 	virtual ~ImportLoader() {
 	}
 
 	virtual TypeInfo* importTypes(const std::string& module) = 0;
 };
 
-class Importer {
+class Importer : CompilerComponent {
 private:
 	std::map<std::string, TypeInfo*> cache;
 	std::vector<ImportLoader*> loaders;
 public:
-	Importer();
+	Importer(std::vector<Error>& errors);
 	~Importer();
 
 	void add(ImportLoader* loader);
@@ -43,7 +47,7 @@ private:
 	Parser& parser;
 	Importer& parent;
 public:
-	SourceImportLoader(Parser& parser, Importer& parent);
+	SourceImportLoader(Parser& parser, Importer& parent, std::vector<Error>& errors);
 
 	virtual TypeInfo* importTypes(const std::string& module);
 };

@@ -6,8 +6,8 @@
 
 using namespace juli;
 
-juli::Declarator::Declarator(Importer& importer, bool importing) :
-		typeInfo(new TypeInfo(!importing)), importer(importer), importing(importing) {
+juli::Declarator::Declarator(std::vector<Error>& errors, Importer& importer, bool importing) :
+		typeInfo(new TypeInfo(errors, !importing)), importer(importer), importing(importing) {
 }
 
 void juli::Declarator::visit(const Node* n) {

@@ -9,8 +9,7 @@
 
 using namespace juli;
 
-juli::SymbolTable::SymbolTable(const TypeInfo& typeInfo) :
-		typeInfo(typeInfo) {
+juli::SymbolTable::SymbolTable(const TypeInfo& typeInfo) : typeInfo(typeInfo) {
 }
 
 void juli::SymbolTable::startScope(
@@ -46,7 +45,8 @@ void juli::SymbolTable::addSymbol(const std::string& name, const Type* type,
 	if (currentScope.find(name) != currentScope.end()) {
 		CompilerError err(n);
 		err.getStream() << "Redefinition of symbol " << name;
-		throw err;
+		typeInfo.getErrors().push_back(err);
+        return;
 	}
 
 	currentScope[name] = type;
@@ -57,7 +57,7 @@ void juli::SymbolTable::addSymbol(NVariableDeclaration* node) {
 }
 
 juli::TypeChecker::TypeChecker(const TypeInfo& typeInfo) :
-		symbolTable(typeInfo), typeInfo(typeInfo) {
+		symbolTable(typeInfo), typeInfo(typeInfo), CompilerComponent(typeInfo.getErrors()) {
 	_newScope = true;
 	_addressing = false;
 	_currentFunction = 0;
@@ -72,7 +72,8 @@ NExpression* juli::TypeChecker::checkAssignment(const Type* left,
 			CompilerError err(n);
 			err.getStream() << message << "Invalid Types: Cannot assign "
 					<< right->expressionType << " to " << left;
-			throw err;
+			errors.push_back(err);
+            return 0;
 		}
 		NCast* c = new NCast(right, 0);
 		c->expressionType = left;
@@ -139,7 +140,8 @@ const Type* juli::TypeChecker::visitVariableRef(NVariableRef* n) {
 	if (!n->expressionType) {
 		CompilerError err(n);
 		err.getStream() << "Unknown symbol " << n->name;
-		throw err;
+		errors.push_back(err);
+        return 0;
 	}
 
 	return n->expressionType;
@@ -154,7 +156,8 @@ const Type* juli::TypeChecker::visitQualifiedAccess(NQualifiedAccess* n) {
 		CompilerError err(n);
 		err.getStream() << "Unknown field " << n->name->name << std::endl;
 		err.getStream() << "Type = " << refType;
-		throw err;
+		errors.push_back(err);
+        return 0;
 	}
 
 	n->index = f->index;
@@ -173,6 +176,8 @@ const Type* juli::TypeChecker::visitCast(NCast* n) {
 		CompilerError err(n);
 		err.getStream() << "Invalid Explicit Cast: Cannot cast "
 				<< n->expression->expressionType << " to " << n->expressionType;
+        errors.push_back(err);
+        return 0;
 	}
 	return n->expressionType;
 }
@@ -241,7 +246,8 @@ const Type* juli::TypeChecker::visitFunctionCall(NFunctionCall* n) {
 	if (n->name->name == "main") {
 		CompilerError err(n);
 		err.getStream() << "Calling main is not allowed";
-		throw err;
+		errors.push_back(err);
+        return 0;
 	}
 
 	ExpressionList& args = n->arguments;
@@ -267,14 +273,16 @@ const Type* juli::TypeChecker::visitArrayAccess(NArrayAccess* n) {
 		CompilerError err(n);
 		err.getStream()
 				<< "Left hand side of array access must be of array type";
-		throw err;
+		errors.push_back(err);
+        return 0;
 	}
 
 	if (t->getDimension() != n->indices.size()) {
 		CompilerError err(n);
 		err.getStream() << "Array is of dimension " << t->getDimension()
 				<< " but " << n->indices.size() << " indices were provided.";
-		throw err;
+		errors.push_back(err);
+        return 0;
 	}
 
 	for (ExpressionList::iterator i = n->indices.begin(); i != n->indices.end();
@@ -296,7 +304,8 @@ const Type* juli::TypeChecker::visitAssignment(NAssignment* n) {
 	if (!addressable) {
 		CompilerError err(n);
 		err.getStream() << "Left hand side of assignment is not addressable";
-		throw err;
+		errors.push_back(err);
+        return 0;
 	}
 
 	addressable->address = true;
@@ -362,7 +371,8 @@ const Type* juli::TypeChecker::visitFunctionDef(NFunctionDefinition* n) {
 				CompilerError err(n);
 				err.getStream() << "Function " << n->signature->name
 						<< " must return a value of type " << t;
-				throw err;
+				errors.push_back(err);
+                return 0;
 			}
 		}
 	} else {
@@ -386,7 +396,8 @@ const Type* juli::TypeChecker::visitReturn(NReturnStatement* n) {
 			CompilerError err(n);
 			err.getStream() << "Function need to return a value of type "
 					<< functionReturnType;
-			throw err;
+			errors.push_back(err);
+            return 0;
 		}
 	}
 

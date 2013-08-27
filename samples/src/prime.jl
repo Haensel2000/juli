@@ -4,13 +4,7 @@ C double sqrt(double x);
 
 int strlen(char[] str) 
 {
-  int l;
-  l = 0;
-  while (str[l] != 0) 
-  {
-    l = l + 1;
-  }
-  return l;
+  return str.length;
 }
 
 int digit(char c) 

@@ -8,7 +8,7 @@ using namespace juli;
 
 std::map<std::string, Type*> juli::TypeInfo::implicitTypes;
 
-juli::TypeInfo::TypeInfo(bool implicit) {
+juli::TypeInfo::TypeInfo(std::vector<Error>& errors, bool implicit) : CompilerComponent(errors) {
 	if (implicitTypes.empty()) {
 		implicitTypes["double"] = new PrimitiveType(FLOAT64);
 		implicitTypes["void"] = new PrimitiveType(VOID);
@@ -84,8 +84,9 @@ void juli::TypeInfo::declareImplicitOperator(const std::string& name, const Type
 		binaryArgs.push_back(FormalParameter(type, s.str()));
 	}
 
-	Function* f = Function::get(name, returnType, binaryArgs, false, 0);
-	declareFunction(f);
+	Function* f = Function::get(name, returnType, binaryArgs, false, 0, errors);
+    if (f)
+        declareFunction(f);
 
 }
 
@@ -94,8 +95,9 @@ void juli::TypeInfo::declareImplicitOperator(const std::string& name, const Type
 }
 
 void juli::TypeInfo::defineFunction(const NFunctionDefinition* def, bool importing) {
-	Function* f = Function::get(def, *this, importing);
-	declareFunction(f);
+	Function* f = Function::get(def, *this, importing, errors);
+    if (f)
+        declareFunction(f);
 }
 
 void juli::TypeInfo::defineClass(const NClassDefinition* def) {
@@ -117,7 +119,8 @@ void juli::TypeInfo::declareClass(const NClassDefinition* def) {
 	if (i != typeTable.end()) {
 		CompilerError err(def);
 		err.getStream() << "Redefinition of type " << def->name->name;
-		throw err;
+		errors.push_back(err);
+        return;
 	}
 
 	typeTable[def->name->name] = type;
@@ -138,14 +141,12 @@ void juli::TypeInfo::declareFunction(Function* f) {
 Function* juli::TypeInfo::resolveFunction(const std::string& name, std::vector<const Type*>& argTypes,
 		const Indentable* astNode) const throw (CompilerError) {
 	std::vector<Function*> matches;
-	try {
-		matches = functions.resolve(name, argTypes);
-	} catch (std::out_of_range& e) {
-	}
+    matches = functions.resolve(name, argTypes);
 	if (matches.empty()) {
 		CompilerError err(astNode);
 		err.getStream() << "Undeclared function: " << name << " " << argTypes;
-		throw err;
+		errors.push_back(err);
+        return 0;
 	} else if (matches.size() > 1) {
 		CompilerError err(astNode);
 		err.getStream() << "Ambiguous Function Call: " << name << "(" << argTypes << ")" << std::endl
@@ -154,7 +155,8 @@ Function* juli::TypeInfo::resolveFunction(const std::string& name, std::vector<c
 			err.getStream() << *i << std::endl;
 		}
 
-		throw err;
+		errors.push_back(err);
+        return 0;
 	}
 	return *matches.begin();
 }
@@ -172,14 +174,15 @@ const std::vector<Type*> juli::TypeInfo::getTypes() const {
 }
 
 const Type* juli::TypeInfo::getType(const std::string& name, const Indentable* astNode) const throw (CompilerError) {
-	try {
-		return typeTable.at(name);
-	} catch (std::out_of_range& e) {
+    std::map<std::string, Type*>::const_iterator typeIterator = typeTable.find(name);
+    if (typeIterator != typeTable.end()) {
+        return typeTable.at(name);
+    } else {
 		CompilerError err(astNode);
 		err.getStream() << "Unknown type '" << name << "'";
-		throw err;
+		errors.push_back(err);
+        return 0;
 	}
-	return 0;
 }
 
 void juli::TypeInfo::merge(const TypeInfo& other) {

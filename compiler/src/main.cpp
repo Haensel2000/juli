@@ -22,58 +22,58 @@ static cl::opt<string> outputFilename("o", cl::desc("Specify output filename"), 
 static cl::opt<string> outputIRFilename("irtext", cl::desc("Output ir assembly code"), cl::value_desc("filename"));
 static cl::opt<string> outputASTFilename("ast", cl::desc("Output debug ast"), cl::value_desc("filename"));
 
+static std::vector<Error> errors;
 
 int main(int argc, char **argv) {
 	int result = 0;
-
+    
 	cl::ParseCommandLineOptions(argc, argv);
-
+    
 	CodeEmitter emitter;
-	Importer importer;
+	Importer importer(errors);
 	Parser parser;
-
-	importer.add(new SourceImportLoader(parser, importer));
-	try {
-		Node* ast = parser.parse(inputFilename);
-
-		Declarator declarator(importer);
-		TypeInfo* typeInfo = declarator.declare(ast);
-		typeInfo->resolveClasses();
-
-		TypeChecker typeChecker(*typeInfo);
-		typeChecker.visit(ast);
-
-		if (!outputASTFilename.empty()) {
-			std::ofstream astos(outputASTFilename.c_str());
-			ast->print(astos, 0, Indentable::FLAG_TREE);
-		}
-
-		IRGenerator irgen("test", *typeInfo);
-		irgen.process(ast);
-
-		if (!outputIRFilename.empty()) {
-			std::ofstream iros(outputIRFilename.c_str());
-			llvm::raw_os_ostream ros(iros);
-			irgen.getTranslationUnit().module->print(ros, 0);
-		}
-
-
-		if (irgen.getTranslationUnit().getErrors().empty()) {
-			emitter.emitCode(outputFilename.c_str(), irgen.getTranslationUnit().module);
-		} else {
-			std::vector<CompilerError> errors = irgen.getTranslationUnit().getErrors();
-			for (std::vector<CompilerError>::iterator i = errors.begin(); i != errors.end(); ++i) {
-				std::cerr << *i;
-			}
-			result = 1;
-		}
-
-		delete typeInfo;
-
-	} catch (Error& ce) {
-		cerr << "Uncaught error: " << ce;
-		result = 2;
-	}
+    
+	importer.add(new SourceImportLoader(parser, importer, errors));
+    
+    Node* ast = parser.parse(inputFilename);
+    
+    if (!ast) {
+        return 1;
+    }
+    
+    Declarator declarator(errors, importer);
+    TypeInfo* typeInfo = declarator.declare(ast);
+    typeInfo->resolveClasses();
+    
+    TypeChecker typeChecker(*typeInfo);
+    typeChecker.visit(ast);
+    
+    if (!outputASTFilename.empty()) {
+        std::ofstream astos(outputASTFilename.c_str());
+        ast->print(astos, 0, Indentable::FLAG_TREE);
+    }
+    
+    IRGenerator irgen(errors, "test", *typeInfo);
+    irgen.process(ast);
+    
+    if (!outputIRFilename.empty()) {
+        std::ofstream iros(outputIRFilename.c_str());
+        llvm::raw_os_ostream ros(iros);
+        irgen.getTranslationUnit().module->print(ros, 0);
+    }
+    
+    
+    if (irgen.getTranslationUnit().getErrors().empty()) {
+        emitter.emitCode(outputFilename.c_str(), irgen.getTranslationUnit().module);
+    } else {
+        std::vector<Error>& errors = irgen.getTranslationUnit().getErrors();
+        for (std::vector<Error>::iterator i = errors.begin(); i != errors.end(); ++i) {
+            std::cerr << *i;
+        }
+        result = 1;
+    }
+    
+    delete typeInfo;
 	return result;
 }
 

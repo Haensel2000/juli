@@ -11,15 +11,13 @@ lib_path = []
 
 if CPPUTILS_PATH:
   include_path.append(os.path.join(CPPUTILS_PATH, 'src'))
-if LLVM_PATH:
-  include_path.append(os.path.join(LLVM_PATH, 'include'))
 if ANTLR3C_PATH:
   include_path.append(os.path.join(ANTLR3C_PATH, 'include'))
   
 if CPPUTILS_PATH:
   lib_path.append(os.path.join(CPPUTILS_PATH, 'build'))
 if LLVM_PATH:
-  lib_path.append(os.path.join(LLVM_PATH, 'lib'))
+  lib_path.append(subprocess.check_output(os.path.join(LLVM_PATH, 'bin', 'llvm-config') + " --libdir", shell=True))
 if ANTLR3C_PATH:
   lib_path.append(os.path.join(ANTLR3C_PATH, 'lib'))
 
@@ -28,85 +26,6 @@ libs=[
   'm', 
   'antlr3c', 
   'cpputils', 
-  'LLVMAsmParser',
-  'LLVMInstrumentation',
-'LLVMLinker',
-'LLVMArchive',
-'LLVMBitReader',
-'LLVMDebugInfo',
-'LLVMipo',
-'LLVMVectorize',
-'LLVMBitWriter',
-'LLVMTableGen',
-'LLVMHexagonCodeGen',
-'LLVMHexagonDesc',
-'LLVMHexagonInfo',
-'LLVMHexagonAsmPrinter',
-'LLVMNVPTXCodeGen',
-'LLVMNVPTXDesc',
-'LLVMNVPTXInfo',
-'LLVMNVPTXAsmPrinter',
-'LLVMMBlazeDisassembler',
-'LLVMMBlazeAsmParser',
-'LLVMMBlazeCodeGen',
-'LLVMMBlazeDesc',
-'LLVMMBlazeInfo',
-'LLVMMBlazeAsmPrinter',
-'LLVMCppBackendCodeGen',
-'LLVMCppBackendInfo',
-'LLVMMSP430CodeGen',
-'LLVMMSP430Desc',
-'LLVMMSP430AsmPrinter',
-'LLVMMSP430Info',
-'LLVMXCoreCodeGen',
-'LLVMXCoreDesc',
-'LLVMXCoreInfo',
-'LLVMMipsCodeGen',
-'LLVMMipsAsmParser',
-'LLVMMipsDisassembler',
-'LLVMMipsDesc',
-'LLVMMipsAsmPrinter',
-'LLVMMipsInfo',
-'LLVMARMDisassembler',
-'LLVMARMCodeGen',
-'LLVMARMAsmParser',
-'LLVMARMDesc',
-'LLVMARMInfo',
-'LLVMARMAsmPrinter',
-'LLVMPowerPCCodeGen',
-'LLVMPowerPCDesc',
-'LLVMPowerPCAsmPrinter',
-'LLVMPowerPCInfo',
-'LLVMSparcCodeGen',
-'LLVMSparcDesc',
-'LLVMSparcInfo',
-'LLVMX86AsmParser',
-'LLVMX86CodeGen',
-'LLVMSelectionDAG',
-'LLVMAsmPrinter',
-'LLVMX86Disassembler',
-'LLVMX86Desc',
-'LLVMX86Info',
-'LLVMX86AsmPrinter',
-'LLVMX86Utils',
-'LLVMMCDisassembler',
-'LLVMMCParser',
-'LLVMInterpreter',
-'LLVMMCJIT',
-'LLVMJIT',
-'LLVMCodeGen',
-'LLVMScalarOpts',
-'LLVMInstCombine',
-'LLVMTransformUtils',
-'LLVMipa',
-'LLVMAnalysis',
-'LLVMRuntimeDyld',
-'LLVMExecutionEngine',
-'LLVMTarget',
-'LLVMMC',
-'LLVMObject',
-'LLVMCore',
-'LLVMSupport',
   'dl']
 
 #ccflags = '-D_DEBUG -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -g -fvisibility-inlines-hidden -fno-exceptions -fno-common -Woverloaded-virtual -Wcast-qual'
@@ -114,7 +33,8 @@ libs=[
 if LLVM_PATH:
     ccflags_raw = subprocess.check_output(os.path.join(LLVM_PATH, 'bin', 'llvm-config') + " --cxxflags", shell=True).split()
     ccflags = ' '.join([f for f in ccflags_raw if not f.startswith('-I')])
-    print 'CCFLAGS = ' + ccflags
+    include_path = include_path + [f[2:] for f in ccflags_raw if f.startswith('-I')]
+    libs = libs + [f[2:] for f in subprocess.check_output(os.path.join(LLVM_PATH, 'bin', 'llvm-config') + " --libs all", shell=True).split()]
 else:
     ccflags = ''
 

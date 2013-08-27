@@ -7,9 +7,7 @@
 
 using namespace juli;
 
-juli::TranslationUnit::TranslationUnit(const std::string& name,
-		const TypeInfo& types) :
-		types(types) {
+juli::TranslationUnit::TranslationUnit(std::vector<Error>& errors, const std::string& name, const TypeInfo& types) : CompilerComponent(errors), types(types){
 	module = new llvm::Module(name, llvm::getGlobalContext());
 }
 

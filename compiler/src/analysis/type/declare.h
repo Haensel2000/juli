@@ -37,7 +37,7 @@ private:
 			unsigned int arity);
 public:
 
-	Declarator(Importer& importer, bool importing = false);
+	Declarator(std::vector<Error>& errors, Importer& importer, bool importing = false);
 
 	TypeInfo* declare(const Node* n);
 

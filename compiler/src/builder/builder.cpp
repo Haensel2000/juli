@@ -2,22 +2,16 @@
 
 using namespace juli;
 
-juli::SourceImportLoader::SourceImportLoader(Parser& parser, Importer& parent) :
-		parser(parser), parent(parent) {
+juli::SourceImportLoader::SourceImportLoader(Parser& parser, Importer& parent, std::vector<Error>& errors) :
+		parser(parser), parent(parent), ImportLoader(errors) {
 }
 
 TypeInfo* juli::SourceImportLoader::importTypes(const std::string& module) {
-	Declarator declarator(parent, true);
-	try {
-		return declarator.declare(parser.parse(module + ".jl"));
-	} catch (CompilerError& e) {
-		throw e;
-	} catch (...) {
-	}
-	return 0;
+	Declarator declarator(errors, parent, true);
+    return declarator.declare(parser.parse(module + ".jl"));
 }
 
-juli::Importer::Importer() {
+juli::Importer::Importer(std::vector<Error>& errors) : CompilerComponent(errors) {
 }
 
 void juli::Importer::add(ImportLoader* loader) {
@@ -44,7 +38,7 @@ TypeInfo& juli::Importer::getTypes(const std::string& module) {
 		if (!ti) {
 			ImportError err;
 			err.getStream() << "Could not load module " << module;
-			throw err;
+			errors.push_back(err);
 		}
 	}
 	return *ti;
